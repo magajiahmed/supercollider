@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////
 t = TempoClock(108/60);
 /////////////////////////////////////////////////////////////
-SynthDef(\kicksynth1, { |basefreq = 50, envratio = 3, freqdecay = 0.02, ampdecay = 0.0125|
-   var   fenv = EnvGen.kr(Env([envratio, 1], [freqdecay], \exp), 1) * basefreq,
-      aenv = EnvGen.kr(Env.perc(0.001, ampdecay), 1, doneAction:2);
-   Out.ar([0, 1], SinOsc.ar(fenv, 0.5pi, aenv));
+SynthDef(\kicksynth1, { |basefreq = 50, envratio = 3, freqdecay = 0.05, ampdecay = 0.0625|
+        var fenv = EnvGen.kr(Env([envratio, 1], [freqdecay], \exp), 1) * basefreq,
+        aenv = EnvGen.kr(Env.perc(0.01, ampdecay), 1, -1, doneAction:2);
+Out.ar([0, 1], SinOsc.ar(fenv, 0.5pi, aenv/4));
 }).store;
 ///////////////////////////////////////////////////////////////
 ~kick = List.new;
@@ -20,10 +20,12 @@ SynthDef(\kicksynth1, { |basefreq = 50, envratio = 3, freqdecay = 0.02, ampdecay
 /////////////////////////////////////////////////////////////////
 (
 SynthDef('snare2', { |outputchan = 0, rezfreq = 1000, length = 0.125|
-	Out.ar(outputchan,               // output channel assignment
-	Resonz.ar(WhiteNoise.ar(0.5),    // white noise into resonant filter
+	Out.ar(outputchan,               // output channel assignment, 0 (left) by default
+//	Resonz.ar(WhiteNoise.ar(0.3),   // white noise into resonant filter
+    Resonz.ar(Crackle.ar(1.9),
 	rezfreq,                         // filter's resonant freq
-	XLine.kr(1, 0.01,                // start, end value (amp)
+//    WhiteNoise.kr(0.5),
+	XLine.kr(0.5, 0.125,                // start, end value (amp)
 	length,                          // length of sound
 	doneAction: 2)))
 }).store;
@@ -35,13 +37,13 @@ SynthDef('snare2', { |outputchan = 0, rezfreq = 1000, length = 0.125|
 ~snr.add(Pbind(
 	 \dur, Prand(#[0.25, 0.5, 0.75, 1, 1.5, 2, 3], inf), 
 	 \outputchan, Pshuf(#[0, 1], inf),
-	 \rezfreq, Pshuf(#[500, 1100, 1200, 1300, 14000], inf),
-	 \length, Pshuf(#[0.03125, 0.0625, 0.125, 0.25, 0.5, 1], inf),
+	 \rezfreq, Pshuf(#[600, 1300, 1400, 1500, 16000], inf),
+	 \length, Pshuf(#[0.03125, 0.0625, 0.125, 0.25, 0.5], inf),
 	 \instrument, \snare2
 ).play(clock: t, quant: 1));
 )
 
-~snr.do({ |player| player.stop}, ~snr = List.new);
+~snr.do({ |player| player.stop}, ~snr = List.new); 
 ////////////////////////////////////////////////////////////////
 (
 SynthDef('hat', { |outputchan = 0, rezfreq = 10000|
@@ -61,3 +63,4 @@ SynthDef('hat', { |outputchan = 0, rezfreq = 10000|
 )
 
 ~hat.do({ |player| player.stop}, ~hat = List.new);
+//////////////////////////////////////////////////////////////////
