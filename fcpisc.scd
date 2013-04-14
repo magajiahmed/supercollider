@@ -20,8 +20,9 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-~nanoktrl2 = 1400710921;
+//~nanoktrl2 = 1400710921;
 //~nanoktrl2 = 683998490;
+~nanoktrl2 = 1310720;
 
 // tempo
 t = TempoClock(88/60);
@@ -204,13 +205,13 @@ SynthDef(\impulse, { |freq = 1000, outchan = 0, peak = 1, rq = 0.5|
 SynthDef(\pingsynth, { |curve = -4, dur = 1, freq = 440, peak = 0.5|
 	var env			=		Env.perc(releaseTime: dur, level: peak/16, curve: curve);
 	var envgen		=		EnvGen.kr(env, doneAction: 2);
-	var bnkmul		=		0.0025;
+	var bnkmul		=		0.002;
 	var bnk1		=		LFBrownNoise0.kr(mul: bnkmul, add: 1);
 	var bnk2		=		LFBrownNoise0.kr(mul: bnkmul, add: 1);
-	var sin1		=		SinOsc.ar(freq, 						mul: envgen/2);
-	var sin2		=		SinOsc.ar((freq + 1), 					mul: envgen/2);
-	var sin3		=		SinOsc.ar(freq * 2.005, 				mul: envgen/4);
-	var sin4		=		SinOsc.ar((freq + 1) * 2.005,		 	mul: envgen/4);
+	var sin1		=		SinOsc.ar(freq, 								mul: envgen/2);
+	var sin2		=		SinOsc.ar((freq + 1) * bnk1, 					mul: envgen/2);
+	var sin3		=		SinOsc.ar(freq * 2.005, 						mul: envgen/4);
+	var sin4		=		SinOsc.ar((freq + 1) * 2.005 * bnk2,		 	mul: envgen/4);
 	var sinmix1		=		sin1 + sin3;
 	var sinmix2		=		sin2 + sin4;
 	var dist		=		Decimator.ar(sinmix1 + sinmix2, 11025, 1.5, envgen / 12);
@@ -511,7 +512,7 @@ Pdef(\sinepingpat,
 								-1, 1, -1, 1, -1, 1, 1,
 								-1, 1, -1, 1, -1, 1, -1, 1, 1,
 								-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, 1
-						] / 1.5, inf),
+						] / 2, inf),
 		\peak, 			0.05
 ));
 
