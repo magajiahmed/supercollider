@@ -24,6 +24,15 @@ w.front;
 );
 
 ////////////////////////////////////////////////////////////////////////////////
+//							RECORDING
+
+/*
+s.prepareForRecord;
+s.record;
+s.stopRecording;
+*/
+
+////////////////////////////////////////////////////////////////////////////////
 //							SYNTHDEFS
 
 // compressor
@@ -81,25 +90,6 @@ SynthDef(\drone, { |freq = 256, freqratio = #[1, 1.5], gate = 1, kbnammul = 0.85
 	Out.ar([0, 1], (sin1a + sin1b + sin2a + sin2b + sin3a + sin3b) / 256);
 }).add;
 
-/*
-~corpulent =
-SynthDef(\lumber, { |	freq = 256, freqratios = #[1, 1.5],
-						gate = 1, pan = 0, peak = 1|
-
-	var env			=	Env.asr(1, peak, 10, 0);
-	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
-	var klor1		=	Lorenz2DC.kr(0.1, 10, mul: 0.002, add: 1);
-	var kbn1		=	LFBrownNoise0.kr(10, mul: 0.03, add: 1);
-	var kbn2        =   LFBrownNoise0.kr(0.75, mul: 0.6, add: 1);
-	var kbn3        =   LFBrownNoise0.kr(mul: 0.5, add: 1);
-	var sin1        =   SinOsc.ar(freqratios * freq, mul: envgen / 100);
-	var sin2        =   SinOsc.ar(freqratios * (freq + 0.2) * klor1, mul: envgen / 100);
-	var deci1		=	Decimator.ar(sin1 + sin2, bits: 10 * kbn1, mul: envgen);
-	var flt			=	RLPF.ar(deci1, freq * 12 * kbn2, 0.5 * kbn3);
-	Out.ar([0, 1], flt);
-}).add;
-*/
-
 // pad
 
 ~pad =
@@ -144,7 +134,7 @@ SynthDef(\squirp, { |amp = 1, dur = 8, freq = 512, squirpamp = 0.05|
 	var sin2		=	SinOsc.ar((freq + 0.1) * squirp2, mul: (envgen / 5));
 	var squirp3		=	LinCongC.ar(freq * 8, mul: squirpamp * 8, add: 1);
 	var sin3		=	SinOsc.ar(freq * 8 * squirp3, mul: (envgen / 72));
-	Out.ar([0, 1], sin1 + sin2 + sin3);
+	Out.ar([0, 1], [sin1 + sin3, sin2 + sin3]);
 }).add;
 
 // pling
@@ -217,7 +207,7 @@ SynthDef(\latte, { |a = 1, b = 3, curve = -8, length = 0.2, pan = 0, peak = 1|
 
 ~germ =
 SynthDef(\imp, { |frq = 2000, pan = 0, peak = 1, rq = 1|
-	var env			=	Env.perc(0.002, level: peak);
+	var env			=	Env.perc(0.005, level: peak);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var imp			=	Impulse.ar(0, mul: envgen);
 	var flt			=	RLPF.ar(imp, frq, rq);
@@ -303,7 +293,7 @@ Pdef(\moisture,
 		\b, 			Pwhite(1, 3, inf),
 		\dur, 			Pwrand([Pseq([0.25 / 2], 4), 0.5, 0.75, 6, 9], [1, 16, 16, 4, 4].normalizeSum, inf),
 		\pan, 			Pshuf([-1, -0.5, 0, 0.5, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 3,
+		\peak, 			Pwhite(0.75, 1, inf) / 4,
 ));
 
 /*
@@ -346,7 +336,7 @@ Pdef(\huddled,
 		\dur, 			Pxrand([0.5, 0.75, 1.5], inf),
 		\frq, 			Prand([4000, 8000, 16000], inf),
 		\pan, 			Prand([-1, 0, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 2,
+		\peak, 			Pwhite(0.75, 1, inf) / 4,
 		\rq, 0.1
 ));
 
@@ -361,7 +351,7 @@ Pdef(\huddled,
 Pdef(\homesick,
 	Pbindf(~godliness,
 		\dur, 			Pwrand([Pseq([0.125], 2), Pseq([0.125], 4), 0.5, 0.75, 1.5], [1, 1, 16, 16, 16].normalizeSum, inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 8,
+		\peak, 			Pwhite(0.75, 1, inf) / 12,
 		\rq, 			0.05
 ));
 
@@ -372,6 +362,21 @@ Pdef(\fluster,
 /*
 ~desert.play(t, quant: 1);
 ~desert.stop;
+*/
+
+// imp for 2nd section
+
+~klikk2 =
+Pdef(\klikk,
+	Pbind(
+		\instrument, \imp,
+		\dur, Pshuf([0.75, 1, 1.5, 2].mirror2, inf),
+		\peak, Pwhite(0.75, 1, inf),
+));
+
+/*
+~klikk2.play(t, quant: 1);
+~klikk2.stop;
 */
 // kik ///////////////////
 
@@ -469,8 +474,8 @@ Pdef(\pad2pat,
 Pbind(
 		\instrument, 	\pad2,
 		\dur, 			Pshuf([7, 9, 11, 13, 15, 17, 19], inf),
-		\freq, 			Pshuf([1/1, 3/2] * 256, inf),
-		\peak, 			0.75,
+		\freq, 			Pshuf([1/1, 3/2] * 256 * (9/8), inf),
+		\peak, 			1,
 		\width, 		Pwhite(0.2, 0.8, inf),
 ));
 
@@ -518,8 +523,8 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-//~nanoktrl = 1310720;
-~nanoktrl = 1400710921;
+~nanoktrl = 1310720;
+//~nanoktrl = 1400710921;
 //~nanoktrl = 683998490;
 
 // bass
@@ -645,6 +650,19 @@ MIDIdef.cc(\geyser, {
 		"hat echo stop".postln;
 	}
 }, 51, srcID: ~nanoktrl);
+
+// klikk2
+
+~klikk2player =
+MIDIdef.cc(\klikk2player, {
+	if (~klikk2.isPlaying.not) {
+		~klikk2.play(t, quant: 0.5);
+		"klikk2 play".postln;
+	} {
+		~klikk2.stop;
+		"klikk2 stop".postln;
+	}
+}, 67, srcID: ~nanoktrl);
 
 // kik
 
