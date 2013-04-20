@@ -40,8 +40,8 @@ SynthDef(\dynamix, {
 SynthDef(\verb, {
 	var in			=	In.ar(4, 2);
 	var kbn1		=	LFBrownNoise0.kr(add: 0.1);
-	var kbn2		=	LFBrownNoise0.kr(5, add: 0.1);
-	var verb		=	GVerb.ar(in, revtime: (25 * kbn2).clip(10, 50), damping: kbn1.clip(0, 1), mul: 0.05);
+	var kbn2		=	LFBrownNoise0.kr(add: 0.1);
+	var verb		=	GVerb.ar(in, revtime: (15 * kbn2).clip(1, 30), damping: kbn1.clip(0, 1), mul: 0.05);
 	Out.ar(2, verb);
 }).add;
 
@@ -55,20 +55,22 @@ SynthDef(\verb, {
 /*
 ~reverb.isPlaying;
 ~reverb.free;
+
 */
 
 //
 
 ~snr =
-SynthDef(\snr, { | a = 1, curve = -64, freq = 500, level = 0.5, pan = 0 |
-	var env 		=	Env.perc(attackTime: 0.005, level: level, curve: curve);
+SynthDef(\snr, { | a = 1, curve = -4, freq = 500, level = 0.5, pan = 0 |
+	var env 		=	Env.perc(attackTime: 0.005, releaseTime: 0.05, level: level, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
+	var bn0			=	LFBrownNoise0.ar(freq, mul: envgen);
 	var bn1			=	LFBrownNoise0.ar(freq, mul: envgen);
-	var bn2			=	LFBrownNoise0.ar(freq, mul: envgen);
-	var resl		=	RLPF.ar(bn1, freq, 0.05);
-	var resr		=	RLPF.ar(bn2, freq, 0.05);
-	var lat			=	Latoocarfian2DC.ar(a: a, mul: 0.75, add: 1).clip(0.1, 1);
-	var ap			=	AllpassL.ar([resl, resr], 0.05, (0.02 * lat).clip(1 / (SampleRate.ir / 3), (SampleRate.ir / 3)), 0.05, mul: level/4);
+	var lat0		=	Latoocarfian2DC.ar(add: 1).clip(0.1, 1);
+	var resl		=	RLPF.ar(bn0, freq * lat0, 0.05);
+	var resr		=	RLPF.ar(bn1, freq * lat0, 0.05);
+	var lat1		=	Latoocarfian2DC.ar(a: a, mul: 0.75, add: 1).clip(0.1, 1);
+	var ap			=	AllpassL.ar([resl, resr], 0.05, (0.02 * lat1).clip(1 / (SampleRate.ir / 3), (SampleRate.ir / 3)), 0.05, mul: level/4);
 	Out.ar([2, 4], [resl, resr] + ap).clip(-1, 1);
 }).add;
 
@@ -88,14 +90,15 @@ SynthDef(\kik, { | curve = -512, dur = 1, freq = 2000, level = 0.75, pan = 0 |
 //
 
 ~hat =
-SynthDef(\hat, { | a = 1, freq = 1000, level = 0.75, rq = 0.05 |
-	var	env			=	Env.perc(level: level);
+SynthDef(\hat, { | level = 0.05, pan = 0 |
+	var	env			=	Env.perc(attackTime: 0.003, releaseTime: 0.01, level: level, curve: -4);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
-	var imp			=	Impulse.ar(0, mul: envgen);
-	var rhpf		=	RLPF.ar(imp, freq, rq);
-	var lat			=	Latoocarfian2DC.ar(a: a, mul: 0.051, add: 1).clip(0.1, 1);
-	var ap			=	AllpassL.ar(imp, 0.05, 0.02 * lat, 0.75, mul: level / 4);
-	Out.ar([2, 3], rhpf + ap).clip(-1, 1);
+	var penv		=	Env.new([1, 0.5], [0.01]);
+	var penvgen		=	EnvGen.kr(penv);
+	var bn			=	LFBrownNoise0.ar(mul: 0.05, add: 1);
+	var sin			=	SinOsc.ar((6400 * penvgen * bn).clip(50, SampleRate.ir / 4), pi, mul: envgen);
+	var pan2		=	Pan2.ar(sin, pan);
+	Out.ar([2, 3], pan2).clip(-1, 1);
 }).add;
 
 //
@@ -110,11 +113,13 @@ SynthDef(\prc, { | freq = 500, level = 0.02, pan = 0 |
 }).add;
 
 ~prc2 =
-SynthDef(\prc2, { | dur = 1, freq = 3200, im = 1, level = 0.1 |
+SynthDef(\prc2, { | dur = 1, freq = 3200, im = 1, level = 0.05 |
 	var env			=	Env.perc(releaseTime: dur, level: level, curve: -64);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var noiz		=	FBSineC.ar(freq, im: [im, (im + 0.1)], mul: envgen);
-	Out.ar(0, noiz).clip(-0.5, 0.5);
+	var trig		=	Impulse.kr(16);
+	var grain		=	GrainIn.ar(2, trig, in: noiz, mul: 0.05);
+	Out.ar(0, noiz + grain).clip(-0.5, 0.5);
 }).add;
 
 //
@@ -123,19 +128,19 @@ SynthDef(\prc2, { | dur = 1, freq = 3200, im = 1, level = 0.1 |
 SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, ka2 = 1, klatmul = 0.01 |
 	var env			=	Env.asr(attackTime: 0.003, sustainLevel: level, releaseTime: 0.1);
 	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
-	var klat0 		=	Latoocarfian2DL.kr(0.1, 0.5, ka1, mul: klatmul, add: 1);
-	var klat1 		=	Latoocarfian2DL.kr(0.1, 0.5, ka1, mul: klatmul, add: 1);
-	var klat2 		=	Latoocarfian2DL.kr(0.1, 0.5, ka2, mul: klatmul, add: 1);
-	var sin			=	SinOsc.ar(freq, mul: envgen);
+	var klat0 		=	Latoocarfian2DL.kr(0.1, 0.5, ka1, mul: klatmul, add: 1).clip(0.9, 1.1);
+	var klat1 		=	Latoocarfian2DL.kr(0.1, 0.5, ka1, mul: klatmul, add: 1).clip(0.9, 1.1);
+	var klat2 		=	Latoocarfian2DL.kr(0.1, 0.5, ka2, mul: klatmul, add: 1).clip(0.9, 1.1);
+	var sin0		=	SinOsc.ar(freq, mul: envgen);
+	var sin1		=	SinOsc.ar(freq * 2.02, mul: envgen);
 	var saw			=	LFSaw.ar((freq * klat0).clip(freq - 1, freq * 2), mul: envgen);
 	var sawl		=	LFSaw.ar(((freq - 0.01) * klat1).clip(freq - 2, freq * 2), mul: envgen);
 	var sawr		=	LFSaw.ar(((freq + 0.01) * klat2).clip(freq - 2, freq * 2), mul: envgen);
 	//var lat 		=	Latoocarfian2DC.ar(0.1, 1, a: a.clip(-3, 3), mul: 1, add: 1);
-	var kbn0		= 	LFBrownNoise0.kr(add: 1).clip(0.1, 1.0);
-	var rlpf		=	RLPF.ar([sawl, sawr] + [saw, saw], freq * 4);
-	var rhpf1		=	RHPF.ar([saw, saw], (freq * 96 * kbn0).clip(freq * 4, SampleRate.ir / 6), 0.25, mul: 0.05).clip(-0.1, 0.1);
-	Out.ar(0, sin + rlpf + rhpf1).clip(-1, 1);
-	//Out.ar(0, sin + rlpf).clip(-1, 1);
+	var kbn0		= 	LFBrownNoise0.kr(mul: 0.6, add: 1).clip(0.1, 1.0);
+	var rlpf		=	RLPF.ar([sawl, sawr] + [saw, saw], freq);
+	var rhpf1		=	RHPF.ar([saw, saw], (freq * 256 * kbn0).clip(freq * 4, SampleRate.ir / 6), 0.05, mul: level / 2).clip(-0.1, 0.1);
+	Out.ar(0, sin0 + sin1 + rlpf + rhpf1).clip(-0.9, 0.9);
 }).add;
 
 //
@@ -162,13 +167,16 @@ SynthDef(\pno, { | a = 1, dur = 1, freq = 440, latmul = 0.05, level = 0.25, pan 
 //
 
 ~sinpulse =
-SynthDef(\sinpulse, { | dur = 1, freq = 200, level = 0.05 |
-	var env			=	Env.perc(attackTime: 0.005, releaseTime: dur, level: level, curve: -4);
+SynthDef(\sinpulse, { | a = 1, dur = 1, freq = 200, level = 0.05, pan = 0 |
+	var env			=	Env.perc(attackTime: 0.005, releaseTime: dur, level: level, curve: -16);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var sin0		=	SinOsc.ar(freq, mul: envgen);
-	var sin1		=	SinOsc.ar(freq * 2.02, mul: envgen / 16);
-	var sin2		=	SinOsc.ar(freq * 23, mul: envgen / 64);
-	Out.ar([0, 1], sin0 + sin1 + sin2);
+	var sin1		=	SinOsc.ar(freq * 2.03, mul: envgen / 16);
+	var sin2		=	SinOsc.ar(freq * 4.08, mul: envgen / 32);
+	var klat		=	Latoocarfian2DC.ar(a: a, mul: 0.5, add: 1).clip(0.1, 10);
+	var sin3		=	SinOsc.ar((freq * 29 * klat).clip(50, SampleRate.ir / 4), mul: envgen / 32);
+	var pan2		=	Pan2.ar(sin0 + sin1 + sin2 + sin3, pan);
+	Out.ar(0, pan2).clip(-0.9, 0.9);
 }).add;
 
 //
@@ -179,7 +187,9 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
 	var kbn0		=	LFBrownNoise0.kr(mul: 0.3, add: 1).clip(0.1, 1);
 	var kbn1		=	LFBrownNoise0.kr(mul: 0.3, add: 1).clip(0.1, 1);
-	var sin0		=	SinOscFB.ar([freq, freq - 0.1], fb, mul: envgen).clip(-1, 1);
+	var kbn2		=	LFBrownNoise0.ar(freq, mul: 0.005, add: 1).clip(0.1, 1);
+	var kbn3		=	LFBrownNoise0.ar(freq, mul: 0.005, add: 1).clip(0.1, 1);
+	var sin0		=	SinOscFB.ar([freq, freq - 0.1] * kbn2, fb * kbn3, mul: envgen).clip(-1, 1);
 	var rlpf		=	RLPF.ar(sin0, freq);
 	var rhpf		=	RHPF.ar(sin0, (6000 * [kbn0, kbn0]).clip(50, SampleRate.ir / 4), 0.3 * kbn1);
 	//var rlpf1		=	RLPF.ar(rhpf, 6000);
@@ -188,20 +198,20 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 
 //
 
-~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, latmul = 0.02, level = 0.05 |
-	var env			= Env.asr(10, level, 20);
-	var envgen 		= EnvGen.kr(env, gate, doneAction: 14);
+~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.05 |
+	var env			= 	Env.asr(10, level, 20);
+	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
-	var lat 		= Latoocarfian2DC.kr(0.01, 10, a: [a, (a - 0.01)], mul: latmul, add: 1).clip(-3, 3);
-	var frq 		= (freq * lat).clip(50, 1600);
-	var saw 		= Saw.ar(frq + [-0.001, 0.001], mul: envgen);
-	var deci		= Decimator.ar(saw, bits: 7).clip(-0.5, 0.5);
-	var rhpf		= RHPF.ar(deci, (12000 * lat).clip(freq, SampleRate.ir/4), 0.25, 0.2).clip(-0.5, 0.5);
-	var fbn			= LFBrownNoise0.kr(mul: fbnmul, add: 1).clip(0.1, 0.9);
-	var rlpf 		= RLPF.ar(saw, (freq * 1.5 * [fbn, fbn]).clip(freq, freq * 4), 0.5).clip(-0.5, 0.5);
+	var lat 		= 	Latoocarfian2DC.kr(0.01, 10, a: [a, (a - 0.01)], mul: latmul, add: 1).clip(-3, 3);
+	var kbn			=	LFBrownNoise0.kr(mul: kbnmul, add: 1);
+	var frq 		= 	(freq * lat).clip(50, 1600);
+	var saw 		= 	Saw.ar(frq + [-0.001, 0.001], mul: envgen);
+	var deci		= 	Decimator.ar(saw, bits: (6 * kbn).clip(3, 24)).clip(-0.5, 0.5);
+	var rhpf		= 	RHPF.ar(deci, (12000 * lat).clip(freq, SampleRate.ir/4), mul: 0.5).clip(-0.5, 0.5);
+	var fbn			= 	LFBrownNoise0.kr(mul: fbnmul, add: 1).clip(0.1, 0.9);
+	var rlpf 		= 	RLPF.ar(saw, (freq * 1.5 * [fbn, fbn]).clip(freq, freq * 4)).clip(-0.5, 0.5);
 	var nodc		=	LeakDC.ar(rlpf + rhpf);
 	Out.ar(0, nodc).clip(-0.5, 0.5);
-	//Out.ar(0, saw).clip(-0.9, 0.9);
 }).add;
 
 /*
@@ -213,7 +223,7 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 ~createPadGroup0 = { | freqs = #[200,300] |
 	~padgroup0 = Group(s).register;
 	freqs.do({|i|
-		Synth.tail(~padgroup0, \pad, [\freq, i, \latmul, 0, \level, 0.05]);
+		Synth.tail(~padgroup0, \pad, [\freq, i, \kbnmul, 0.1, \latmul, 0, \level, 0.05]);
 	});
 };
 
@@ -221,6 +231,7 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 ~createPadGroup0.value;
 ~padgroup0.isPlaying;
 ~padgroup0.release(3);
+~padgroup = nil;
 */
 
 ~createPadGroup1 = { | freqs = #[400,600,400,600] |
@@ -291,7 +302,7 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 ~createGossamer = { | freqs = #[800,1200,1800] |
 	~gossamergroup = Group(s).register;
 	freqs.do({|i|
-		Synth.tail(~gossamergroup, \pad, [\a, (6.0.rand - 3), \freq, i, \latmul, 0.00005, \level, 0.005]);
+		Synth.tail(~gossamergroup, \pad, [\a, (6.0.rand - 3), \freq, i, \kbnmul, 0.25, \latmul, 0, \level, 0.005]);
 	});
 };
 
@@ -300,6 +311,7 @@ SynthDef(\grable, { | a = 1, fb = 0, freq = 400, gate = 1, latmul = 0.5, level =
 ~gossamergroup.isPlaying;
 ~gossamergroup.release(3);
 ~gossamergroup.free;
+~gossamergroup = nil;
 */
 
 // PATTERNS ///////////////////////////////////////////////////
@@ -327,6 +339,31 @@ Pdef(\snrpat,
 ~snrpat.play(t, quant: 1);
 ~snrpat.isPlaying;
 ~snrpat.stop;
+*/
+
+~snrpat2 =
+Pdef(\snrpat2,
+	Pbindf(
+		~snrpat,
+		\dur, Prand([0.75, 1, 1.5, 2, 3, 4, 6, 8], inf),
+		//\freq, 400,
+		\freq, Pshuf(Array.fill(6, { arg i; 400 * (2**i) }).mirror2, inf),
+		\level, 0.1,
+		\note, 1
+));
+
+/*
+~snrpat2.play(t, quant: 1);
+~snrpat2.isPlaying;
+~snrpat2.stop;
+*/
+
+~snrpar = Pdef(\snrpar, Ppar(Array.fill(10, { ~snrpat2 }), inf));
+
+/*
+~snrpar.play(t, quant: 1);
+~snrpar.isPlaying;
+~snrpar.stop;
 */
 
 //
@@ -392,14 +429,10 @@ Pdef(\prc2pat,
 Pdef(\hatpat,
 	Pbind(
 		\instrument, \hat,
-		\a, Pwhite(0.1, 1.0, inf),
-		\dur, Pseq([
-			Pseq([0.75], 23), 5,
-			Pseq([0.75], 25), 7,
-			Pseq([0.75], 27), 9,
-			Pseq([1.25], 21), 3,
-			Pseq([1.25], 23), 5,
-			Pseq([1.25], 25), 7,
+		\dur, Prand([
+			Pseq([0.75], 3),
+			Pseq([Pshuf([0.5, 0.75].mirror2, 3), 3], 1),
+			Pseq([Pshuf([0.75, 0.75, 1.25].mirror2, 3), 3], 1),
 		], inf),
 ));
 
@@ -408,6 +441,32 @@ Pdef(\hatpat,
 ~hatpat.isPlaying;
 ~hatpat.stop;
 */
+
+~hatpat2 =
+Pdef(\hatpat2,
+	Pbindf(~hatpat,
+		\dur, Pseq([
+			Pshuf([0.5, 0.5, 0.75].mirror2, 23),
+			Pshuf([0.75, 0.5, 1.25].mirror2, 21),
+		], inf),
+		\level, 0.03,
+		\pan, Prand([-1, -0.5, 0.5, 1], inf)
+));
+
+/*
+~hatpatr.play(t, quant: 1.5);
+~hatpatr.stop;
+*/
+
+~hatpar = Pdef(\hatpar, Ppar([~hatpat, ~hatpatr], inf));
+
+/*
+~hatpar.play(t, quant: 1.5);
+~hatpar.isPlaying;
+~hatpar.stop;
+*/
+
+//
 
 ~basspat =
 Pdef(\basspat,
@@ -420,6 +479,7 @@ Pdef(\basspat,
 		\ka1, Pwhite(0.0, 1.0, inf),
 		\ka2, Pwhite(0.0, 1.0, inf),
 		\legato, 0.5,
+		\level, 0.1,
 ));
 
 /*
@@ -470,20 +530,39 @@ Pdef(\pnopat2,
 Pdef(\spat,
 	Pbind(
 		\instrument, \sinpulse,
-		\dur, Pseq([
+		\a, Pwhite(-3, 3, inf),
+		\dur, Prand([0.75, Pseq([
 			Prand([1, 1.5], 5), 1,
 			Prand([1, 1.5], 4), 2,
 			Prand([1, 1.5], 3), 3,
-			Prand([1, 1.5], 2), 4
-		], inf),
-		\freq, [200, 300],
+			Prand([1, 1.5], 2), 4,
+		], 1)], inf),
+		\freq, Pwrand([[1/1, 3/2] * 200, [15/14, 3/2] * 200], [16, 1].normalizeSum, inf),
 		\level, 0.03,
+		\pan, 0
 ));
 
 /*
 ~spat.play(t, quant: 1);
 ~spat.stop;
 */
+
+~spat2 = Pdef(\spat2, Pbindf(~spat, \pan, Prand([-1, -0.5, 0.5, 1], inf)));
+
+/*
+~spat2.play(t, quant: 1);
+~spat2.stop;
+*/
+
+~spar = Pdef(\spar, Ppar(Array.fill(5, { ~spat2 }, inf)));
+
+/*
+~spar.play(t, quant: 1);
+~spar.isPlaying;
+~spar.stop;
+*/
+
+PdefAllGui.new;
 
 //
 
@@ -493,8 +572,12 @@ Pdef(\gpat,
 		\instrument, \grable,
 		\dur, Prand([32, 48, 64, 96], inf),
 		\a, Pwhite(-3, 3, inf),
-		\fb, 0.6,
-		\freq, Pshuf([7/8, 1/1, 15/14, 9/8, 7/6, 8/7, 4/3, 7/5, 3/2, 12/7, 7/4, 28/15, 2/1] * 400, inf),
+		\fb, 0.67,
+		\freq, Pshuf([
+			7/8,
+			1/1, 15/14, 9/8, 7/6, 8/7, 4/3, 7/5, 3/2, 12/7, 7/4, 28/15,
+			2/1, 15/7, 9/4, 7/3
+		] * 400, inf),
 		\legato, 0.4,
 ));
 
@@ -586,6 +669,16 @@ s.stopRecording;
 	};
 }, 48, srcID: ~nanoktrl2);
 
+~snrktrl2 = MIDIdef.cc(\snrktrl2, {
+	if(~snrpar.isPlaying.not) {
+		~snrpar.play(t, quant: 1);
+		"snrpar play".postln;
+	} {
+		~snrpar.stop;
+		"snrpar stop".postln;
+	};
+}, 65, srcID: ~nanoktrl2);
+
 ~kikktrl = MIDIdef.cc(\kikktrl, {
 	if(~kikpat.isPlaying.not) {
 		~kikpat.play(t, quant: 1);
@@ -606,6 +699,16 @@ s.stopRecording;
 	};
 }, 64, srcID: ~nanoktrl2);
 
+~hat2ktrl = MIDIdef.cc(\hat2ktrl, {
+	if(~hatpar.isPlaying.not) {
+		~hatpar.play(t, quant: 1);
+		"hats play".postln;
+	} {
+		~hatpar.stop;
+		"hats stop".postln;
+	};
+}, 33, srcID: ~nanoktrl2);
+
 ~prcktrl = MIDIdef.cc(\prcktrl, {
 	if(~prcpar.isPlaying.not) {
 		~prcpar.play(t, quant: 1);
@@ -614,7 +717,7 @@ s.stopRecording;
 		~prcpar.stop;
 		"prc stop".postln;
 	};
-}, 33, srcID: ~nanoktrl2);
+}, 34, srcID: ~nanoktrl2);
 
 ~prc2ktrl = MIDIdef.cc(\prc2ktrl, {
 	if(~prc2pat.isPlaying.not) {
@@ -624,7 +727,7 @@ s.stopRecording;
 		~prc2pat.stop;
 		"prc2 stop".postln;
 	};
-}, 49, srcID: ~nanoktrl2);
+}, 50, srcID: ~nanoktrl2);
 
 ~bassktrl = MIDIdef.cc(\bassktrl, {
 	if(~basspat.isPlaying.not) {
@@ -634,7 +737,7 @@ s.stopRecording;
 		~basspat.stop;
 		"bass stop".postln;
 	};
-}, 34, srcID: ~nanoktrl2);
+}, 35, srcID: ~nanoktrl2);
 
 ~pno1ktrl = MIDIdef.cc(\pno1ktrl, {
 	if(~pnopat1.isPlaying.not) {
@@ -644,7 +747,7 @@ s.stopRecording;
 		~pnopat1.stop;
 		"pno1 stop".postln;
 	};
-}, 50, srcID: ~nanoktrl2);
+}, 51, srcID: ~nanoktrl2);
 
 ~pno2ktrl = MIDIdef.cc(\pno2ktrl, {
 	if(~pnopat2.isPlaying.not) {
@@ -654,7 +757,7 @@ s.stopRecording;
 		~pnopat2.stop;
 		"pno2 stop".postln;
 	};
-}, 66, srcID: ~nanoktrl2);
+}, 67, srcID: ~nanoktrl2);
 
 ~pulsektrl = MIDIdef.cc(\pulsektrl, {
 	if(~spat.isPlaying.not) {
@@ -664,7 +767,17 @@ s.stopRecording;
 		~spat.stop;
 		"pulse stop".postln;
 	};
-}, 35, srcID: ~nanoktrl2);
+}, 36, srcID: ~nanoktrl2);
+
+~pulseparktrl = MIDIdef.cc(\pulseparktrl, {
+	if(~spar.isPlaying.not) {
+		~spar.play(t, quant: 1);
+		"pulsepar play".postln;
+	} {
+		~spar.stop;
+		"pulsepar stop".postln;
+	};
+}, 52, srcID: ~nanoktrl2);
 
 ~grablektrl = MIDIdef.cc(\grablektrl, {
 	if(~gpar.isPlaying.not) {
@@ -674,7 +787,7 @@ s.stopRecording;
 		~gpar.stop;
 		"grable stop".postln;
 	};
-}, 51, srcID: ~nanoktrl2);
+}, 68, srcID: ~nanoktrl2);
 
 ~pad0mdef = MIDIdef.cc(\pad0mdef, {
 	if(~padgroup0.isNil) {
