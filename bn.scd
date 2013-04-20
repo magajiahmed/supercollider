@@ -389,7 +389,7 @@ Pdef(\prcpat0,
 		\instrument, \prc,
 		\dur, Pshuf([0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24].mirror2, inf),
 		\freq, Pwhite(400, 600, inf),
-		\level, 0.1,
+		\level, 0.2,
 		\pan, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
 ));
 
@@ -399,7 +399,7 @@ Pdef(\prcpat0,
 ~prcpat.stop;
 */
 
-~prcpat1 = Pdef(\prcpat1, Pbindf(~prcpat0, \level, 0.03));
+~prcpat1 = Pdef(\prcpat1, Pbindf(~prcpat0, \level, 0.1));
 
 ~prcpar = Pdef(\prcpar, Ppar([~prcpat0, ~prcpat1], inf));
 
@@ -669,7 +669,7 @@ s.stopRecording;
 	};
 }, 48, srcID: ~nanoktrl2);
 
-~snrktrl2 = MIDIdef.cc(\snrktrl2, {
+~snrparktrl = MIDIdef.cc(\snrparktrl, {
 	if(~snrpar.isPlaying.not) {
 		~snrpar.play(t, quant: 1);
 		"snrpar play".postln;
@@ -677,7 +677,7 @@ s.stopRecording;
 		~snrpar.stop;
 		"snrpar stop".postln;
 	};
-}, 65, srcID: ~nanoktrl2);
+}, 66, srcID: ~nanoktrl2);
 
 ~kikktrl = MIDIdef.cc(\kikktrl, {
 	if(~kikpat.isPlaying.not) {
