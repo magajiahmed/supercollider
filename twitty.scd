@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// TODO: Document/comment code
+// TODO:        Document/comment code
+//              Tweak pad2 to be more striated and less ethereal
 //
 ////////////////////////////////////////////////////////////////////////////////
 //                          INIT
@@ -13,15 +14,6 @@ t = TempoClock(96/60);
 // 							GRAPHICAL MONITORING
 
 Stethoscope.new(s);
-
-(
-w = Window("Analyzer", Rect(0, 0, 511, 300));
-f = FreqScopeView(w, w.view.bounds);
-f.active_(true); // turn it on the first time;
-
-w.onClose_({ f.kill }); // you must have this
-w.front;
-);
 
 ////////////////////////////////////////////////////////////////////////////////
 //							RECORDING
@@ -137,6 +129,47 @@ SynthDef(\squirp, { |amp = 1, dur = 8, freq = 512, squirpamp = 0.05|
 	Out.ar([0, 1], [sin1 + sin3, sin2 + sin3]);
 }).add;
 
+// kords
+
+~kords =
+SynthDef(\kords, { | freq = 512, gate = 1, level = 0.25 |
+	var env 		=	Env.asr(sustainLevel: level);
+	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
+	var bn			=	LFBrownNoise0.ar(freq, add: 1);
+	var sin1		=	SinOsc.ar(freq, mul: envgen * bn);
+	var sin2		=	SinOsc.ar(freq * 2.02, mul: (envgen * bn) / 2);
+	Out.ar([0, 1], sin1 + sin2);
+}).add;
+
+/*
+~kordtest = Synth(\kords).register;
+~kordtest.release;
+*/
+
+~kords2 =
+SynthDef(\kords2, { | freq = 512, gate = 1, level = 0.1, ratio = 1.125 |
+	var env		= 	Env.asr(attackTime: 5, sustainLevel: level, releaseTime: 5, curve: 0);
+	var envgen	=	EnvGen.kr(env, gate, doneAction: 2);
+	var sfreqs	=	[freq, freq + 0.2];
+	var bn		=	LFBrownNoise0.ar(sfreqs, mul: envgen / 2);
+	var kbnf	=	LFBrownNoise0.kr([freq, freq], mul: 0, add: 1);
+	var kbna	=	LFBrownNoise0.kr([freq, freq] / 16, mul: [0.75, 0.75], add: 1);
+	var layers	=	16;
+	var frqs	=	Array.fill(layers, { arg i; (sfreqs * kbnf) + (sfreqs * i * ratio * kbnf) });
+	var amps	=	Array.fill(layers, { arg i; (1 / (((i + 1) * ratio) * 32)) * kbna });
+	var rt		=	Array.fill(layers, { 0.3 });
+	var klank	=	DynKlank.ar(`[frqs, amps, rt], bn);
+	Out.ar(0, klank).clip(-0.9, 0.9);
+}).add;
+
+[1,2,3,4].mirror.postln;
+
+/*
+~kords2test = Synth(\kords2).register;
+~kords2test.isPlaying;
+~kords2test.release;
+*/
+
 // pling
 
 ~burn =
@@ -145,21 +178,21 @@ SynthDef(\sin, { |amp = 1, curve = -4, dur = 1, envgendiv = 32, freq = 440, mulk
 	var env			=	Env.perc(0.005, releaseTime: dur, level: amp, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	///////////////////////////////////////////////////////////////////////////
-	var crckl1		= 	Crackle.kr(chaosParam: xaos, mul: mulcrckl, add: 1);
-	var sin1		=	SinOsc.ar(freq * crckl1, mul: envgen / 3);
-	var kbn1		=	LFBrownNoise0.kr(freq, mul: mulkbn, add: 1);
-	var sin1a		=	SinOsc.ar(freq * crckl1 * kbn1 * 8, mul: (envgen / envgendiv));
+	var crckl1		= 	Crackle.kr(chaosParam: [xaos, xaos], mul: mulcrckl, add: 1);
+	var sin1		=	SinOsc.ar([freq, freq + 0.1] * crckl1, mul: envgen / 3);
+	var kbn1		=	LFBrownNoise0.kr([freq, freq], mul: mulkbn, add: 1);
+	var sin1a		=	SinOsc.ar([freq, freq + 0.1] * crckl1 * kbn1 * 8, mul: (envgen / envgendiv));
 	////////////////////////////////////////////////////////////////////////////
-	var crckl2		= 	Crackle.kr(chaosParam: xaos, mul: mulcrckl, add: 1);
-	var sin2		=	SinOsc.ar(freq * crckl2, mul: envgen / 3);
-	var kbn2		=	LFBrownNoise0.kr(freq, mul: mulkbn, add: 1);
-	var sin2a		=	SinOsc.ar(freq * crckl2 * kbn2 * 8, mul: (envgen / envgendiv));
+	var crckl2		= 	Crackle.kr(chaosParam: [xaos, xaos], mul: mulcrckl, add: 1);
+	var sin2		=	SinOsc.ar([freq, freq + 0.1] * crckl2, mul: envgen / 3);
+	var kbn2		=	LFBrownNoise0.kr([freq, freq], mul: mulkbn, add: 1);
+	var sin2a		=	SinOsc.ar([freq, freq + 0.1] * crckl2 * kbn2 * 8, mul: (envgen / envgendiv));
 	////////////////////////////////////////////////////////////////////////////
-	var sin3		=	SinOsc.ar(freq, mul: envgen / 3);
-	var kbn3		=	LFBrownNoise0.kr(freq, mul: mulkbn, add: 1);
-	var sin3a		=	SinOsc.ar(freq * kbn3 * 8, mul: (envgen / envgendiv));
+	var sin3		=	SinOsc.ar([freq, freq + 0.1], mul: envgen / 3);
+	var kbn3		=	LFBrownNoise0.kr([freq, freq], mul: mulkbn, add: 1);
+	var sin3a		=	SinOsc.ar([freq, freq + 0.1] * kbn3 * 8, mul: (envgen / envgendiv));
 	///////////////////////////////////////////////////////////////////
-	Out.ar([0, 1], sin1 + sin1a + sin2 + sin2a + sin3 + sin3a);
+	Out.ar(0, sin1 + sin1a + sin2 + sin2a + sin3 + sin3a);
 }).add;
 
 // ox
@@ -180,16 +213,16 @@ SynthDef(\ox, { |dur = 1, end = 0.5, freq= 440, length = 0.25, peak = 1|
 
 ~pad2 =
 SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 0.0075, peak = 1, width = 0.5|
-	var env			=	Env.adsr(5, 1, peak, 10, peak, curve: -4);
+	var env			=	Env.adsr(0.5, 1, peak, 10, peak, curve: -4);
 	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
 	var kbn1		=	LFBrownNoise0.kr(freq / 8, mul: kbnmul, add: 1);
-	var saw1		=	VarSaw.ar(freq * kbn1, width: width, mul: envgen / 128);
+	var saw1		=	VarSaw.ar([freq, freq + 0.5] * kbn1, width: width, mul: envgen / 128);
 	var kbn2		=	LFBrownNoise0.kr(freq / 8, mul: kbnmul, add: 1);
-	var saw2		=	VarSaw.ar((freq + 0.1) * kbn2, width: width, mul: envgen / 128);
+	var saw2		=	VarSaw.ar(([freq, freq + 0.5] + 0.1) * kbn2, width: width, mul: envgen / 128);
 	var kbn3		=	LFBrownNoise0.kr(freq / 4, mul: 0.1, add: 1);
 	var cutoff		=	(freq * 2 * kbn3).clip(50, SampleRate.ir / 3);
 	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.1);
-	Out.ar([0, 1], rlpf);
+	Out.ar(0, rlpf);
 }).add;
 
 // prc based on xaotic fn
@@ -255,6 +288,36 @@ Pbind(
 /*
 ~squirpy2.play(t, quant: 1);
 ~squirpy2.stop;
+*/
+
+// kords
+
+~kordsdurarray = [16, 24, 32, 48].scramble;
+
+~kordpat1 =
+Pdef(\kordpat1,
+	Pbind(
+		\instrument, \kords2,
+		//\dur, Pseq(~kordsdurarray, inf),
+		\dur, Pshuf([8, 12, 16, 24, 32, 48], inf),
+		\freq, Pshuf([1/1, 3/2, 7/4, 9/4, 13/5].mirror * ~keyfrq * 16, inf),
+		\legato, 0.5,
+		\level, 0.03,
+		\ratio, Pshuf([13/11, 17/11, 23/11, 29/11], inf),
+));
+
+/*
+~kordpat1.play(t, quant: 1);
+~korpat1.isPlaying;
+~kordpat1.stop;
+*/
+
+~kordpar = Pdef(\kordpar, Ppar(Array.fill(5, {~kordpat1})));
+
+/*
+~kordpar.play(t, quant: 1);
+~kordpar.isPlaying;
+~kordpar.stop;
 */
 
 // pad ///////////////////////////////////////////////
@@ -423,7 +486,7 @@ Pdef(\horned,
 Pdef(\fillery,
 	Pbind(
 		\instrument, 	\sin,
-		\amp, 			0.02,
+		\amp, 			0.05,
 		\dur, 			Pshuf([0.25, 4, 6, 8, 12, 16, 24, 32, 48], inf),
 		\freq, 			Pseq([9/10, 1/1, 16/15, 9/8, 6/5, 3/2, 9/5, 13/5] * ~keyfrq * 8, inf),
 ));
@@ -469,12 +532,12 @@ Ppar(
 
 // pad2
 
-~pad2pat =
+~pad2pat1 =
 Pdef(\pad2pat,
 Pbind(
 		\instrument, 	\pad2,
 		\dur, 			Pshuf([7, 9, 11, 13, 15, 17, 19], inf),
-		\freq, 			Pshuf([1/1, 3/2] * 256 * (9/8), inf),
+		\freq, 			Pshuf([1/1, 3/2] * 256, inf),
 		\peak, 			1,
 		\width, 		Pwhite(0.2, 0.8, inf),
 ));
@@ -484,10 +547,17 @@ Pbind(
 ~pad2pat.stop;
 */
 
+~pad2pat2 =
+Pdef(\pad2pat2,
+	Pbindf(
+		~pad2pat1,
+		\freq, Pshuf([1/1, 3/2] * 256 * (9/8), inf),
+));
+
 ~pad2chords =
 Pdef(\pad2chords,
 Ppar(
-		[~pad2pat, ~pad2pat], inf
+		[~pad2pat1, ~pad2pat2], inf
 ));
 
 /*
@@ -624,6 +694,19 @@ MIDIdef.cc(\squipplayer2, {
 		"squirpy2 stop".postln;
 	}
 }, 50, srcID: ~nanoktrl);
+
+// kords
+
+~kordsplayer =
+MIDIdef.cc(\kordplayer, {
+	if (~kordpar.isPlaying.not) {
+		~kordpar.play(t, quant: 0.5);
+		"kord play".postln;
+	} {
+		~kordpar.stop;
+		"kord stop".postln;
+	}
+}, 66, srcID: ~nanoktrl);
 
 // clicky 'hat'
 
