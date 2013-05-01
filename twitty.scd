@@ -1,9 +1,4 @@
 ////////////////////////////////////////////////////////////////////////////////
-//
-// TODO:        Document/comment code
-//              Tweak pad2 to be more striated and less ethereal
-//
-////////////////////////////////////////////////////////////////////////////////
 //                          INIT
 (
 
@@ -212,16 +207,16 @@ SynthDef(\ox, { |dur = 1, end = 0.5, freq= 440, length = 0.25, peak = 1|
 // pad2
 
 ~pad2 =
-SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 0.0075, peak = 1, width = 0.5|
-	var env			=	Env.adsr(0.5, 1, peak, 10, peak, curve: -4);
+SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 1, peak = 1, width = 0.5|
+	var env			=	Env.adsr(3, 1, peak, 3, peak, curve: -4);
 	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
-	var kbn1		=	LFBrownNoise0.kr(freq / 8, mul: kbnmul, add: 1);
-	var saw1		=	VarSaw.ar([freq, freq + 0.5] * kbn1, width: width, mul: envgen / 128);
-	var kbn2		=	LFBrownNoise0.kr(freq / 8, mul: kbnmul, add: 1);
-	var saw2		=	VarSaw.ar(([freq, freq + 0.5] + 0.1) * kbn2, width: width, mul: envgen / 128);
-	var kbn3		=	LFBrownNoise0.kr(freq / 4, mul: 0.1, add: 1);
+	var kbn1		=	LFBrownNoise0.kr(mul: kbnmul, add: 1);
+	var saw1		=	VarSaw.ar([freq, freq + 0.1], width: width, mul: (envgen / 128) * kbn1);
+	var kbn2		=	LFBrownNoise0.kr(mul: [kbnmul, kbnmul], add: 1);
+	var saw2		=	VarSaw.ar(([freq, freq + 0.1] + 0.1), width: width, mul: (envgen / 128) * kbn2);
+	var kbn3		=	LFBrownNoise0.kr(mul: [0.05, 0.5], add: 1);
 	var cutoff		=	(freq * 2 * kbn3).clip(50, SampleRate.ir / 3);
-	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.1);
+	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.3);
 	Out.ar(0, rlpf);
 }).add;
 
@@ -536,9 +531,9 @@ Ppar(
 Pdef(\pad2pat,
 Pbind(
 		\instrument, 	\pad2,
-		\dur, 			Pshuf([7, 9, 11, 13, 15, 17, 19], inf),
-		\freq, 			Pshuf([1/1, 3/2] * 256, inf),
-		\peak, 			1,
+		\dur, 			Pshuf([17, 19, 23, 29].mirror2, inf),
+		\freq, 			Pshuf([[1/1, 3/2]].mirror2 * 512 * (9/8), inf),
+		\peak, 			0.3,
 		\width, 		Pwhite(0.2, 0.8, inf),
 ));
 
@@ -547,17 +542,10 @@ Pbind(
 ~pad2pat.stop;
 */
 
-~pad2pat2 =
-Pdef(\pad2pat2,
-	Pbindf(
-		~pad2pat1,
-		\freq, Pshuf([1/1, 3/2] * 256 * (9/8), inf),
-));
-
 ~pad2chords =
 Pdef(\pad2chords,
 Ppar(
-		[~pad2pat1, ~pad2pat2], inf
+		Array.fill(3, { ~pad2pat1 }), inf
 ));
 
 /*
