@@ -8,7 +8,7 @@ t = TempoClock(96/60);
 ////////////////////////////////////////////////////////////////////////////////
 // 							GRAPHICAL MONITORING
 
-Stethoscope.new(s);
+//Stethoscope.new(s);
 
 ////////////////////////////////////////////////////////////////////////////////
 //							RECORDING
@@ -351,7 +351,7 @@ Pdef(\moisture,
 		\b, 			Pwhite(1, 3, inf),
 		\dur, 			Pwrand([Pseq([0.25 / 2], 4), 0.5, 0.75, 6, 9], [1, 16, 16, 4, 4].normalizeSum, inf),
 		\pan, 			Pshuf([-1, -0.5, 0, 0.5, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 4,
+		\peak, 			Pwhite(0.75, 1, inf) / 7,
 ));
 
 /*
@@ -448,7 +448,7 @@ Pdef(\borne,
 		\dur, 			Pxrand([0.25, 0.5, 0.75, 1, 1.5, 4, 6, 16, 24], inf),
 		\length, 		0.25,
 		\pan, 			Pwhite(-0.5, 0.5, inf),
-		\peak, 			Pwhite(0.75, 1, inf),
+		\peak, 			Pwhite(0.4, 0.5, inf),
 ));
 
 /*
@@ -531,8 +531,8 @@ Ppar(
 Pdef(\pad2pat,
 Pbind(
 		\instrument, 	\pad2,
-		\dur, 			Pshuf([17, 19, 23, 29].mirror2, inf),
-		\freq, 			Pshuf([[1/1, 3/2]].mirror2 * 512 * (9/8), inf),
+		\dur, 			Pshuf([17, 19, 23, 29, 31].mirror2, inf),
+		\freq, 			Pshuf([[1/1, 3/2, 7/4]].mirror2 * 512 * (9/8), inf),
 		\peak, 			0.3,
 		\width, 		Pwhite(0.2, 0.8, inf),
 ));

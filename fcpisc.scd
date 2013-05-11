@@ -3,9 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // 								TODO
 
-// Try using Pbindf in, for example, prcpat{1,2}
 // Improve comments and documentation
-// Switch from MIDIFunc's to MIDIDef's
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // 								STARTUP STUFF
@@ -435,7 +433,7 @@ Pdef(\prcpat1,
 							1/1, 1/1, 1/1, 1/1, 7/6
 						] * ~keyfrq * 16, inf),
 		\pan,	 		Pwhite(-0.5, 0.5, inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 5,
+		\peak, 			Pwhite(0.75, 1, inf) / 4,
 		\xaosinit,	 	Prand([1.2, 1.4, 1.6, 1.8, 1.99], inf),
 ));
 

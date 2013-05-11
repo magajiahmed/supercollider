@@ -9,8 +9,9 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 ~nanoktrl2 = 1310720;
 
 //other stuff
-s.scope(2);
+//s.scope(2);
 t = TempoClock(135/60);
+
 
 // SYNTHDEFS /////////////////////////////////////////////////////
 
@@ -247,7 +248,7 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 
 //
 
-~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.07 |
+~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.1 |
 	var env			= 	Env.asr(10, level, 30);
 	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
@@ -376,7 +377,7 @@ Pdef(\snrpat,
 			1, 1, 1, 1, 0.75
 		], inf),
 		\freq, Pwhite(1000, 1200, inf),
-		\level, 0.2,
+		\level, 0.04,
 		\note, Pseq([
 			Rest, 1,
 			Rest, Rest, 1,
@@ -394,12 +395,13 @@ Pdef(\snrpat,
 Pdef(\snrpat2,
 	Pbindf(
 		~snrpat,
+		\curve, -64,
 		\dur, Pshuf([
 			0.75, 0.75, 1,
 			0.75, 0.75, 0.75, 1,
 			0.75, 0.75, 0.75, 0.75, 1
 		], inf),
-		\freq, Pwhite(6000, 6400, inf),
+		\freq, Pwhite(14000, 15000, inf),
 		\level, Prand([0.75, 1] * 0.1, inf),
 		\note, 1
 ));
@@ -410,7 +412,7 @@ Pdef(\snrpat2,
 ~snrpat2.stop;
 */
 
-~snrpar = Pdef(\snrpar, Ppar(Array.fill(2, { ~snrpat2 }), inf));
+~snrpar = Pdef(\snrpar, Ppar(Array.fill(1, { ~snrpat2 }), inf));
 
 /*
 ~snrpar.play(t, quant: 1);
@@ -420,13 +422,13 @@ Pdef(\snrpat2,
 
 //
 
+~kikpatdurarray = Array.fill(12, { arg i; 0.25 * (i + 1) });
 ~kikpat =
 Pdef(\kikpat,
 	Pbind(
 		\instrument, \kik,
 		\curve, -512,
-		//\dur, Prand([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 2, 3, 4, 6].mirror2, inf),
-		\dur, Pwhite(0.25, 6, inf).round(0.25),
+		\dur, Pshuf(~kikpatdurarray.mirror2, inf).round(0.25),
 		\freq, 200
 ));
 
@@ -508,6 +510,7 @@ Pdef(\prc3pat,
 		\b, Pwhite(0.1, 1.9, inf),
 		\dur, Prand([0.25, 0.5, 0.75, 1, 1.25, 1.5], inf),
 		\freq, Prand([128, 256, 512, 1024, 2048, 4096, 8192, 16384], inf),
+		\level, 0.03,
 		\pan, Prand([-1, -0.5, 0, 0.5, 1], inf),
 		\xi, Pwhite(1, 2, inf),
 ));
@@ -713,7 +716,7 @@ Pdef(\gpat,
 			2/1, 15/7, 9/4, 7/3
 		] * 400, inf),
 		\legato, 0.5,
-		\level, 0.01,
+		\level, 0.02,
 ));
 
 /*
@@ -805,13 +808,13 @@ s.stopRecording;
 	};
 }, 48, srcID: ~nanoktrl2);
 
-~snrparktrl = MIDIdef.cc(\snrparktrl, {
-	if(~snrpar.isPlaying.not) {
-		~snrpar.play(t, quant: 1);
-		"snrpar play".postln;
+~snr2ktrl = MIDIdef.cc(\snr2ktrl, {
+	if(~snrpat2.isPlaying.not) {
+		~snrpat2.play(t, quant: 1);
+		"snr2 play".postln;
 	} {
-		~snrpar.stop;
-		"snrpar stop".postln;
+		~snrpat2.stop;
+		"snrpat2 stop".postln;
 	};
 }, 66, srcID: ~nanoktrl2);
 
