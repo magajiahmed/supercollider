@@ -8,7 +8,9 @@ t = TempoClock(96/60);
 ////////////////////////////////////////////////////////////////////////////////
 // 							GRAPHICAL MONITORING
 
-//Stethoscope.new(s);
+/*
+s.scope(2);
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 //							RECORDING
@@ -545,7 +547,7 @@ Pbind(
 ~pad2chords =
 Pdef(\pad2chords,
 Ppar(
-		Array.fill(3, { ~pad2pat1 }), inf
+		Array.fill(5, { ~pad2pat1 }), inf
 ));
 
 /*
