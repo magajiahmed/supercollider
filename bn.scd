@@ -12,6 +12,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 /*
 s.scope(2);
 */
+
 t = TempoClock(135/60);
 
 //record
@@ -30,10 +31,12 @@ SynthDef(\dynamix, {
 	Out.ar(0, compressor);
 }).add;
 
+(
 ~startcompressor = {
 	s.sync;
 	~compressor = Synth(\dynamix).register;
 }.fork;
+);
 
 ~startcompressor;
 
@@ -243,8 +246,8 @@ SynthDef(\sinpulse, { | a = 1, dur = 1, freq = 200, gate = 1, level = 0.002, pan
 	var sin3		=	SinOsc.ar(freqs * kbnfrq3 * 32, mul: (envgen / 8) * kbnmul);
 	var klat0		=	Latoocarfian2DC.ar(freq / 2, freq, a: a).range(0.25, 4);
 	var klat1		=	Latoocarfian2DC.ar(freq / 2, freq, a: a).range(0.25, 4);
-	var sin4		=	SinOsc.ar((freqs * klat0 * 11).clip(50, SampleRate.ir / 4), mul: (envgen / 11) * kbnmul);
-	var sin5		=	SinOsc.ar((freqs * klat1 * 13).clip(50, SampleRate.ir / 4), mul: (envgen / 13) * kbnmul);
+	var sin4		=	SinOsc.ar((freqs * klat0 * 11).clip(50, SampleRate.ir / 4), mul: (envgen / 8) * kbnmul);
+	var sin5		=	SinOsc.ar((freqs * klat1 * 13).clip(50, SampleRate.ir / 4), mul: (envgen / 8) * kbnmul);
 	//var pan2		=	Pan2.ar(sin0 + sin1 + sin2 + sin3 + sin4 + sin5, pan);
 	//var pan2		=	Pan2.ar(sin0 + sin1 + sin2, pan);
 	Out.ar(0, sin0 + sin1 + sin3 + sin4 + sin5).clip(-0.9, 0.9);
