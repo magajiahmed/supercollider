@@ -24,12 +24,14 @@ s.stopRecording;
 
 // SYNTHDEFS /////////////////////////////////////////////////////
 
+(
 ~dynamix =
 SynthDef(\dynamix, {
 	var in	   		= 	In.ar(2, 2);
 	var compressor	=	Compander.ar(in, in, thresh: 0.25, slopeAbove: 1/128, clampTime: 0.002);
 	Out.ar(0, compressor);
 }).add;
+);
 
 (
 ~startcompressor = {
@@ -41,6 +43,7 @@ SynthDef(\dynamix, {
 ~startcompressor;
 
 /*
+~compressor.isPlaying;
 ~compressor.free;
 */
 
@@ -48,11 +51,11 @@ SynthDef(\dynamix, {
 
 (
 ~verb =
-SynthDef(\verb, {
+SynthDef(\verb, { | kbn2frq = 20 |
 	var in			=	In.ar(4, 2);
 	var kbn1		=	LFBrownNoise0.kr(add: 0.1);
-	var kbn2		=	LFBrownNoise0.kr(add: 0.4);
-	var verb		=	GVerb.ar(in, revtime: (80 * kbn2).clip(1, 200), damping: kbn1.clip(0, 1), mul: 0.04);
+	var kbn2		=	LFBrownNoise0.kr(kbn2frq, add: 0.4);
+	var verb		=	GVerb.ar(in, revtime: (80 * kbn2).clip(1, 200), damping: kbn1.clip(0, 1), mul: 0.03);
 	Out.ar(2, verb);
 }).add;
 );
@@ -209,8 +212,8 @@ SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, 
 
 (
 ~pno =
-SynthDef(\pno, { | a = 1, dur = 1, freq = 440, latmul = 0.05, level = 0.25, pan = 0 |
-	var env			=	Env.perc(releaseTime: dur, level: level, curve: -8);
+SynthDef(\pno, { | a = 1, curve = -8, dur = 1, freq = 440, latmul = 0.05, level = 0.25, pan = 0 |
+	var env			=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var klat		=	Latoocarfian2DC.kr(a: a, mul: latmul, add: 1);
 	var klat2		=	Latoocarfian2DC.kr(a: a + 0.01, mul: latmul, add: 1);
@@ -229,11 +232,11 @@ SynthDef(\pno, { | a = 1, dur = 1, freq = 440, latmul = 0.05, level = 0.25, pan 
 //
 
 (
-~sinpulse =
-SynthDef(\sinpulse, { | a = 1, dur = 1, freq = 200, gate = 1, level = 0.002, pan = 0 |
+~drone =
+SynthDef(\drone, { | a = 1, dur = 1, freq = 200, gate = 1, level = 0.002, pan = 0 |
 	//var env			=	Env.perc(attackTime: 0.005, releaseTime: dur, level: level, curve: 0);
 	var env			=	Env.asr(attackTime: 5, sustainLevel: level, releaseTime: 10);
-	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
+	var envgen		=	EnvGen.kr(env, gate, doneAction: 14);
 	var freqs		= 	[freq, freq - 1];
 	var kbnfrq0		=	LFBrownNoise0.kr(freq).range(0.999, 1.001);
 	var kbnfrq1		=	LFBrownNoise0.kr(freq).range(0.999, 1.001);
@@ -253,6 +256,22 @@ SynthDef(\sinpulse, { | a = 1, dur = 1, freq = 200, gate = 1, level = 0.002, pan
 	Out.ar(0, sin0 + sin1 + sin3 + sin4 + sin5).clip(-0.9, 0.9);
 }).add;
 );
+
+(
+~createDroneGroup = { | freqs = #[200, 300] |
+	~droneGroup = Group(s).register;
+	freqs.do({|i|
+		Synth.tail(~droneGroup, \drone, [\a, (6.0.rand - 2), \freq, i]);
+	});
+};
+);
+
+/*
+~createDroneGroup.value;
+~droneGroup.isPlaying;
+~droneGroup.release;
+~droneGroup1 = nil;
+*/
 
 //
 
@@ -308,15 +327,15 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 //
 
 (
-~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.1 |
+~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.05 |
 	var env			= 	Env.asr(10, level, 30);
 	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
 	var lat 		= 	Latoocarfian2DC.kr(0.01, 5, a: [a, (a - 0.01)], mul: latmul, add: 1);
 	var kbn			=	LFBrownNoise0.kr(mul: kbnmul, add: 1).clip(0.5, 4);
-	var frq 		= 	(freq * lat).clip(100, 6400);
+	var frq 		= 	(freq * lat).clip(100, 3200);
 	var saw 		= 	Saw.ar(frq + [-0.001, 0.001], mul: envgen).clip(-0.5, 0.5);
-	var deci		= 	Decimator.ar(saw, bits: (6 * kbn).clip(3, 24)).clip(-0.5, 0.5);
+	var deci		= 	Decimator.ar(saw, bits: (6 * kbn).clip(4, 24)).clip(-0.5, 0.5);
 	var rhpf		= 	RHPF.ar(deci, (12000 * lat).clip(freq, SampleRate.ir/4), mul: 0.5).clip(-0.5, 0.5);
 	var fbn			= 	LFBrownNoise0.kr(mul: fbnmul, add: 1).clip(0.1, 0.9);
 	var rlpf 		= 	RLPF.ar(saw, (freq * 1.5 * [fbn, fbn]).clip(freq, freq * 4)).clip(-0.5, 0.5);
@@ -822,6 +841,7 @@ Pdef(\pnopat1,
 ~pnopat1.stop;
 */
 
+(
 ~pnopat2 =
 Pdef(\pnopat2,
 	Pbind(
@@ -833,11 +853,71 @@ Pdef(\pnopat2,
 		\level, 0.02,
 		\pan, Prand([-0.5, 0, 0.5], inf),
 ));
+);
 
 /*
 ~pnopat2.play(t, quant: 1);
 ~pnopat2.isPlaying;
 ~pnopat2.stop;
+*/
+
+//
+
+(
+~pnopat3a =
+Pdef(\pnopat3a,
+	Pbind(
+		\instrument, \pno,
+		\a, Pwhite(-0.1, 0.1, inf),
+		\curve, 4,
+		\dur, Pseq([
+			0.25, 0.5,
+			0.25, 0.25, 0.5,
+			0.25, 0.25, 0.25, 0.5
+		], inf),
+		\freq, Pseq([
+			1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 7/8, 1/1, 3/2,
+			1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 7/8, 1/1, 3/2,
+			1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 7/8, 1/1, 3/2
+		] * 800, inf),
+		\latmul, 0.05,
+		\level, 0.004,
+		\pan, -1,
+));
+);
+
+/*
+~pnopat3a.play(t, quant: 1);
+~pnopat3a.isPlaying;
+~pnopat3a.stop;
+*/
+
+(
+~pnopat3b =
+Pdef(\pnopat3b,
+	Pbindf(~pnopat3a,
+		\dur, Pseq([
+			0.5, 0.25,
+			0.5, 0.25, 0.25,
+			0.5, 0.25, 0.25, 0.25, 0.25
+		], inf),
+		\pan, 1
+));
+);
+
+/*
+~pnopat3b.play(t, quant: 1);
+~pnopat3b.stop;
+*/
+
+(
+~pnopar3 =
+Pdef(\pnopar3, Ppar([~pnopat3a, ~pnopat3b], inf));
+);
+
+/*
+~pnopar3.play(t, quant: 1);
+~pnopar3.stop;
 */
 
 //
@@ -1158,6 +1238,18 @@ s.stopRecording;
 	};
 }, 67, srcID: ~nanoktrl2);
 
+(
+~pno3ktrl = MIDIdef.cc(\pno3ktrl, {
+	if(~pnopar3.isPlaying.not) {
+		~pnopar3.play(t, quant: 1);
+		"pno3 play".postln;
+	} {
+		~pnopar3.stop;
+		"pno3 stop".postln;
+	};
+}, 68, srcID: ~nanoktrl2);
+);
+
 /*
 ~pulsektrl = MIDIdef.cc(\pulsektrl, {
 	if(~spat.isPlaying.not) {
@@ -1180,6 +1272,7 @@ s.stopRecording;
 }, 52, srcID: ~nanoktrl2);
 */
 
+/*
 (
 ~spatktrl = MIDIdef.cc(\pulsektrl, {
 	if(~spat1.isPlaying.not) {
@@ -1205,7 +1298,22 @@ s.stopRecording;
 	};
 }, 52, srcID: ~nanoktrl2);
 );
+*/
 
+(
+~dronektrl = MIDIdef.cc(\sparktrl, {
+	if(~droneGroup.isNil) {
+		~createDroneGroup.value;
+		"drone play".postln;
+	} {
+		~droneGroup.release;
+		~droneGroup = nil;
+		"drone stop".postln;
+	};
+}, 36, srcID: ~nanoktrl2);
+);
+
+(
 ~grablektrl = MIDIdef.cc(\grablektrl, {
 	if(~gpar.isPlaying.not) {
 		~gpar.play(t, quant: 1);
@@ -1214,8 +1322,10 @@ s.stopRecording;
 		~gpar.stop;
 		"grable stop".postln;
 	};
-}, 68, srcID: ~nanoktrl2);
+}, 52, srcID: ~nanoktrl2);
+);
 
+(
 ~sinpadmdef = MIDIdef.cc(\sinpadmdef, {
 	if(~sinpadgroup.isNil) {
 		~createsinpadGroup.value;
@@ -1226,6 +1336,7 @@ s.stopRecording;
 		"sinpad stop".postln;
 	}
 }, 55, srcID: ~nanoktrl2);
+);
 
 ~pad0mdef = MIDIdef.cc(\pad0mdef, {
 	if(~padgroup0.isNil) {
