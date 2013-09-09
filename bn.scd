@@ -215,17 +215,17 @@ SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, 
 SynthDef(\pno, { | a = 1, curve = -8, dur = 1, freq = 440, latmul = 0.05, level = 0.25, pan = 0 |
 	var env			=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
-	var klat		=	Latoocarfian2DC.kr(a: a, mul: latmul, add: 1);
-	var klat2		=	Latoocarfian2DC.kr(a: a + 0.01, mul: latmul, add: 1);
-	var klat3		=	Latoocarfian2DC.ar(a: a - 0.01, mul: 1, add: 1);
+	var klat		=	Latoocarfian2DC.kr(a: a, mul: latmul, add: 1).clip(0.95, 1.05);
+	var klat2		=	Latoocarfian2DC.kr(a: a + 0.01, mul: latmul, add: 1).clip(0.95, 1.05);
+	var klat3		=	Latoocarfian2DC.ar(a: a - 0.01, mul: 1, add: 1).clip(0.95, 1.05);
 	var sin1		=	SinOsc.ar(freq, mul: envgen);
 	var sin1kl		=	SinOsc.ar(freq * klat, mul: envgen);
 	var sin2		=	SinOsc.ar((freq * 2.01), mul: envgen / 64);
-	var sin2kl		=	SinOsc.ar(freq * klat2, mul: envgen / 64);
+	var sin2kl		=	SinOsc.ar(freq * klat2 * 2.01, mul: envgen / 64);
 	var sin20		=	SinOsc.ar((freq * 10.01 * klat3).clip(50, SampleRate.ir / 4), mul: envgen / 4);
-	var sinmix		=	sin1 + sin1kl + sin20;
+	var sinmix		=	sin1 + sin1kl + sin2 + sin2kl + sin20;
 	var pan2 		=	Pan2.ar(sinmix, pan);
-	Out.ar(0, pan2).clip(-1, 1);
+	Out.ar(0, pan2).clip(-0.99, 0.99);
 }).add;
 );
 
@@ -331,7 +331,7 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 	var env			= 	Env.asr(10, level, 30);
 	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
-	var lat 		= 	Latoocarfian2DC.kr(0.01, 5, a: [a, (a - 0.01)], mul: latmul, add: 1);
+	var lat 		= 	Latoocarfian2DC.kr(0.01, 5, a: [a, (a - 0.01)], mul: latmul, add: 1).clip(0.5, 16);
 	var kbn			=	LFBrownNoise0.kr(mul: kbnmul, add: 1).clip(0.5, 4);
 	var frq 		= 	(freq * lat).clip(100, 3200);
 	var saw 		= 	Saw.ar(frq + [-0.001, 0.001], mul: envgen).clip(-0.5, 0.5);
