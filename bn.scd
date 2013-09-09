@@ -328,27 +328,20 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 
 (
 ~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.05 |
-	var env			= 	Env.asr(10, level, 30);
+	var env			= 	Env.asr(10, level, 20);
 	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
 	var lat 		= 	Latoocarfian2DC.kr(0.01, 5, a: [a, (a - 0.01)], mul: latmul, add: 1).clip(0.5, 16);
-	var kbn			=	LFBrownNoise0.kr(mul: kbnmul, add: 1).clip(0.5, 4);
+	var kbn1		=	LFBrownNoise0.kr.range(0.67, 1.5);
+	var kbn2		=	LFBrownNoise0.kr.range(0.8, 1.25);
 	var frq 		= 	(freq * lat).clip(100, 3200);
 	var saw 		= 	Saw.ar(frq + [-0.001, 0.001], mul: envgen).clip(-0.5, 0.5);
-	var deci		= 	Decimator.ar(saw, bits: (6 * kbn).clip(4, 24)).clip(-0.5, 0.5);
-	var rhpf		= 	RHPF.ar(deci, (12000 * lat).clip(freq, SampleRate.ir/4), mul: 0.5).clip(-0.5, 0.5);
-	var fbn			= 	LFBrownNoise0.kr(mul: fbnmul, add: 1).clip(0.1, 0.9);
-	var rlpf 		= 	RLPF.ar(saw, (freq * 1.5 * [fbn, fbn]).clip(freq, freq * 4)).clip(-0.5, 0.5);
-	var nodc		=	LeakDC.ar(rlpf + rhpf).clip(-0.5, 0.5);
-	Out.ar(0, nodc).clip(-0.5, 0.5);
+	var deci		= 	Decimator.ar(saw, bits: (6 * kbn1)).clip(-0.5, 0.5);
+	var rhpf		= 	RHPF.ar(deci, (11000 * kbn2).clip(50, SampleRate.ir / 3), 0.25, mul: 0.5).clip(-0.5, 0.5);
+	var rlpf 		= 	RLPF.ar(saw, freq * 1.5);
+	Out.ar(0, rlpf + rhpf).clip(-0.5, 0.5);
 }).add;
 );
-
-/*
-~padtest1 = Synth(\pad).register;
-~padtest1.isPlaying;
-~padtest1.release;
-*/
 
 (
 ~createPadGroup0 = { | freqs = #[200,300,200,300] |
