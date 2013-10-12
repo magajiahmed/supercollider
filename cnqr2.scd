@@ -1069,22 +1069,22 @@ SynthDef(\pad, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.008 |
 	//var env 			=	Env.sine(dur / 1.5, level);
 	var env				=	Env.asr(4, level, 4, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var kbnenv			=	LFBrownNoise0.kr(15).range(0.3, 1).round(0.1);
+	var kbnenv			=	LFBrownNoise0.kr(15).range(0.1, 1).round(0.1);
 	var n				=	12;
 	//var n				=	1;
 	var mix				=	Mix.fill(n, {
 		arg i;
 		var klfn		=	LFNoise1.kr([0.1, 0.1], 0.003, 1);
-		// var pulse0		=	LFPulse.ar(([freq, freq + 0.1] * klfn), mul: (envgen) / (i + 1));
-		// var pulse1		=	LFPulse.ar([freq, freq + 0.1], mul: (envgen) / n);
-		// pulse0 + pulse1;
 		var freqgap		= 	3;
 		var saw0		=	LFSaw.ar([freq, freq + (i / freqgap)] * klfn, mul: envgen / (i + 1));
 		var saw1		=	LFSaw.ar([freq + ((i + 1) / freqgap), freq + ((i + 2) / freqgap)], mul: envgen / n);
 		saw0 + saw1;
 	});
-	var lpf				=	BLowPass4.ar(mix, freq * 1.5);
-	var rhpf			=	BHiPass4.ar(mix, 7000, 0.02, mul: 0.2);
+	var lor				=	Lorenz2DC.ar(mul: 0.5, add: 1);
+	var sin				=	SinOsc.ar(6000 * lor, mul: envgen / 8);
+	var sinmix			=	mix + sin;
+	var lpf				=	BLowPass4.ar(sinmix, freq * 1.5);
+	var rhpf			=	BHiPass4.ar(sinmix, 8000, 0.02, mul: 0.1);
 	var filtmix			=	lpf + rhpf;
 	var striated		=	filtmix * kbnenv;
 	Out.ar(0, striated);
@@ -1095,7 +1095,7 @@ SynthDef(\pad, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.008 |
 
 (
 ~scaledegrees.postln;
-~chords0 = Array.fill(~scale.size, { arg i; [i, i + 2, i + 5, i + 7, ~scale.size -1] + 6 });
+~chords0 = Array.fill(~scale.size, { arg i; [i, i + 2, i + 5, i + 7] });
 ~chords1 = ~chords0 + (~scale.size);
 'chords0: '.postln;
 ~chords0.postln;
@@ -1113,9 +1113,10 @@ Pdef(\padpat0,
 	Pbind(
 		\instrument, \pad,
 		\degree, Prand(~chords0 ++ [Rest].stutter(6), inf),
-		//\degree, Prand(~chords0, inf),
+		//\degree, Place(~chords0),
 		\dur, Prand(~padpatdurarr, inf),
-		\root, (~scale.size - 1) * -1,
+		\root, 0,
+		//\root, (~scale.size - 1) * -1,
 		\scale, ~scale,
 ));
 );
