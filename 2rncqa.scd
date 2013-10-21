@@ -60,9 +60,9 @@ SynthDef(\bass, { | dur = 1, freq = 100, k = 1.4, level = 0.03 |
 	var sin				=	SinOsc.ar(freq, mul: envgen);
 	var saw				=	LFSaw.ar(freq, mul: envgen);
 	var sawflt			=	RLPF.ar(saw, freq * 2);
-	var bn1				=	LFBrownNoise1.kr(0.3.dup).range(1, 15);
-	var bn2				=	LFBrownNoise0.kr(bn1).range(0.5, 2);
-	var shape			=	SineShaper.ar(sin + saw, 0.0005 * bn2);
+	var bn1				=	LFBrownNoise1.kr(1.dup).range(1, 50);
+	var bn2				=	LFBrownNoise2.kr(bn1).range(0.5, 2);
+	var shape			=	SineShaper.ar(sin + saw, 0.0003 * bn2);
 	Out.ar([0, 2], sin + sawflt + shape).fold(-0.9, 0.9);
 }).add;
 );
@@ -97,7 +97,7 @@ Pdef(\basspat,
 		~basspat.play(t, quant: 0.5);
 		"bass play".postln;
 	} {
-		~basspat.stop;
+		~basspat.pause;
 		"bass stop".postln;
 	};
 }, 32, srcID: ~nanoktrl2);
@@ -167,7 +167,7 @@ Pdef(\pbpat,
 		~rbpdef.play(t, quant: 3);
 		"recbuf play".postln;
 	} {
-		~rbpdef.stop;
+		~rbpdef.pause;
 		"recbuf stop".postln;
 	};
 }, 48, srcID: ~nanoktrl2);
@@ -179,7 +179,7 @@ Pdef(\pbpat,
 		~pbpat.play(t, quant: 0.5);
 		"playbuf play".postln;
 	} {
-		~pbpat.stop;
+		~pbpat.pause;
 		"playbuf stop".postln;
 	};
 }, 64, srcID: ~nanoktrl2);
@@ -210,7 +210,7 @@ Pdef(\prc1apdef,
 	Pbind(
 		\instrument, \prc1,
 		\bwr, Prand([0.1, 0.5], inf),
-		\curve, Prand([-256, -64, -32], inf),
+		\curve, Prand([-256, -64], inf),
 		\dur, Prand([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3], inf),
 		\freq, Prand(~prcfrqarray, inf),
 		\k, Pwhite(1.2, 1.6, inf),
@@ -285,7 +285,7 @@ Pdef(\prc2apat,
 		~prc2apat.play(t, quant: 0.5);
 		"prc2a play".postln;
 	} {
-		~prc2apat.stop;
+		~prc2apat.pause;
 		"prc2a stop".postln;
 	};
 }, 34, srcID: ~nanoktrl2);
@@ -302,7 +302,9 @@ SynthDef(\prc3, { | bits = 24, curve = -64, dur = 1, freq = 4000, level = 0.3, p
 	var n				=	3;
 	var lfn1			=	LFNoise1.ar(15).range(0.5, 2);
 	var klank			=	DynKlank.ar(`[
-		Array.fill(n, { arg i; (i + 23).nthPrime * 110 }) * lfn1, Array.fill(n, {0.2}), Array.fill(n, {0.01})
+		Array.fill(n, { arg i; (i + 23).nthPrime * 110 }) * lfn1,
+		Array.fill(n, {0.2}),
+		Array.fill(n, {0.01})
 	], imp);
 	var deci			=	Decimator.ar(klank, rate, bits);
 	var pan2			=	Pan2.ar(deci, pan);
@@ -344,16 +346,14 @@ Pdef(\prc3pat,
 );
 
 ////////////////////////////////////////////////////////////////
-// CRUMBLE
+// PRC4
 
 (
-SynthDef(\crumble, { | gate = 1, level = 0.008 |
-	var env				=	Env.asr(0.1, level, 0.1, 0);
-	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var klfn1			=	LFNoise0.kr(15.dup).range(0, 1);
-	var klfn2			=	LFNoise0.kr(10.dup).range(0, 1);
-	var bn				=	LFBrownNoise1.ar(5000.dup, mul: envgen * klfn1 * klfn2);
-	var rez				=	RHPF.ar(bn, 1000 * LFNoise1.kr(15.dup, mul: 0.1, add: 1), 0.1);
+SynthDef(\prc4, { | bwr = 0.1, curve = -64, dur = 1, ffreq = 1000, freq = 5000, gate = 1, level = 0.008 |
+	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
+	var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var bn				=	LFBrownNoise1.ar(freq.dup, mul: envgen);
+	var rez				=	RHPF.ar(bn, ffreq * LFNoise1.kr(5.dup, mul: 0.5, add: 1), bwr);
 	Out.ar(0, rez);
 }).add;
 );
@@ -361,31 +361,70 @@ SynthDef(\crumble, { | gate = 1, level = 0.008 |
 // Pattern
 
 (
-~crumblepat =
-Pdef(\crumblepat,
-	Pmono(
-		\crumble
+~prc4pat1 =
+Pdef(\prc4pat1,
+	Pbind(
+		\instrument, \prc4,
+		\bwr, 0.1,
+		\curve, -64,
+		\dur, Prand([Pseq([1/3], 3), Pseq([1/4], 4), Pseq([1/6], 6), 1, 2], inf),
+		\ffreq, 3000,
+		\freq, Pwhite(4000, 5000, inf),
+		\level, Pwrand([0.25, 1] * 0.05, [6, 1].normalizeSum, inf),
+		\note, Pwrand([1, Rest], [12, 8].normalizeSum, inf)
 ));
 );
 
 /*
-~crumblepat.play(t, quant: 1);
-~crumblepat.isPlaying;
-~crumblepat.pause;
+~prc4pat1.play(t, quant: 1);
+~prc4pat1.isPlaying;
+~prc4pat1.pause;
+*/
+
+(
+~prc4pat2 =
+Pdef(\prc4pat2,
+	Pbindf(
+		~prc4pat1,
+		\bwr, 0.05,
+		\dur, 1,
+		\ffreq, 5000,
+		\freq, 6000,
+		\level, 0.05,
+		\note, Prand([1, Rest], inf),
+));
+);
+
+/*
+~prc4pat2.play(t, quant: 1);
+~prc4pat2.isPlaying;
+~prc4pat2.pause;
 */
 
 // Midi Control
 
 (
-~crumblektrl = MIDIdef.cc(\crumblektrl, {
-	if(~crumblepat.isPlaying.not) {
-		~crumblepat.play(t, quant: 0.5);
-		"crumble play".postln;
+~prc4pat1ktrl = MIDIdef.cc(\prc4pat1ktrl, {
+	if(~prc4pat1.isPlaying.not) {
+		~prc4pat1.play(t, quant: 1);
+		"prc4-1 play".postln;
 	} {
-		~crumblepat.stop;
-		"crumble stop".postln;
+		~prc4pat1.pause;
+		"prc4-1 stop".postln;
 	};
 }, 36, srcID: ~nanoktrl2);
+);
+
+(
+~prc4pat2ktrl = MIDIdef.cc(\prc4pat2ktrl, {
+	if(~prc4pat2.isPlaying.not) {
+		~prc4pat2.play(t, quant: 1);
+		"prc4-2 play".postln;
+	} {
+		~prc4pat2.pause;
+		"prc4-2 stop".postln;
+	};
+}, 52, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -397,7 +436,7 @@ SynthDef(\plunk, { | dur = 1, freq = 400, level = 0.05, pan = 0 |
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbenv			=	Env.new([0.999, 0.1], [0.05], 'sine');
 	var fbenvgen		= 	EnvGen.kr(fbenv);
-	var	kbn				=	LFBrownNoise0.kr(50).range(0.1, 1);
+	var	kbn				=	(LFBrownNoise0.kr(30).range(0, 1)).round(0.5);
 	var sinfb			=	SinOscFB.ar(freq, fbenvgen, envgen * kbn);
 	var pan2			=	Pan2.ar(sinfb, pan);
 	Out.ar(0, pan2);
@@ -441,6 +480,32 @@ Pdef(\plunkpat2,
 ~plunkpat2.pause;
 */
 
+// Midi Control
+
+(
+~plunk1ktrl = MIDIdef.cc(\plunk1ktrl, {
+	if(~plunkpat1.isPlaying.not) {
+		~plunkpat1.play(t, quant: 0.5);
+		"plunk1 play".postln;
+	} {
+		~plunkpat1.pause;
+		"plunk1 stop".postln;
+	};
+}, 37, srcID: ~nanoktrl2);
+);
+
+(
+~plunk2ktrl = MIDIdef.cc(\plunk2ktrl, {
+	if(~plunkpat2.isPlaying.not) {
+		~plunkpat2.play(t, quant: 1);
+		"plunk2 play".postln;
+	} {
+		~plunkpat2.pause;
+		"plunk2 stop".postln;
+	};
+}, 53, srcID: ~nanoktrl2);
+);
+
 ////////////////////////////////////////////////////////////////
 // PAD /////////////////////////////////////////////////////////
 
@@ -451,31 +516,22 @@ Pdef(\plunkpat2,
 SynthDef(\pad, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.003 |
 	var env				=	Env.asr(3, level, 3, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var kbnenv			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.1);
-	var n				=	12;
-	var mix				=	Mix.fill(n, {
-		arg i;
-		var klfn		=	LFNoise1.kr([0.1, 0.1], 0.001, 1);
-		var freqgap		= 	3;
-		var saw0		=	LFSaw.ar([freq, freq + (i / freqgap)] * klfn, mul: envgen / (i + 1));
-		var saw1		=	LFSaw.ar([freq + ((i + 1) / freqgap), freq + ((i + 2) / freqgap)], mul: envgen / n);
-		saw0 + saw1;
-	});
-	var lor				=	Lorenz2DC.ar(mul: 0.5, add: 1);
-	var sin				=	SinOsc.ar(6000 * lor, mul: envgen / 6);
-	var sinmix			=	mix + sin;
-	var lpf				=	BLowPass4.ar(sinmix, freq * 8, 0.8);
-	var rhpf			=	BHiPass4.ar(sinmix, 6000, 0.02, mul: 0.03);
+	var kbnenv			=	(LFBrownNoise0.kr(15).range(0, 1)).round(1);
+	var klfn			=	LFNoise1.kr(1.dup, 0.001, 1);
+	var saw0			=	LFSaw.ar(freq.dup, mul: envgen / 2);
+	var saw1			=	LFSaw.ar(freq.dup * klfn, mul: envgen / 2);
+	var sawmix			=	saw0 + saw1;
+	var lpf				=	BLowPass4.ar(sawmix, freq * 2);
+	var rhpf			=	BHiPass4.ar(sawmix, 6000, 0.1, mul: kbnenv / 2);
 	var filtmix			=	lpf + rhpf;
-	var striated		=	filtmix * kbnenv;
-	Out.ar(0, striated);
+	Out.ar(0, filtmix);
 }).add;
 );
 
 // Pattern
 
 (
-~chords1 = (~scaledegrees ++ (~scaledegrees + ~scaledegrees.size)).powerset.reject({ arg i; i.size != 6 });
+~chords1 = (~scaledegrees ++ (~scaledegrees + ~scaledegrees.size)).powerset.reject({ arg i; i.size != 3 });
 ~chords1.size.postln;
 ~padpatdurarr = Array.fill(3, { arg i; (i + 3).nthPrime });
 ~padpat1 =
