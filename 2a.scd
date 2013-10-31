@@ -171,7 +171,7 @@ Pdef(\pbpat,
 SynthDef(\prc1, { | bwr = 1, curve = -64, dur = 1, freq = 400, k = 1.4, level = 0.05, pan = 0 |
 	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var stan			=	Standard2DC.ar(3, 300, k: k, mul: 1, add: 1);
+	var stan			=	Standard2DC.ar(3, 3000, k: k, mul: 1, add: 1);
 	var fbfreqmod		=	LFNoise0.kr(0.5).range(1, 30);
 	var fbmod			=	LFNoise1.kr(fbfreqmod).range(0, 0.999);
 	var sinfb			=	SinOscFB.ar(freq * stan, 0.999, mul: envgen);
@@ -185,15 +185,14 @@ SynthDef(\prc1, { | bwr = 1, curve = -64, dur = 1, freq = 400, k = 1.4, level = 
 // Pattern
 
 (
-~prcfrqarray = Array.fill(3, { arg i; (i.nthPrime).nthPrime * 100 }).postln;
+~prc1frqarray1 = Array.fill(3, { arg i; (i.nthPrime).nthPrime * 100 }).postln;
 ~prc1apat =
 Pdef(\prc1apdef,
 	Pbind(
 		\instrument, \prc1,
 		\bwr, Prand([0.1, 0.5], inf),
-		//\curve, Prand([-256, -16], inf),
 		\dur, Prand([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6], inf),
-		\freq, Prand(~prcfrqarray, inf),
+		\freq, Prand(~prc1frqarray1, inf),
 		\k, Pwhite(1.2, 1.6, inf),
 		\pan, Prand([-0.5, 0, 0, 0.5], inf)
 ));
@@ -203,6 +202,40 @@ Pdef(\prc1apdef,
 ~prc1apat.play(t, quant: 1);
 ~prc1apat.isPlaying;
 ~prc1apat.pause;
+*/
+
+(
+~prc1frqarray2 = (~prc1frqarray1 * 4).postln;
+~prc1bpat =
+Pdef(\prc1bpdef,
+	Pbindf(~prc1apat,
+		\curve, -256,
+		\freq, Prand(~prc1frqarray2, inf),
+		\level, 0.1
+));
+);
+
+/*
+~prc1bpat.play(t, quant: 1);
+~prc1bpat.isPlaying;
+~prc1bpat.pause;
+*/
+
+(
+~prc1frqarray3 = (~prc1frqarray1 / 8).postln;
+~prc1cpat =
+Pdef(\prc1cpdef,
+	Pbindf(~prc1apat,
+		\curve, -256,
+		\freq, Prand(~prc1frqarray3, inf),
+		\level, 0.1
+));
+);
+
+/*
+~prc1cpat.play(t, quant: 1);
+~prc1cpat.isPlaying;
+~prc1cpat.pause;
 */
 
 
@@ -218,6 +251,30 @@ Pdef(\prc1apdef,
 		"prc1a stop".postln;
 	};
 }, 33, srcID: ~nanoktrl2);
+);
+
+(
+~prc1bktrl = MIDIdef.cc(\prc1bktrl, {
+	if(~prc1bpat.isPlaying.not) {
+		~prc1bpat.play(t, quant: 1);
+		"prc1b play".postln;
+	} {
+		~prc1bpat.pause;
+		"prc1b stop".postln;
+	};
+}, 49, srcID: ~nanoktrl2);
+);
+
+(
+~prc1cktrl = MIDIdef.cc(\prc1cktrl, {
+	if(~prc1cpat.isPlaying.not) {
+		~prc1cpat.play(t, quant: 1);
+		"prc1c play".postln;
+	} {
+		~prc1cpat.pause;
+		"prc1c stop".postln;
+	};
+}, 65, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -345,7 +402,7 @@ Pdef(\prc3pat,
 		\instrument, \prc3,
 		\dur, 1,
 		\bits, Pwhite(8, 16, inf),
-		\note, Pwrand([Rest, 1], [1, 1].normalizeSum, inf),
+		\note, Pwrand([Rest, 1], [2, 1].normalizeSum, inf),
 		\pan, Prand([-0.5, 0, 0.5], inf),
 		\rate, Pwhite(0.75, 1, inf) * 44100,
 ));
@@ -398,7 +455,7 @@ Pdef(\prc4pat1,
 			Pseq([1.75], 17)
 		], inf),
 		\freq, 8000,
-		\note, Pwrand([1, Rest], [3, 1].normalizeSum, inf),
+		\note, Pwrand([1, Rest], [4, 1].normalizeSum, inf),
 		\xaos, 1
 ));
 );
@@ -484,7 +541,8 @@ Pdef(\plunkpat1,
 	Pbind(
 		\instrument, \plunk,
 		\dur, Prand([
-			Pseq([0.125], 2), Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 4), Pseq([1/3], 3), 1, Pseq([0.25], 6), 1.5, 2, 3, 4, 6, 8, 12
+			Pseq([0.125], 2), Pseq([1/6], 3), Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 4), 1, Pseq([0.25], 6),
+			1.5, 2, 3, 4, 6, 8, 12, 16, 24
 		], inf),
 		\degree, Prand([-3, -1, 0], inf),
 		\octave, 5,
@@ -572,11 +630,11 @@ Pdef(\plunkpat3,
 
 (
 SynthDef(\penguin, { | freq = 400, gate = 1, level = 0.1 |
-	var env				=	Env.asr(sustainLevel: level);
+	var env				=	Env.asr(sustainLevel: level, releaseTime: 3);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var tri				=	LFTri.ar(freq, mul: envgen);
-	var kbnfm			=	LFNoise0.kr(1).range(1, 30);
-	var kbn				=	LFBrownNoise1.kr(kbnfm.dup).range(0.004, 0.006);
+	var kbnfm			=	LFNoise0.kr(1).range(1, 10);
+	var kbn				=	LFBrownNoise2.kr(kbnfm.dup).range(0.003, 0.005);
 	var shape			=	SineShaper.ar(tri, kbn);
 	var lpf				=	BLowPass4.ar(shape, freq * 2);
 	var hpf				=	HPF.ar(shape, 4000);
@@ -591,13 +649,12 @@ Pdef(\pgnpat,
 	Pmono(
 		\penguin,
 		//\degree, Pswitch1(~pgndegrees, Pbrown(0, ~pgndegrees.size, 1, inf)),
-		\degree, Pshuf(~pgndegrees, inf),
+		\degree, Prand(~pgndegrees, inf),
 		\dur, Prand([
-			Pseq([0.25], 2), 0.5,
-			Pseq([0.25, 0.5, 0.25]), 1,
-			Pseq([0.25, 0.5, 0.5, 0.25]), 1.5,
-			Pseq([0.25, 0.5, 0.5, 0.5, 0.25]), 2,
-			3, 4, 6, 8, 12
+			Pseq([0.25], 2),
+			Pseq([0.25, 0.5, 0.25]),
+			Pseq([0.25, 0.5, 0.5, 0.25]),
+			8, 12, 16, 24, 32, 48, 64, 96
 		], inf),
 		\octave, Prand([5, 6], inf),
 		\scale, ~scale,
@@ -632,14 +689,14 @@ MIDIdef.cc(\pgnktrl, {
 SynthDef(\sinth, { | fb = 0, freq = 400, gate = 1, level = 0.05 |
 	var env				=	Env.asr(sustainLevel: level, releaseTime: 2);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var kbn1a			=	LFBrownNoise0.kr(0.5.dup).range(0.5, 15);
-	var kbn1b			=	LFBrownNoise2.kr(kbn1a, mul: 0.01, add: 1);
+	var kbn1a			=	LFBrownNoise0.kr(0.5.dup).range(0.5, 2);
+	var kbn1b			=	LFBrownNoise2.kr(kbn1a, mul: 0.003, add: 1);
 	var sin				=	SinOsc.ar(freq * kbn1b, mul: envgen);
 	var kbn2			=	LFBrownNoise2.kr(1.3.dup).range(0, 0.999);
 	var sinfb			=	SinOscFB.ar([freq, freq + 0.2], kbn2, envgen);
 	var shape			=	SineShaper.ar(sin + sinfb, 0.003);
-	var lpf				=	RLPF.ar(shape, freq * 4, 0.1);
-	var rhpf			=	RHPF.ar(shape, (freq * 16).clip(50, SampleRate.ir / 3), 0.1, 0.5);
+	var lpf				=	RLPF.ar(shape, freq * 2);
+	var rhpf			=	RHPF.ar(shape, (freq * 16).clip(50, SampleRate.ir / 3), 0.03);
 	Out.ar(0, lpf + rhpf);
 }).add;
 );
@@ -657,7 +714,7 @@ Pdef(\sinpat,
 			Pseq([0.25, 0.5, 0.25]), 1,
 			Pseq([0.25, 0.5, 0.5, 0.25]), 1.5,
 			Pseq([0.25, 0.5, 0.5, 0.5, 0.25]), 2,
-			3, 4, 6, 8, 12
+			3, 4, 6, 8, 12, 16, 24
 		], inf),
 		\octave, 6,
 		\scale, ~scale,
@@ -746,7 +803,7 @@ Pdef(\pad1pat,
 		// 	Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 3)), Rest,
 		// ], inf),
 		\degree, Pseq([Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 1)), Rest], inf),
-		\dur, Pseq([0.25, 3, 0.25, 5, 0.25, 7], inf),
+		\dur, Pseq([0.25, 3, 0.25, 5, 0.25, 7, 0.25, 9, 0.25, 11], inf),
 		\octave, 8,
 		\scale, ~scale,
 ));
