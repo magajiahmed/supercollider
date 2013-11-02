@@ -15,7 +15,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 );
 
 s.meter;
-t = TempoClock(80/60);
+t = TempoClock(108/60);
 t.tempo.postln;
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 
@@ -192,7 +192,7 @@ Pdef(\prc1apdef,
 		\instrument, \prc1,
 		\bwr, Prand([0.1, 0.5], inf),
 		\dur, Prand([
-			Pseq([0.25/3], 3), Pseq([0.125], 2), 0.25, 0.5, 0.75,
+			Pseq([0.125], 2), 0.25, 0.5, 0.75,
 			Pseq([1/3], 3), 1, 1.5, Pseq([2/3], 3), 2, Pseq([0.75], 4), 3, 4, 6
 		], inf),
 		\freq, Prand(~prc1frqarray1, inf),
@@ -301,8 +301,9 @@ Pdef(\prc2apat,
 	Pbind(
 		\instrument, \prc2a,
 		\a, Pwhite(0.9, 1.1, inf),
-		\dur, Prand([Pseq([0.125], 2), 0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.25], inf),
-		\freq, Pwrand([200, 1000, Pseq([1500, 1000])], [8, 2, 1].normalizeSum, inf)
+		\dur, Pxrand([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 2, Pseq([0.75], 4), 3, Pseq([1], 6)], inf),
+		\freq, Pwrand([200, 500, 1000, Pseq([Pwhite(1400, 1600, 1), Pwhite(900, 1100, 1)], 2)], [4, 2, 1].normalizeSum, inf),
+		\note, Pwrand([Rest, 1], [1, 4].normalizeSum, inf)
 ));
 );
 
@@ -328,7 +329,7 @@ Pdef(\prc2apat,
 // PRC2B
 
 (
-SynthDef(\prc2b, { | curve = -16, dur = 1, freq = 1000, level = 0.3, pan = 0 |
+SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.3, pan = 0 |
 	var env				=	Env.perc(releaseTime: 0.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var bn				=	LFBrownNoise1.ar(freq, mul: envgen);
@@ -645,7 +646,7 @@ Pdef(\plunkpat1,
 	Pbind(
 		\instrument, \plunk,
 		\dur, Prand([
-			Pseq([0.125], 2), Pseq([1/6], 3), 0.5, 1,
+			Pseq([1/6], 3), 0.5, 1,
 			1.5, 2, 3, 4, 6, 8, 12, 16, 24
 		], inf),
 		\degree, Prand([-3, -1, 0], inf),
