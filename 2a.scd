@@ -15,7 +15,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 );
 
 s.meter;
-t = TempoClock(108/60);
+t = TempoClock(80/60);
 t.tempo.postln;
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 
@@ -54,7 +54,7 @@ SynthDef(\bass, { | dur = 1, freq = 100, k = 1.4, level = 0.03 |
 Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
-		\degree, Pxrand([0, 1, 2, 3], inf),
+		\degree, Pxrand([-1, 0, 1, 2, 3], inf),
 		\dur, Prand(~durations, inf),
 		\k, Pwhite(1.3, 1.5, inf),
 		\octave, 3,
@@ -191,7 +191,10 @@ Pdef(\prc1apdef,
 	Pbind(
 		\instrument, \prc1,
 		\bwr, Prand([0.1, 0.5], inf),
-		\dur, Prand([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6], inf),
+		\dur, Prand([
+			Pseq([0.25/3], 3), Pseq([0.125], 2), 0.25, 0.5, 0.75,
+			Pseq([1/3], 3), 1, 1.5, Pseq([2/3], 3), 2, Pseq([0.75], 4), 3, 4, 6
+		], inf),
 		\freq, Prand(~prc1frqarray1, inf),
 		\k, Pwhite(1.2, 1.6, inf),
 		\note, Pwrand([Rest, 1], [1, 3].normalizeSum, inf),
@@ -298,7 +301,7 @@ Pdef(\prc2apat,
 	Pbind(
 		\instrument, \prc2a,
 		\a, Pwhite(0.9, 1.1, inf),
-		\dur, Prand([0.25, 0.5, 0.75, 1, 1.25], inf),
+		\dur, Prand([Pseq([0.125], 2), 0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.25], inf),
 		\freq, Pwrand([200, 1000, Pseq([1500, 1000])], [8, 2, 1].normalizeSum, inf)
 ));
 );
@@ -395,7 +398,7 @@ Pdef(\prc2cpat,
 	Pbind(
 		\instrument, \prc2c,
 		\curve, Prand([-64, -32, -16], inf),
-		\dur, Prand([0.25, 0.5, 0.75], inf),
+		\dur, Prand([0.25, 0.5, 0.75, Pseq([1/3], 3), Pseq([0.75], 4)], inf),
 		\freq, Pxrand([100, 120, 130, 500, 520, 530, 1000, 1200, 1300], inf),
 		\pan, Prand([-0.5, 0, 0.5], inf),
 ));
@@ -450,7 +453,7 @@ Pdef(\prc3apat,
 		\instrument, \prc3a,
 		\dur, 1,
 		\bits, Pwhite(8, 16, inf),
-		\note, Pwrand([Rest, 1], [2, 1].normalizeSum, inf),
+		//\note, Pwrand([Rest, 1], [3, 2].normalizeSum, inf),
 		\pan, Prand([-0.5, 0, 0.5], inf),
 		\rate, Pwhite(0.75, 1, inf) * 44100,
 ));
@@ -480,24 +483,28 @@ Pdef(\prc3apat,
 (
 SynthDef(\prc3b, { | curve = -16, dur = 1, freq = 1000, level = 0.1 |
 	//var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
-	var env				=	Env.new([0, level, (level / 100), 0], [0.003, 0.05, 0.2], 'cubed');
+	var env				=	Env.new([0, level, level / 32, 0], [0.003, 0.01, dur / 4], 'sin');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var xline			=	XLine.kr(1, 0.5, 0.05);
-	var klfn			=	LFBrownNoise0.kr(200.dup).range(0.5, 1);
-	var sin				=	FSinOsc.ar(freq.dup * xline * klfn, mul: envgen);
-	Out.ar(0, sin);
+	var n				=	3;
+	var mixfill			=	Mix.fill(n, {
+		var kbn1		=	LFBrownNoise2.kr(0.5).range(5, 50);
+		var kbn2		=	LFBrownNoise1.kr(kbn1.dup).range(0.5, 1);
+		var sin			=	FSinOsc.ar(freq * kbn2, mul: envgen / n);
+		sin;
+	});
+	Out.ar(0, mixfill);
 }).add;
 );
 
 (
-~prc3bfrqarray = Array.fill(5, { arg i; 8000 + (i * 1000) });
+~prc3bfrqarray = Array.fill(5, { arg i; 4000 + (i * 2000) });
 ~prc3bpat =
 Pdef(\prc3bpat,
 	Pbind(
 		\instrument, \prc3b,
 		\dur, Prand([Pseq([0.125], 2), 0.5, 0.75, Pseq([1/3], 3), 4, 6, 8, 12], inf),
 		\freq, Pseq([Pxrand(~prc3bfrqarray).repeat(3)], inf),
-		\level, 0.03
+		\level, 0.1
 ));
 );
 
@@ -638,7 +645,7 @@ Pdef(\plunkpat1,
 	Pbind(
 		\instrument, \plunk,
 		\dur, Prand([
-			Pseq([0.125], 2), Pseq([1/6], 3), Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 4), 1, Pseq([0.25], 6),
+			Pseq([0.125], 2), Pseq([1/6], 3), 0.5, 1,
 			1.5, 2, 3, 4, 6, 8, 12, 16, 24
 		], inf),
 		\degree, Prand([-3, -1, 0], inf),
@@ -746,12 +753,13 @@ Pdef(\pgnpat,
 	Pmono(
 		\penguin,
 		\degree, Prand(~pgndegrees, inf),
-		\dur, Prand([
-			Pseq([0.25], 2),
-			Pseq([0.25, 0.5, 0.25]),
-			Pseq([0.25, 0.5, 0.5, 0.25]),
-			8, 12, 16, 24, 32, 48
-		], inf),
+		// \dur, Prand([
+		// 	Pseq([0.25], 2),
+		// 	Pseq([0.25, 0.5, 0.25]),
+		// 	Pseq([0.25, 0.5, 0.5, 0.25]),
+		// 	8, 12, 16, 24, 32, 48
+		// ], inf),
+		\dur, Pseq([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
 		\octave, Pxrand([5, 6], inf),
 		\scale, ~scale,
 ));
