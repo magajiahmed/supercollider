@@ -15,7 +15,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 );
 
 s.meter;
-t = TempoClock(108/60);
+t = TempoClock(96/60);
 t.tempo.postln;
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 
@@ -28,34 +28,66 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 ////////////////////////////////////////////////////////
+// RECORDING
+
+/*
+s.prepareForRecord;
+s.record;
+s.stopRecording;
+*/
+
+////////////////////////////////////////////////////////
+// COMPANDER
+
+(
+SynthDef(\dynamix, {
+	var in	   		= 	In.ar(4, 2);
+	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/128); // compressor
+	Out.ar(0, compressor);
+}).add;
+);
+
+~dynamix = Synth(\dynamix).register;
+/*
+~dynamix.isPlaying;
+~dynamix.free;
+*/
+
+////////////////////////////////////////////////////////
 // BASS ////////////////////////////////////////////////
 
 // SynthDef
 
 (
-SynthDef(\bass, { | dur = 1, freq = 100, k = 1.4, level = 0.03 |
+SynthDef(\bass, { | dur = 1, freq = 100, k = 1.4, level = 0.02 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: -4);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var sin				=	SinOsc.ar(freq, mul: envgen);
 	var saw				=	LFSaw.ar(freq, mul: envgen);
-	var sawflt			=	RLPF.ar(saw, freq * 2);
+	var sawflt			=	RLPF.ar(saw, freq * 2, 0.3);
 	var bn1				=	LFBrownNoise1.kr(1.dup).range(1, 50);
 	var bn2				=	LFBrownNoise0.kr(bn1).range(0.5, 2);
-	var shape			=	SineShaper.ar(sin + saw, 0.0003 * bn2);
-	Out.ar([0, 2], sin + sawflt + shape).fold(-0.9, 0.9);
+	var shape			=	SineShaper.ar(sin + saw, 0.005 * bn2);
+	var bn				=	LFBrownNoise1.ar(freq.dup).range(0.75, 1.5);
+	var shapeflt		=	RLPF.ar(shape, 6000 * bn, 0.05, 0.5);
+	Out.ar([0, 2], sin + sawflt + shapeflt).fold(-0.9, 0.9);
 }).add;
 );
+
+/*
+[0, 1, 2, 3].stutter(3).postln;
+*/
 
 // Pattern
 
 (
-~durations = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 32];
+~bassdurations = [0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, Pseq([0.75], 4), 3, 4, 6, 8, 12, 16, 24];
 ~basspat =
 Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
-		\degree, Pxrand([-1, 0, 1, 2, 3], inf),
-		\dur, Prand(~durations, inf),
+		\degree, Pshuf([-1, 0, 1, 2, 3].stutter(3), inf),
+		\dur, Pshuf(~bassdurations, inf),
 		\k, Pwhite(1.3, 1.5, inf),
 		\octave, 3,
 		\scale, ~scale,
@@ -168,7 +200,7 @@ Pdef(\pbpat,
 // PRC1
 
 (
-SynthDef(\prc1, { | bwr = 1, curve = -64, dur = 1, freq = 400, k = 1.4, level = 0.05, pan = 0 |
+SynthDef(\prc1, { | bwr = 1, curve = -32, dur = 1, freq = 400, k = 1.4, level = 0.03, pan = 0 |
 	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var stan			=	Standard2DC.ar(3, 3000, k: k, mul: 1, add: 1);
@@ -178,7 +210,7 @@ SynthDef(\prc1, { | bwr = 1, curve = -64, dur = 1, freq = 400, k = 1.4, level = 
 	var lfn				=	LFNoise1.kr(1 / (dur * 10), mul: 1, add: 1);
 	var rez				=	Resonz.ar(sinfb, freq, bwr, 2);
 	var pan2			=	Pan2.ar((sinfb / 3) + rez, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -192,7 +224,7 @@ Pdef(\prc1apdef,
 		\instrument, \prc1,
 		\bwr, Prand([0.1, 0.5], inf),
 		\dur, Prand([
-			Pseq([0.125], 2), 0.25, 0.5, 0.75,
+			Pseq([0.125], 2), 0.25, Pseq([0.25], 2),  0.5, Pseq([0.25], 3), 0.75,
 			Pseq([1/3], 3), 1, 1.5, Pseq([2/3], 3), 2, Pseq([0.75], 4), 3, 4, 6
 		], inf),
 		\freq, Prand(~prc1frqarray1, inf),
@@ -213,9 +245,7 @@ Pdef(\prc1apdef,
 ~prc1bpat =
 Pdef(\prc1bpdef,
 	Pbindf(~prc1apat,
-		\curve, -256,
 		\freq, Prand(~prc1frqarray2, inf),
-		\level, 0.1
 ));
 );
 
@@ -230,9 +260,7 @@ Pdef(\prc1bpdef,
 ~prc1cpat =
 Pdef(\prc1cpdef,
 	Pbindf(~prc1apat,
-		\curve, -256,
 		\freq, Prand(~prc1frqarray3, inf),
-		\level, 0.1
 ));
 );
 
@@ -285,13 +313,13 @@ Pdef(\prc1cpdef,
 // PRC2A
 
 (
-SynthDef(\prc2a, { | a = 1, cfreq = 1000, curve = -16, dur = 1, freq = 1000, level = 0.15, pan = 0 |
+SynthDef(\prc2a, { | a = 1, cfreq = 1000, curve = -16, dur = 1, freq = 1000, level = 0.1, pan = 0 |
 	var env				=	Env.perc(releaseTime: 0.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
 	var sin				=	SinOsc.ar(freq * cusp, mul: envgen);
 	var pan2			=	Pan2.ar(sin, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -301,9 +329,8 @@ Pdef(\prc2apat,
 	Pbind(
 		\instrument, \prc2a,
 		\a, Pwhite(0.9, 1.1, inf),
-		\dur, Pxrand([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 2, Pseq([0.75], 4), 3, Pseq([1], 6)], inf),
-		\freq, Pwrand([200, 500, 1000, Pseq([Pwhite(1400, 1600, 1), Pwhite(900, 1100, 1)], 2)], [4, 2, 1].normalizeSum, inf),
-		\note, Pwrand([Rest, 1], [1, 4].normalizeSum, inf)
+		\dur, Prand([0.5, Pseq([0.25], 3), 0.75, 1, Pseq([0.75], 2), 1.5, 2, Pseq([0.75], 4), 3, 4, 6], inf),
+		\freq, Prand([Pseq([200, 600]), Pseq([200, 700, 600])], inf),
 ));
 );
 
@@ -329,13 +356,13 @@ Pdef(\prc2apat,
 // PRC2B
 
 (
-SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.3, pan = 0 |
+SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.15, pan = 0 |
 	var env				=	Env.perc(releaseTime: 0.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var bn				=	LFBrownNoise1.ar(freq, mul: envgen);
 	var rez				=	RLPF.ar(bn, freq, 0.5);
 	var pan2			=	Pan2.ar(rez, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -381,7 +408,7 @@ Pdef(\prc2bpat,
 // PRC2C
 
 (
-SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.8, pan = 0 |
+SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.5, pan = 0 |
 	var env				=	Env.perc(0.005, 1, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var clip			=	ClipNoise.ar(envgen);
@@ -389,7 +416,7 @@ SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.8, pan = 0 |
 	var stan			=	Standard2DC.ar.clip(0.05, 0.5);
 	var rez				=	Resonz.ar(clip, freq * xline, stan);
 	var pan2			= 	Pan2.ar(rez, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -435,13 +462,13 @@ SynthDef(\prc3a, { | bits = 24, curve = -64, dur = 1, freq = 4000, level = 0.3, 
 	var lfn1			=	LFNoise1.ar(15).range(0.5, 2);
 	var klank			=	DynKlank.ar(`[
 		Array.fill(n, { arg i; (i + 23).nthPrime * 110 }) * lfn1,
-		Array.fill(n, {0.2}),
+		Array.fill(n, {0.3}),
 		Array.fill(n, {0.01})
 	], imp);
 	var deci			=	Decimator.ar(klank, rate, bits);
 	var rez				=	Resonz.ar(deci, 4000, 0.1);
 	var pan2			=	Pan2.ar(rez, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -454,7 +481,6 @@ Pdef(\prc3apat,
 		\instrument, \prc3a,
 		\dur, 1,
 		\bits, Pwhite(8, 16, inf),
-		//\note, Pwrand([Rest, 1], [3, 2].normalizeSum, inf),
 		\pan, Prand([-0.5, 0, 0.5], inf),
 		\rate, Pwhite(0.75, 1, inf) * 44100,
 ));
@@ -482,29 +508,30 @@ Pdef(\prc3apat,
 // PRC3B
 
 (
-SynthDef(\prc3b, { | curve = -16, dur = 1, freq = 1000, level = 0.1 |
+SynthDef(\prc3b, { | curve = -16, dur = 1, freq = 1000, level = 0.07 |
 	//var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
-	var env				=	Env.new([0, level, level / 32, 0], [0.003, 0.01, dur / 4], 'sin');
+	var env				=	Env.new([0, level, level / 32, 0], [0.003, 0.05, dur / 2], 'cubed');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var n				=	3;
+	var n				=	11;
 	var mixfill			=	Mix.fill(n, {
-		var kbn1		=	LFBrownNoise2.kr(0.5).range(5, 50);
-		var kbn2		=	LFBrownNoise1.kr(kbn1.dup).range(0.5, 1);
+		var kbn1		=	LFBrownNoise0.kr(0.5.dup).range(1, 100);
+		var kbn2		=	LFBrownNoise1.kr(kbn1).range(0.8, 1);
 		var sin			=	FSinOsc.ar(freq * kbn2, mul: envgen / n);
 		sin;
 	});
-	Out.ar(0, mixfill);
+	//var kbnenv			=	LFBrownNoise0.kr(13.dup).range(0, 1).round(0.5);
+	Out.ar(4, mixfill);
 }).add;
 );
 
 (
-~prc3bfrqarray = Array.fill(5, { arg i; 4000 + (i * 2000) });
+~prc3bfrqarray = Array.fill(3, { arg i; 2000 + (i * pi * 300) });
 ~prc3bpat =
 Pdef(\prc3bpat,
 	Pbind(
 		\instrument, \prc3b,
-		\dur, Prand([Pseq([0.125], 2), 0.5, 0.75, Pseq([1/3], 3), 4, 6, 8, 12], inf),
-		\freq, Pseq([Pxrand(~prc3bfrqarray).repeat(3)], inf),
+		\dur, Pshuf([Pseq([0.125], 2), 0.5, 0.75, Pseq([1/3], 3), 4, 6, 8, 12], inf),
+		\freq, Pxrand(~prc3bfrqarray, inf),
 		\level, 0.1
 ));
 );
@@ -531,14 +558,14 @@ Pdef(\prc3bpat,
 // PRC4
 
 (
-SynthDef(\prc4, { | a = 0.1, b = 3, curve = -16, dur = 1, freq = 10000, level = 0.5, pan = 0 |
+SynthDef(\prc4, { | a = 0.1, b = 3, curve = -16, dur = 1, freq = 10000, level = 0.3, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, b, add: 1);
 	var sin				=	SinOsc.ar(freq * (cusp), mul: envgen);
 	var rez				=	Resonz.ar(sin, 6000, 0.1);
 	var pan2			=	Pan2.ar(rez, pan);
-	Out.ar(0, pan2).fold(-0.5, 0.5);
+	Out.ar(4, pan2).fold(-0.5, 0.5);
 }).add;
 );
 
@@ -578,7 +605,7 @@ Pdef(\prc4pat2,
 		\curve, -16,
 		\dur, Prand([Pseq([1/6], 6), Pseq([1/4], 4), Pseq([1/3], 3), Pseq([0.5], 2), 1, Pseq([2/3], 3), 2], inf),
 		\freq, 6000,
-		\level, Pwrand([0.5, 1] * 0.1, [6, 1].normalizeSum, inf),
+		\level, 0.2,
 		\note, Prand([1, Rest], inf),
 		\xaos, Pwhite(1.5, 1.999, inf)
 ));
@@ -620,7 +647,7 @@ Pdef(\prc4pat2,
 // PLUNK
 
 (
-SynthDef(\plunk, { | dur = 1, freq = 400, level = 0.1, pan = 0 |
+SynthDef(\plunk, { | dur = 1, freq = 400, level = 0.08, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: -8);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbenv			=	Env.new([0.999, 0.1], [0.05], 'sine');
@@ -636,27 +663,23 @@ SynthDef(\plunk, { | dur = 1, freq = 400, level = 0.1, pan = 0 |
 }).add;
 );
 
-/*
-~plunk = Synth(\plunk);
-*/
-
 (
 ~plunkpat1 =
 Pdef(\plunkpat1,
 	Pbind(
 		\instrument, \plunk,
 		\dur, Prand([
-			Pseq([1/6], 3), 0.5, 1,
-			1.5, 2, 3, 4, 6, 8, 12, 16, 24
+			Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25, 0.5, 0.25]), Pseq([0.25], 4), 1,
+			1.5, 2, 3, 4, 6, 8, 12
 		], inf),
-		\degree, Prand([-3, -1, 0], inf),
+		\degree, Prand([-3, -1, 0, 1], inf),
 		\octave, 5,
 		\scale, ~scale,
 ));
 );
 
 /*
-~plunkpat1.play(t, quant: 0.5);
+~plunkpat1.play(t, quant: 1);
 ~plunkpat1.isPlaying;
 ~plunkpat1.pause;
 */
@@ -666,12 +689,12 @@ Pdef(\plunkpat1,
 Pdef(\plunkpat2,
 	Pbindf(
 		~plunkpat1,
-		\degree, Prand([0, 1, 3, 5, Rest], inf),
+		\degree, Prand([0, 1, 2, 3, 5, Rest], inf),
 ));
 );
 
 /*
-~plunkpat2.play(t, quant: 0.5);
+~plunkpat2.play(t, quant: 1);
 ~plunkpat2.isPlaying;
 ~plunkpat2.pause;
 */
@@ -687,7 +710,7 @@ Pdef(\plunkpat3,
 );
 
 /*
-~plunkpat3.play(t, quant: 0.5);
+~plunkpat3.play(t, quant: 1);
 ~plunkpat3.isPlaying;
 ~plunkpat3.pause;
 */
@@ -734,53 +757,76 @@ Pdef(\plunkpat3,
 // PENGUIN
 
 (
-SynthDef(\penguin, { | freq = 400, gate = 1, level = 0.1 |
-	var env				=	Env.asr(sustainLevel: level, releaseTime: 3);
+SynthDef(\penguin, { | freq = 400, gate = 1, level = 0.07 |
+	var env				=	Env.asr(sustainLevel: level, releaseTime: 5);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var tri				=	LFTri.ar(freq, mul: envgen);
+	var tri				=	LFTri.ar((freq).fold(50, s.sampleRate / 3), mul: envgen);
 	var kbnfm			=	LFNoise0.kr(1).range(1, 10);
-	var kbn				=	LFBrownNoise2.kr(kbnfm.dup).range(0.003, 0.005);
+	var kbn				=	LFBrownNoise1.kr(kbnfm.dup).range(0.0005, 0.005);
 	var shape			=	SineShaper.ar(tri, kbn);
-	var lpf				=	BLowPass4.ar(shape, freq * 2);
-	var hpf				=	HPF.ar(shape, 4000);
-	Out.ar(0, lpf + hpf);
+	var lpf				=	BLowPass4.ar(shape, freq * 4, 0.1);
+	var hpf				=	HPF.ar(shape, 6000, 0.3);
+	Out.ar(0, (lpf + hpf) * 2);
 }).add;
 );
 
+// (
+// ~pgndegrees = [-1, 0, 1, 2, 3];
+// ~pgnpat =
+// Pdef(\pgnpat,
+// 	Pmono(
+// 		\penguin,
+// 		\degree, Pswitch1(~pgndegrees, Pbrown(-1, ~pgndegrees.size, 1), inf),
+// 		// \dur, Prand([
+// 		// 	Pseq([0.25], 2),
+// 		// 	Pseq([0.25, 0.5, 0.25]),
+// 		// 	Pseq([0.25, 0.5, 0.5, 0.25]),
+// 		// 	8, 12, 16, 24, 32, 48
+// 		// ], inf),
+// 		\dur, Pseq([Pseq([0.125], 2), Pseq([Pseq([0.125], 2), 0.25]), Pseq([0.125], 4), Pseq([1/3], 3), 1, 2, 8, 12, 16, 24, 32, 48], inf),
+// 		//\octave, Pxrand([5, 6], inf),
+// 		\octave, 6,
+// 		\scale, ~scale,
+// ));
+// );
+
 (
-~pgndegrees = [0, 1, 2, 3];
-~pgnpat =
-Pdef(\pgnpat,
-	Pmono(
-		\penguin,
-		\degree, Prand(~pgndegrees, inf),
-		// \dur, Prand([
-		// 	Pseq([0.25], 2),
-		// 	Pseq([0.25, 0.5, 0.25]),
-		// 	Pseq([0.25, 0.5, 0.5, 0.25]),
-		// 	8, 12, 16, 24, 32, 48
-		// ], inf),
-		\dur, Pseq([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
-		\octave, Pxrand([5, 6], inf),
+~pgnpat1 =
+Pdef(\pgnpat1,
+	Pbind(
+		\instrument, \penguin,
+		\degree, Pswitch([-1, 0, 1, 2, 3, 7, Rest], Pbrown(0, 6, 1), inf),
+		\dur, Pshuf([8, 12, 16, 24, 32, 48], inf),
+		\octave, 6,
 		\scale, ~scale,
 ));
 );
 
 /*
-~pgnpat.play(t, quant: 1);
-~pgnpat.isPlaying;
-~pgnpat.pause;
+~pgnpat1.play(t, quant: 1);
+~pgnpat1.isPlaying;
+~pgnpat1.pause;
+*/
+
+~pgnpat2 = Pdef(\pgnpat2, Pbindf(~pgnpat1, \degree, Pseq([0, 7], inf)));
+
+~pgnpar = Pdef(\pgnpar, Ppar([~pgnpat1, ~pgnpat2]));
+
+/*
+~pgnpar.play(t, quant: 1);
+~pgnpar.isPlaying;
+~pgnpar.pause;
 */
 
 (
 ~pgnktrl =
 MIDIdef.cc(\pgnktrl, {
-	if(~pgnpat.isPlaying.not) {
-		~pgnpat.play(t, quant: 1);
-		"pgnpat play".postln;
+	if(~pgnpar.isPlaying.not) {
+		~pgnpar.play(t, quant: 1);
+		"pgnpar play".postln;
 	} {
-		~pgnpat.pause;
-		"pgnpat pause".postln;
+		~pgnpar.pause;
+		"pgnpar pause".postln;
 	}
 }, 38, srcID: ~nanoktrl2);
 );
@@ -788,10 +834,12 @@ MIDIdef.cc(\pgnktrl, {
 ////////////////////////////////////////////////////////////////
 // SINTH
 
-~shaperbuf = Buffer.alloc(s, 512, 1, { |buf| buf.chebyMsg([1,0,1,1,0,1])});
+// Synth
+
+//~shaperbuf = Buffer.alloc(s, 512, 1, { |buf| buf.chebyMsg([1,0,1,1,0,1])});
 
 (
-SynthDef(\sinth, { | fb = 0, freq = 400, gate = 1, level = 0.05 |
+SynthDef(\sinth, { | fb = 0, freq = 400, gate = 1, level = 0.03 |
 	var env				=	Env.asr(sustainLevel: level, releaseTime: 2);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var kbn1a			=	LFBrownNoise0.kr(0.5.dup).range(0.5, 2);
@@ -800,29 +848,37 @@ SynthDef(\sinth, { | fb = 0, freq = 400, gate = 1, level = 0.05 |
 	var kbn2			=	LFBrownNoise2.kr(1.3.dup).range(0, 0.999);
 	var sinfb			=	SinOscFB.ar([freq, freq + 0.2], kbn2, envgen);
 	var shape			=	SineShaper.ar(sin + sinfb, 0.003);
-	var lpf				=	RLPF.ar(shape, freq * 2);
-	var rhpf			=	RHPF.ar(shape, (freq * 16).clip(50, SampleRate.ir / 3), 0.03);
+	var lpf				=	RLPF.ar(shape, freq * 2, 0.1);
+	var rhpf			=	RHPF.ar(shape, (freq * 16).clip(50, SampleRate.ir / 3), 0.03, 0.3);
 	Out.ar(0, lpf + rhpf);
 }).add;
 );
 
-//
+// Pattern
+
+// (
+// ~sinpat =
+// Pdef(\sinpat,
+// 	Pmono(
+// 		\sinth,
+// 		\degree, Prand(~scaledegrees, inf),
+// 		\dur, Prand([
+// 			Pseq([0.25], 2), 0.5,
+// 			Pseq([0.25, 0.5, 0.25]), 1,
+// 			Pseq([0.25, 0.5, 0.5, 0.25]), 1.5,
+// 			Pseq([0.25, 0.5, 0.5, 0.5, 0.25]), 2,
+// 			3, 4, 6, 8, 12, 16, 24
+// 		], inf),
+// 		\octave, 6,
+// 		\scale, ~scale,
+// ));
+// );
 
 (
 ~sinpat =
 Pdef(\sinpat,
-	Pmono(
-		\sinth,
-		\degree, Prand(~scaledegrees, inf),
-		\dur, Prand([
-			Pseq([0.25], 2), 0.5,
-			Pseq([0.25, 0.5, 0.25]), 1,
-			Pseq([0.25, 0.5, 0.5, 0.25]), 1.5,
-			Pseq([0.25, 0.5, 0.5, 0.5, 0.25]), 2,
-			3, 4, 6, 8, 12, 16, 24
-		], inf),
-		\octave, 6,
-		\scale, ~scale,
+	Pbindf(~pgnpat1,
+		\instrument, \sinth,
 ));
 );
 
@@ -873,7 +929,7 @@ SynthDef(\pad1, { | freq = 400, gate = 1, level = 0.01 |
 */
 
 (
-SynthDef(\pad1, { | freq = 400, gate = 1, level = 0.05 |
+SynthDef(\pad1, { | freq = 400, gate = 1, level = 0.03 |
 	var env				=	Env.new([0, level, level / 96, 0], [0.01, 0.1, 3]);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var mixfill			=	Mix.fill(4, {
@@ -939,7 +995,7 @@ Pdef(\pad1pat,
 
 (
 ~pad2 =
-SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.005 |
+SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.003 |
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var kbnenv1			=	(LFBrownNoise0.kr(15).range(0.25, 1).round(0.25));
@@ -979,7 +1035,7 @@ Pdef(\pad2pat,
 		 	Prand(~padchords2, 3), Rest
 		 ], inf),
 		\dur, Pshuf([11, 13, 15], inf),
-		\level, 0.01,
+		\level, 0.007,
 		\octave, 5,
 		\scale, ~scale,
 ));
