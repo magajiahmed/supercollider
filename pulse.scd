@@ -30,4 +30,5 @@ Pdef(\pdef1,
 
 /*
 ~pdef2.play;
+~pdef2.pause;
 */
