@@ -11,8 +11,9 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-~nanoktrl2 = 1310720;
+//~nanoktrl2 = 1310720;
 //~nanoktrl2 = 1835008;
+~nanoktrl2 = 1572864;
 );
 
 s.meter;
@@ -91,12 +92,13 @@ SynthDef(\bass, { arg a = 1, dur = 1, freq = 100, level = 0.02;
  	var env				=	Env.perc(releaseTime: dur, level: level, curve: -4);
  	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var tri				=	LFTri.ar(freq, mul: envgen);
+	var tri2			=	LFTri.ar(freq / 2, mul: envgen);
 	var lat				=	Latoocarfian2DC.ar(a: [a, a - 0.01], mul: 0.5, add: 1);
 	var sin1			=	SinOsc.ar(freq * lat, mul: 100, add: 1);
 	var sin2			=	SinOsc.ar(freq, sin1, mul: envgen / 10);
 	var rlpf 			=	RLPF.ar(sin2, freq * 2);
 	var rhpf			=	RHPF.ar(sin2, 5000, 0.1);
-	Out.ar([0, 2], tri + rlpf + rhpf);
+	Out.ar([0, 2], tri + tri2 + rlpf + rhpf);
 }).add;
 );
 
@@ -112,6 +114,7 @@ Pdef(\basspat,
 		\a, Pwhite(0.9, 1.1, inf),
 		\degree, Pshuf([-1, 0, 1, 2, 3].stutter(3), inf),
 		\dur, Pshuf(~bassdurations, inf),
+		\legato, 0.1,
 		\octave, 3,
 		\scale, ~scale,
 ));
@@ -183,7 +186,7 @@ Pdef(\pbpat,
 	Pbind(
 		\instrument, \bufrd,
 		\dur, Prand([1, 1.5], inf),
-		\ffreq, 500,
+		\ffreq, 3000,
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
 );
@@ -345,34 +348,42 @@ Pdef(\prc1cpdef,
 // PRC2A
 
 (
-SynthDef(\prc2a, { | a = 1, curve = -24, dur = 1, freq = 1000, level = 0.08, pan = 0 |
+SynthDef(\prc2a, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level = 0.08, pan = 0 |
 	var env				=	Env.perc(releaseTime: 0.15, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
 	var lfn				=	LFNoise0.ar(15).range(0, 1);
 	var sin				=	SinOsc.ar(freq * cusp, mul: envgen);
-	var sin2			=	sin.round(0.1) / 2;
-	var rez				=	Resonz.ar(sin2, 2000, 0.2, 2);
-	var pan2			=	Pan2.ar(sin + rez, pan);
+	var sin2			=	sin.round(0.01) / 2;
+	var rez				=	Resonz.ar(sin, freq, 0.05, 4);
+	var pan2			=	Pan2.ar(sin2 + rez, pan);
 	Out.ar(4, pan2);
 }).add;
 );
 
 (
-~prc2apatfrq1 = 150;
-~prc2apatfrq2 = 1500;
+~prc2apatfrq1 = 100;
+~prc2apatfrq2 = 2000;
 ~prc2apat1 =
 Pdef(\prc2apat,
 	Pbind(
 		\instrument, \prc2a,
-		\a, Pwhite(1, 3, inf),
+		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1], inf),
+		\dfrq, Pwhite(100, 8000, inf),
 		\dur, Pshuf([
-			Pshuf([0.25, 0.5, 0.75].stutter(7)), Pseq([1/3], 3), Pseq([2/5], 5), 1.5
+			Pseq([0.125, 0.125, 0.75]),
+			Pseq([1/3], 3),
+			Pseq([0.25], 3),
+			Pseq([0.25], 5),
+			Pseq([0.75], 4),
+			Pseq([0.5, 0.75], 4),
 		], inf),
 		\freq, Pshuf([
 			Pseq([~prc2apatfrq1], 3), Pseq([~prc2apatfrq1, ~prc2apatfrq2, ~prc2apatfrq1]), Pseq([~prc2apatfrq1, ~prc2apatfrq2, ~prc2apatfrq2])
 		].stutter(11), inf),
-		\level, Pwhite(0.5, 1, inf) * 0.08,
+		// \freq, Prand([~prc2apatfrq1, ~prc2apatfrq2], inf),
+		//\level, Pwhite(0.5, 1, inf) * 0.08,
+		\level, Pshuf([0.5, 1] * 0.08, inf),
 		\pan, Pshuf([Pseq([-0.25], 3), Pseq([0], 3), Pseq([0.25], 3)], inf),
 ));
 );
@@ -391,7 +402,7 @@ Pdef(\prc2apat,
 ~prc2apat2.pause;
 */
 
-~prc2apar = Pdef(\prc2apar, Ppar([~prc2apat1, ~prc2apat2], inf));
+~prc2apar = Pdef(\prc2apar, Ppar(Array.fill(3, { ~prc2apat1 }), inf));
 
 /*
 ~prc2apar.play(t, quant: 1);
@@ -440,7 +451,8 @@ Pdef(\prc2bpat,
 			Pseq([Pseq([0.125], 2), 0.75]),
 			Pseq([Pseq([0.25], 2), 0.5]),
 			Pshuf(~prc2bpatdurarr, 7),
-			Pseq([Pseq([1/3], 3)])
+			Pseq([Pseq([1/3], 3)]),
+			3, 4
 		], inf),
 		\freq, Pxrand([500, 1000, 5000], inf),
 		\pan, Prand([-0.5, 0, 0.5], inf)
@@ -981,7 +993,7 @@ Pdef(\pnopat,
 		\instrument, \pno,
 		\dur, Pshuf(~pulsedurarray, inf),
 		\fb, Pwhite(0, 0.999, inf),
-		\level, Prand([0.5, 1] * 0.01, inf),
+		\level, Prand([0.5, 1] * 0.005, inf),
 		\octave, 8,
 		\s, Pwhite(8.0, 12, inf),
 		\scale, ~scale));
