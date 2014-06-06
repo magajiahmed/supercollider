@@ -70,7 +70,6 @@ SynthDef(\rezf, { | freq = 440, vol = 0 |
 ~rezfplay1.free;
 */
 
-
 ~rezfplay2 = Synth(\rezf, [\freq, 165]).register;
 /*
 ~rezfplay2.isPlaying;
@@ -88,12 +87,35 @@ SynthDef(\rezf, { | freq = 440, vol = 0 |
 ~rezf1volktrl =
 MIDIdef.cc(\rezf1volktrl, { arg vol;
 	if(~rezfplay1.isPlaying) {
-		vol = vol.linexp(0, 127, 0.0001, 1);
+		vol = vol.linexp(0, 127, 0.0001, 1000);
 		~rezfplay1.set(\vol, vol);
 		vol.postln;
 	}
 }, 5, srcID: ~nanoktrl2)
 );
+
+(
+~rezf2volktrl =
+MIDIdef.cc(\rezf2volktrl, { arg vol;
+	if(~rezfplay2.isPlaying) {
+		vol = vol.linexp(0, 127, 0.0001, 200);
+		~rezfplay2.set(\vol, vol);
+		vol.postln;
+	}
+}, 6, srcID: ~nanoktrl2)
+);
+
+(
+~rezf3volktrl =
+MIDIdef.cc(\rezf3volktrl, { arg vol;
+	if(~rezfplay3.isPlaying) {
+		vol = vol.linexp(0, 127, 0.0001, 40);
+		~rezfplay3.set(\vol, vol);
+		vol.postln;
+	}
+}, 7, srcID: ~nanoktrl2)
+);
+
 
 // CRICKETS CONVOLVED
 
