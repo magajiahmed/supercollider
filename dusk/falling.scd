@@ -8,7 +8,6 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1310720;
 ~nanoktrl2 = 1572864;
 
-s.freeAll;
 
 ~root = 4;
 ~scale = Scale.new(#[0, 2, 4, 5, 7, 9, 10], 12, name: 'mixo');
@@ -26,12 +25,13 @@ s.stopRecording;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\sinth, { | dur = 1, freq = 440, freq2 = 6000, im = 1, level = 0.015, pan = 0 |
-	var env					=	Env.perc(0.003, releaseTime: 0.75, level: level);
+SynthDef(\sinth, { | dur = 1, freq = 440, freq2 = 6000, im = 1, level = 0.03, pan = 0 |
+	var env					=	Env.perc(0.003, releaseTime: dur, level: level, curve: -6);
 	var envgen				=	EnvGen.kr(env, doneAction: 2);
-	var fbsin				=	FBSineC.ar(([freq, freq * 1.005] * 16).dup, im, mul: envgen);
+	var lfn					=	LFNoise1.kr(0.5.dup, 0.003, 1);
+	var fbsin				=	FBSineC.ar(([freq, freq * 1.006] * 16) * lfn, im, mul: envgen);
 	var rlpf				=	RLPF.ar(fbsin, freq * 2, 0.5);
-	var rhpf				=	RHPF.ar(fbsin, (freq * 12).clip(50, SampleRate.ir / 3), 0.2);
+	var rhpf				=	RHPF.ar(fbsin, (freq * 16).clip(50, SampleRate.ir / 3), 0.2);
 	var pan2				=	Pan2.ar(rlpf + rhpf, pan);
 	Out.ar(0, pan2);
 }).add
@@ -46,7 +46,7 @@ Pdef(\sinpat1,
 		\instrument, \sinth,
 		\degree, Pseq([Pshuf(~mbiradegrees1.stutter(5), 5)], inf),
 		\dur, Pseq(~mbiradurs1, inf),
-		\im, Prand((1..3) / 3, inf),
+		\im, Pshuf(((1..3) / 3).stutter(5), inf),
 		\octave, 5,
 		\pan, -1,
 		\root, ~root,
@@ -55,7 +55,8 @@ Pdef(\sinpat1,
 );
 
 ~sinpat2 = Pdef(\sinpat2, Pbindf(~sinpat1, \pan, 1));
-~sinpar = Pdef(\sinpar, Ppar([~sinpat1, ~sinpat2], inf));
+~sinpat2a = Pdef(\sinpat2a, Pbindf(~sinpat1, \degree, 0, \pan, 0));
+~sinpar = Pdef(\sinpar, Ppar([~sinpat1, ~sinpat2, ~sinpat2a], inf));
 
 /*
 ~sinpar.play(t, quant: 4);
@@ -68,8 +69,9 @@ Pdef(\sinpat1,
 Pdef(\sinpat3,
 	Pbindf(
 		~sinpat1,
-		\degree, -3,
+		\degree, [3, 4],
 		\dur, Pseq(~mbiradurs1, inf),
+		\octave, 4,
 		\pan, 0
 ));
 ~sinpat4 = Pdef(\sinpat4, Pbindf(~sinpat3, \dur, 1));
@@ -87,7 +89,7 @@ Pdef(\sinpat3,
 Pdef(\sinpat5,
 	Pbindf(
 		~sinpat1,
-		\degree, 6,
+		\degree, [4, 6],
 		\dur, Pseq(~mbiradurs1, inf),
 		\pan, 0
 ));
@@ -180,14 +182,15 @@ SynthDef(\pulse, { | dur = 1, freq = 440, level = 0.01, pan = 0 |
 Pdef(\tripat,
 	Pbind(
 		\instrument, \pulse,
-		\degree, [-1, 0, 1, 4],
+		\degree, [0, 4],
 		//\dur, Pshuf([8/5, 7/5].stutter(5), inf),
 		\dur, Pseq([
 			1.5, 2,
 			1.5, 1.5, 2,
 			1.5, 1.5, 1.5, 2,
 		], inf),
-		\octave, 5,
+		\im, Pshuf(((1..3) / 3).stutter(5), inf),
+		\octave, 4,
 		\pan, Pseq([-0.5, 0.5], inf),
 		\root, ~root,
 		\scale, ~scale,
@@ -221,12 +224,12 @@ MIDIdef.cc(\tripatstopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\pad, { | fb = 0.5, freq = 440, gate = 1, level = 0.01 |
+SynthDef(\pad, { | fb = 0.5, freq = 440, gate = 1, level = 0.007 |
 	var env				=	Env.asr(sustainLevel: level);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var lfn				=	LFNoise1.kr(0.4.dup, 0.003, 1);
+	var lfn				=	LFNoise1.kr(0.4.dup, 0.002, 1);
 	var sinfb			=	SinOscFB.ar([freq, freq * 1.001] * lfn, fb, envgen);
-	var rlpf			=	RLPF.ar(sinfb, freq * 4);
+	var rlpf			=	RLPF.ar(sinfb, freq * 2, 0.3);
 	Out.ar(0, rlpf);
 }
 ).add
@@ -250,6 +253,14 @@ Pdef(\chordspat1,
 ~chordspat1.play(t, quant: 4);
 ~chordspat1.isPlaying;
 ~chordspat1.pause;
+*/
+
+~chordspar1 = Pdef(\chordspar1, Ppar([~chordspat1, ~chordspat1], inf));
+
+/*
+~chordspar1.play(t, quant: 4);
+~chordspar1.isPlaying;
+~chordspar1.pause;
 */
 
 (
@@ -278,7 +289,7 @@ Pdef(\basspat,
 		\dur, 24,
 		\fb, 0.9,
 		\legato, 0.5,
-		\level, 0.05,
+		\level, 0.04,
 		\octave, 2,
 		\root, ~root,
 		\scale, ~scale2
@@ -294,18 +305,18 @@ Pdef(\basspat,
 //
 
 (
-~chordspat1playktrl =
-MIDIdef.cc(\chordspat1playktrl, {
-	if(~chordspat1.isPlaying.not) {
-		~chordspat1.play(t, quant: 4);
+~chordspar1playktrl =
+MIDIdef.cc(\chordspar1playktrl, {
+	if(~chordspar1.isPlaying.not) {
+		~chordspar1.play(t, quant: 4);
 		"chords1 play".postln;
 	}
 }, 36, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
 
-~chordspat1stopktrl =
-MIDIdef.cc(\chordspat1stopktrl, {
-	if(~chordspat1.isPlaying) {
-		~chordspat1.pause;
+~chordspar1stopktrl =
+MIDIdef.cc(\chordspar1stopktrl, {
+	if(~chordspar1.isPlaying) {
+		~chordspar1.pause;
 		"chords1 stop".postln;
 	}
 }, 36, srcID: ~nanoktrl2, argTemplate: 0)
@@ -519,8 +530,8 @@ Pdef(\kikpat,
 	Pbind(
 		\instrument, \snr,
 		\dur, Pseq([1/5, 1, 2, 3].mirror2, inf),
-		\freq, 1000,
-		//\note, Pseq([Rest, 0], inf)
+		\freq, 300,
+		\ffreq, 300,
 ))
 );
 
@@ -555,9 +566,10 @@ MIDIdef.cc(\kikpatstopktrl, {
 Pdef(\perc1pat,
 	Pbind(
 		\instrument, \snr,
-		\dur, Prand([Pseq([2, 2, 1] / 5), Pseq([2, 1, 2] / 5), 1], inf),
-		\freq, Pwhite(18900, 19100, inf),
-		\ffreq, 500,
+		\dur, Prand([Pseq([1, 4] / 5), Pseq([2, 3] / 5), Pseq([3, 2] / 5), Pseq([2, 2, 1] / 5), Pseq([2, 1, 2] / 5), 1], inf),
+		\freq, 19000,
+		\ffreq, Pshuf([300, 400, 500].stutter(5), inf),
+		\level, 0.15,
 ))
 );
 
@@ -567,19 +579,27 @@ Pdef(\perc1pat,
 ~perc1pat.pause;
 */
 
+~perc1par = Pdef(\perc1par, Ppar(Array.fill(4, { ~perc1pat })));
+
+/*
+~perc1par.play(t, quant: 1);
+~perc1par.isPlaying;
+~perc1par.pause;
+*/
+
 (
-~perc1patplayktrl =
-MIDIdef.cc(\perc1patplayktrl, {
-	if(~perc1pat.isPlaying.not) {
-		~perc1pat.play(t, quant: 1);
+~perc1parplayktrl =
+MIDIdef.cc(\perc1parplayktrl, {
+	if(~perc1par.isPlaying.not) {
+		~perc1par.play(t, quant: 1);
 		"perc1 play".postln;
 	}
 }, 51, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
 
 ~perc1parstopktrl =
-MIDIdef.cc(\perc1patstopktrl, {
-	if(~perc1pat.isPlaying) {
-		~perc1pat.pause;
+MIDIdef.cc(\perc1parstopktrl, {
+	if(~perc1par.isPlaying) {
+		~perc1par.pause;
 		"perc1 stop".postln;
 	}
 }, 51, srcID: ~nanoktrl2, argTemplate: 0)
@@ -589,7 +609,7 @@ MIDIdef.cc(\perc1patstopktrl, {
 
 (
 SynthDef(\perc2, { | curve = -64, freq = 15000, level = 0.1 |
-	var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
+	var env				=	Env.perc(releaseTime: 1.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fenv			=	Env.new([1, 3], [1], \sine);
 	var fenvgen			=	EnvGen.kr(fenv);
