@@ -9,6 +9,14 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 
 s.meter;
 
+////////////////////////////////////////////////////////////////
+
+/*
+s.prepareForRecord;
+s.record;
+s.stopRecording;
+*/
+
 // load sound files
 
 (
@@ -56,8 +64,9 @@ SynthDef(\rezf, { | freq = 440, vol = 0 |
 	var in					=	In.ar(2, 2);
 	var mixfill				=	Mix.fill(16, {
 		arg i;
-		var rez					=	Resonz.ar(in, freq * i.nthPrime, 0.005, vol / (i + 1).exp(3));
-		rez
+		var rez 				=	Resonz.ar(in, freq * i.nthPrime, 0.005, vol / (i + 1).exp(4));
+		var rez2				=	Resonz.ar(in, freq * i.nthPrime * 2, 0.005, vol / (16 * (i + 1).exp(4)));
+		rez + rez2;
 	});
 	Out.ar(0, mixfill);
 }).add
@@ -87,7 +96,7 @@ SynthDef(\rezf, { | freq = 440, vol = 0 |
 ~rezf1volktrl =
 MIDIdef.cc(\rezf1volktrl, { arg vol;
 	if(~rezfplay1.isPlaying) {
-		vol = vol.linexp(0, 127, 0.0001, 1000);
+		vol = vol.linexp(0, 127, 0.0001, 750);
 		~rezfplay1.set(\vol, vol);
 		vol.postln;
 	}
@@ -98,7 +107,7 @@ MIDIdef.cc(\rezf1volktrl, { arg vol;
 ~rezf2volktrl =
 MIDIdef.cc(\rezf2volktrl, { arg vol;
 	if(~rezfplay2.isPlaying) {
-		vol = vol.linexp(0, 127, 0.0001, 200);
+		vol = vol.linexp(0, 127, 0.0001, 150);
 		~rezfplay2.set(\vol, vol);
 		vol.postln;
 	}
@@ -109,7 +118,7 @@ MIDIdef.cc(\rezf2volktrl, { arg vol;
 ~rezf3volktrl =
 MIDIdef.cc(\rezf3volktrl, { arg vol;
 	if(~rezfplay3.isPlaying) {
-		vol = vol.linexp(0, 127, 0.0001, 40);
+		vol = vol.linexp(0, 127, 0.0001, 30);
 		~rezfplay3.set(\vol, vol);
 		vol.postln;
 	}

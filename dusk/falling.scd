@@ -8,8 +8,10 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1310720;
 ~nanoktrl2 = 1572864;
 
+s.freeAll;
+
 ~root = 4;
-~scale = Scale.new(#[0, 2, 4, 6, 7, 9, 10], 12, name: 'mixo');
+~scale = Scale.new(#[0, 2, 4, 5, 7, 9, 10], 12, name: 'mixo');
 ~scale2 = Scale.new(#[0, 1, 3, 4, 5, 8], 12, name: 'wat');
 t = TempoClock(140/60);
 
@@ -236,7 +238,7 @@ Pdef(\chordspat1,
 	Pbind(
 		\instrument,\pad,
 		\degree, Pshuf((0..(~scale.size - 1)), inf),
-		\fb, 0.5,
+		\fb, 0.99,
 		\dur, 24,
 		\octave, 6,
 		\root, ~root,
@@ -271,7 +273,7 @@ Pdef(\chordspat2,
 ~basspat =
 Pdef(\basspat,
 	Pbind(
-		\instrument, \bass,
+		\instrument, \pad,
 		\degree, Pshuf((0..5), inf),
 		\dur, 24,
 		\fb, 0.9,
@@ -428,7 +430,7 @@ MIDIdef.cc(\klkparstopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\snr, { | freq = 12000, ffreq = 1000, level = 0.15 |
+SynthDef(\snr, { | freq = 12000, ffreq = 1000, level = 0.3 |
 	var env				=	Env.perc(releaseTime: 0.1, level: level, curve: -16);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfn				=	LFNoise2.ar(freq.dup, envgen);
@@ -554,8 +556,8 @@ Pdef(\perc1pat,
 	Pbind(
 		\instrument, \snr,
 		\dur, Prand([Pseq([2, 2, 1] / 5), Pseq([2, 1, 2] / 5), 1], inf),
-		\freq, Pwhite(1900, 2100, inf),
-		\ffreq, Pwhite(2900, 3100, inf),
+		\freq, Pwhite(18900, 19100, inf),
+		\ffreq, 500,
 ))
 );
 
