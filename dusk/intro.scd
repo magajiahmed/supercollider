@@ -64,8 +64,8 @@ SynthDef(\rezf, { | freq = 440, vol = 0 |
 	var in					=	In.ar(2, 2);
 	var mixfill				=	Mix.fill(16, {
 		arg i;
-		var rez 				=	Resonz.ar(in, freq * i.nthPrime, 0.002, (vol * 2) / (i + 1).exp(2));
-		var rez2				=	Resonz.ar(in, freq * i.nthPrime * 2, 0.002, (vol * 2) / (4 * (i + 1).exp(3)));
+		var rez 				=	Resonz.ar(in, freq * i.nthPrime, 0.002, vol / (i + 1).exp(2));
+		var rez2				=	Resonz.ar(in, freq * i.nthPrime * 2, 0.002, vol / (4 * (i + 1).exp(3)));
 		rez + rez2;
 	});
 	Out.ar(0, mixfill);
