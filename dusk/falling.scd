@@ -11,7 +11,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 
 ~root = 4;
 ~scale = Scale.new(#[0, 2, 4, 5, 7, 9, 10], 12, name: 'mixo');
-~scale2 = Scale.new(#[0, 1, 3, 4, 5, 8], 12, name: 'wat');
+~scale2 = Scale.new(#[1, 3, 5, 6, 8], 12, name: 'wat');
 t = TempoClock(140/60);
 
 ////////////////////////////////////////////////////////////////
@@ -222,7 +222,7 @@ Pdef(\tripat,
 		], inf),
 		\im, Pshuf(((1..3) / 3).stutter(5), inf),
 		\octave, 4,
-		\pan, Pseq([-0.5, 0.5], inf),
+		\pan, Pshuf([-0.3, 0.3].stutter(5), inf),
 		\root, ~root,
 		\scale, ~scale,
 ))
@@ -258,26 +258,50 @@ MIDIdef.cc(\tripatstopktrl, {
 SynthDef(\pad, { | fb = 0.5, freq = 440, gate = 1, level = 0.007 |
 	var env				=	Env.asr(sustainLevel: level);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var lfn				=	LFNoise1.kr(0.4.dup, 0.002, 1);
-	var sinfb			=	SinOscFB.ar([freq, freq * 1.001] * lfn, fb, envgen);
-	var rlpf			=	RLPF.ar(sinfb, freq * 8, 0.4);
+	var n				=	8;
+	var sfbmix			=	Mix.fill(n, {
+		arg i;
+		var lfn				=	LFNoise1.kr(0.4.dup, 0.002, 1);
+		var sinfb			=	SinOscFB.ar(([freq, freq * 1.001] * (1 + (i / 10000))) * lfn, fb, envgen / (n / 2));
+		sinfb
+	});
+	var rlpf			=	RLPF.ar(sfbmix, freq * 6, 0.3);
 	Out.ar(0, rlpf);
 }
 ).add
 );
 
+/*
 (
+var a;
+a = List[1, 2, 3, 4];
+a.removeAll(List[2, 3]);
+a;
+)
+
+(0..(~scale.size / 2));
+((~scale.size / 2)..(~scale.size -1)).round(1);
+*/
+
+(
+~chordspatdegreesarray1 = [0, 1, 2, 3].scramble;
+~chordspatdegreesarray2 = [4, 5, 6].scramble;
 ~chordspat1 =
 Pdef(\chordspat1,
 	Pbind(
 		\instrument,\pad,
-		\degree, Pshuf((0..(~scale.size - 1)), inf),
+		\degree, Pshuf(~chordspatdegreesarray1, inf),
 		\fb, 0.99,
-		\dur, 24,
+		\dur, 36,
+		\legato, 0.6,
 		\octave, 6,
 		\root, ~root,
 		\scale, ~scale,
 ));
+
+~chordspat1a = Pdef(\chordspat1a, Pbindf(~chordspat1, \degree, Pshuf(~chordspatdegreesarray2.reverse, inf)));
+
+~chordspar1 = Pdef(\chordspar1, Ppar([~chordspat1, ~chordspat1a], inf));
 );
 
 /*
@@ -286,10 +310,8 @@ Pdef(\chordspat1,
 ~chordspat1.pause;
 */
 
-~chordspar1 = Pdef(\chordspar1, Ppar([~chordspat1, ~chordspat1], inf));
-
 /*
-~chordspar1.play(t, quant: 4);
+~chordspar1.play(t, quant: 5);
 ~chordspar1.isPlaying;
 ~chordspar1.pause;
 */
@@ -300,16 +322,14 @@ Pdef(\chordspat2,
 	Pbindf(
 		~chordspat1,
 		\degree, [0, 4],
-		\scale, ~scale
 ));
 );
 
 /*
-~chordspat2.play(t, quant: 4);
+~chordspat2.play(t, quant: 5);
 ~chordspat2.isPlaying;
 ~chordspat2.pause;
 */
-
 
 (
 ~basspat =
@@ -317,10 +337,10 @@ Pdef(\basspat,
 	Pbind(
 		\instrument, \pad,
 		\degree, Pshuf((0..5), inf),
-		\dur, 24,
-		\fb, 0.9,
-		\legato, 0.5,
-		\level, 0.04,
+		\dur, 36,
+		\fb, 0.8,
+		\legato, 0.6,
+		\level, 0.03,
 		\octave, 2,
 		\root, ~root,
 		\scale, ~scale2
@@ -328,7 +348,7 @@ Pdef(\basspat,
 );
 
 /*
-~basspat.play(t, quant: 24);
+~basspat.play(t, quant: 5);
 ~basspat.isPlaying;
 ~basspat.pause;
 */
@@ -339,7 +359,7 @@ Pdef(\basspat,
 ~chordspar1playktrl =
 MIDIdef.cc(\chordspar1playktrl, {
 	if(~chordspar1.isPlaying.not) {
-		~chordspar1.play(t, quant: 4);
+		~chordspar1.play(t, quant: 5);
 		"chords1 play".postln;
 	}
 }, 36, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
@@ -357,7 +377,7 @@ MIDIdef.cc(\chordspar1stopktrl, {
 ~chordspat2playktrl =
 MIDIdef.cc(\chordspat2playktrl, {
 	if(~chordspat2.isPlaying.not) {
-		~chordspat2.play(t, quant: 4);
+		~chordspat2.play(t, quant: 5);
 		"chords2 play".postln;
 	}
 }, 52, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
@@ -375,7 +395,7 @@ MIDIdef.cc(\chordspat2stopktrl, {
 ~basspatplayktrl =
 MIDIdef.cc(\basspatplayktrl, {
 	if(~basspat.isPlaying.not) {
-		~basspat.play(t, quant: 24);
+		~basspat.play(t, quant: 5);
 		"bass play".postln;
 	}
 }, 68, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
@@ -393,10 +413,10 @@ MIDIdef.cc(\basspatstopktrl, {
 
 (
 SynthDef(\klk, { | freq = 8000, level = 0.05, pan = 0 |
-	var env				=	Env.perc(0.0005, 0.001, level, -64);
+	var env				=	Env.perc(0.0005, 0.01, level, -64);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfn				=	LFNoise1.ar(12000, envgen);
-	var rhpf			=	RHPF.ar(lfn, 8000, 0.5);
+	var rhpf			=	RHPF.ar(lfn, 8000, 0.2);
 	var pan2			=	Pan2.ar(rhpf, pan);
 	Out.ar(0, pan2);
 }).add
@@ -419,7 +439,7 @@ Pdef(\klkpat,
 */
 
 (
-~klkechodurs = ([6, 6, 7, 6, 6, 6, 7, 6, 6, 6, 6, 7] - 2) / 5;
+~klkechodurs = ([6, 6, 7, 6, 6, 6, 7, 6, 6, 6, 6, 7]) / 5;
 ~klkpat2 =
 Pdef(\klkpat2,
 	Pbindf(
@@ -479,12 +499,14 @@ MIDIdef.cc(\klkparstopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\snr, { | freq = 12000, ffreq = 1000, level = 0.4, pan = 0 |
-	var env				=	Env.perc(0.003, releaseTime: 0.1, level: level, curve: -16);
+SynthDef(\snr, { | curve = -16, freq = 12000, ffreq = 1000, klkffreq = 2000, klklevel = 0.1, level = 0.5, pan = 0, rq = 0.2 |
+	var env				=	Env.perc(0.003, 0.1, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var klk				=	BlitB3.ar(0, klklevel);
+	var klkflt			=	RLPF.ar(klk, klkffreq);
 	var lfn				=	LFNoise2.ar(freq, envgen);
-	var rlpf			=	RLPF.ar(lfn, ffreq, 0.2);
-	var pan2			=	Pan2.ar(rlpf, pan);
+	var rlpf			=	RLPF.ar(lfn, ffreq, rq);
+	var pan2			=	Pan2.ar(rlpf + klkflt, pan);
 	Out.ar(0, pan2);
 }).add
 );
@@ -494,15 +516,20 @@ SynthDef(\snr, { | freq = 12000, ffreq = 1000, level = 0.4, pan = 0 |
 Pdef(\snrpat1,
 	Pbind(
 		\instrument, \snr,
-		\dur, Pseq([
-			1, 1, 1, 2,
-			1, 1, 1, 1, 2,
-			1, 1, 1, 1, 1, 2
-		], inf),
+		// \dur, Pseq([
+		// 	1, 1, 1, 2,
+		// 	1, 1, 1, 1, 2,
+		// 	1, 1, 1, 1, 1, 2
+		// ], inf),
 		\freq, Pwhite(11000, 13000, inf),
 		\ffreq, 1200,
 		\level, 0.4,
-		\note, Pseq([Rest, 0], inf),
+		//\note, Pseq([Rest, 0], inf),
+		\note, Pseq([
+			Rest, 0, Rest,
+			Rest, 0, Rest, 0, Rest,
+			Rest, 0, Rest, 0, Rest, 0, Rest
+		], inf),
 ))
 );
 
@@ -526,12 +553,6 @@ Pdef(\snrpat2,
 ))
 );
 
-/*
-~snrpat2.play(t, quant: 1);
-~snrpat2.isPlaying;
-~snrpat2.pause;
-*/
-
 (
 ~snrpat3 =
 Pdef(\snrpat3,
@@ -542,6 +563,18 @@ Pdef(\snrpat3,
 ))
 );
 );
+
+/*
+~snrpat2.play(t, quant: 1);
+~snrpat2.isPlaying;
+~snrpat2.pause;
+*/
+
+/*
+~snrpat3.play(t, quant: 1);
+~snrpat3.isPlaying;
+~snrpat3.pause;
+*/
 
 ~snrpar = Pdef(\snrpar, Ppar([~snrpat1, ~snrpat2, ~snrpat3], inf));
 
@@ -576,9 +609,11 @@ MIDIdef.cc(\snrparstopktrl, {
 Pdef(\kikpat,
 	Pbind(
 		\instrument, \snr,
+		\curve, 0,
 		\dur, Pseq([1/5, 1, 2, 3].mirror2, inf),
-		\freq, 400,
-		\ffreq, 800,
+		\freq, 100,
+		\ffreq, 200,
+		\klkffreq, 3000,
 ))
 );
 
@@ -615,7 +650,8 @@ Pdef(\perc1pat,
 		\instrument, \snr,
 		\dur, Prand([Pseq([1, 4] / 5), Pseq([2, 3] / 5), Pseq([3, 2] / 5), Pseq([2, 2, 1] / 5), Pseq([2, 1, 2] / 5), 1], inf),
 		\freq, 19000,
-		\ffreq, Pshuf([300, 400, 500].stutter(5), inf),
+		\ffreq, Pshuf([250, 350, 450].stutter(5), inf),
+		\klklevel, 0.03,
 		\level, 0.15,
 ))
 );
