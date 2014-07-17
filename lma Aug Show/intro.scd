@@ -1,3 +1,12 @@
+//midi
+MIDIdef.freeAll;
+MIDIClient.init;
+MIDIIn.connectAll;
+c.free;
+c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
+//~nanoktrl2 = 1310720;
+~nanoktrl2 = 1572864;
+
 s.meter;
 s.scope;
 
@@ -6,14 +15,20 @@ s.scope;
 ~scale = Scale.new(#[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 12, ~tuning);
 ~root = 3;
 
+t = TempoClock(140/60);
+
 ////////////////////////////////////////////////////////////////
+
+~lmamediadir = "/media/lma";
 
 (
 ~filteredcrickets.free;
+~jungle.free;
 );
 
 (
-~filteredcrickets = Buffer.read(s, "/media/lma/samples/FilteredCrickets01.wav");
+~filteredcrickets = Buffer.read(s, ~lmamediadir ++ "/samples/FilteredCrickets01.wav");
+~jungle = Buffer.read(s, ~lmamediadir ++ "/samples/Jarra Schirris - Vang Vieng - Vang Vieng Jungle.aif");
 );
 
 (
@@ -42,6 +57,67 @@ SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, rate = 1, vol = 0 |
 ~filteredcricketsplay_upoct.isPlaying;
 ~filteredcricketsplay_upoct.release;
 */
+
+/*
+~jungleplay = Synth(\sndfileplayer, [\bufnum, ~jungle.bufnum, \loop, 1, \vol, 0.2]).register;
+~jungleplay.isPlaying;
+~jungleplay.release;
+*/
+
+
+(
+~crickets1playktrl =
+MIDIdef.cc(\cricketc1playktrl, {
+	if(~filteredcricketsplay.isPlaying.not) {
+		~filteredcricketsplay = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \vol, 0.1]).register;
+		"crickets play".postln;
+	}
+}, 32, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
+
+~cricketc1stopktrl =
+MIDIdef.cc(\cricketc1stopktrl, {
+	if(~filteredcricketsplay.isPlaying) {
+		~filteredcricketsplay.release;
+		"crickets stop".postln;
+	}
+}, 32, srcID: ~nanoktrl2, argTemplate: 0)
+);
+
+(
+~crickets2playktrl =
+MIDIdef.cc(\cricketc2playktrl, {
+	if(~filteredcricketsplay_up5th.isPlaying.not) {
+		~filteredcricketsplay_up5th = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \rate, 1.5, \vol, 0.1]).register;
+		"crickets up 5th play".postln;
+	}
+}, 48, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
+
+~cricketc2stopktrl =
+MIDIdef.cc(\cricketc2stopktrl, {
+	if(~filteredcricketsplay_up5th.isPlaying) {
+		~filteredcricketsplay_up5th.release;
+		"crickets up 5th stop".postln;
+	}
+}, 48, srcID: ~nanoktrl2, argTemplate: 0)
+);
+
+(
+~crickets3playktrl =
+MIDIdef.cc(\cricketc3playktrl, {
+	if(~filteredcricketsplay_upoct.isPlaying.not) {
+		~filteredcricketsplay_upoct = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \rate, 2, \vol, 0.1]).register;
+		"crickets up oct play".postln;
+	}
+}, 64, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
+
+~cricketc3stopktrl =
+MIDIdef.cc(\cricketc3stopktrl, {
+	if(~filteredcricketsplay_upoct.isPlaying) {
+		~filteredcricketsplay_upoct.release;
+		"crickets up oct stop".postln;
+	}
+}, 64, srcID: ~nanoktrl2, argTemplate: 0)
+);
 
 ////////////////////////////////////////////////////////////////
 
@@ -77,7 +153,7 @@ Pdef(\dronepat1,
 );
 
 /*
-~dronepat1.play;
+~dronepat1.play(t, quant: 1);
 ~dronepat1.isPlaying;
 ~dronepat1.stop;
 */
@@ -97,7 +173,136 @@ Pdef(\dronepat2,
 );
 
 /*
-~dronepat2.play;
+~dronepat2.play(t, quant: 1);
 ~dronepat2.isPlaying;
 ~dronepat2.stop;
+*/
+
+(
+~dronepat1playktrl =
+MIDIdef.cc(\dronepat1playktrl, {
+	if(~dronepat1.isPlaying.not) {
+		~dronepat1.play(t, quant: 1);
+		"dronepat1 play".postln;
+	}
+}, 33, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
+
+~dronepat1stopktrl =
+MIDIdef.cc(\dronepat1stopktrl, {
+	if(~dronepat1.isPlaying) {
+		~dronepat1.pause;
+		"dronepat1 stop".postln;
+	}
+}, 33, srcID: ~nanoktrl2, argTemplate: 0)
+);
+
+(
+~dronepat2playktrl =
+MIDIdef.cc(\dronepat2playktrl, {
+	if(~dronepat2.isPlaying.not) {
+		~dronepat2.play(t, quant: 1);
+		"dronepat2 play".postln;
+	}
+}, 49, srcID: ~nanoktrl2, argTemplate: { arg x; x > 0 });
+
+~dronepat2stopktrl =
+MIDIdef.cc(\dronepat2stopktrl, {
+	if(~dronepat2.isPlaying) {
+		~dronepat2.pause;
+		"dronepat2 stop".postln;
+	}
+}, 49, srcID: ~nanoktrl2, argTemplate: 0)
+);
+
+////////////////////////////////////////////////////////////////////////
+// clicks
+
+(
+SynthDef(\klk, { | minfreq = 18000, maxfreq = 20000, ffreq = 4000, bwr = 0.1, a = 1, level = 0.1 |
+	var env				=	Env.perc(0.003, 0.0001, level, -64);
+	var envgen			=	EnvGen.ar(env, doneAction: 2);
+	//var blit			=	BlitB3.ar(0.dup, envgen);
+	var lat				=	Latoocarfian2DC.ar([minfreq, minfreq + 100], [maxfreq, maxfreq + 100], a, mul: envgen);
+	var flt				=	Resonz.ar(lat, ffreq, bwr);
+	Out.ar(0, flt);
+}).add;
+);
+
+~pstan = Pstandard.new.asStream;
+
+(
+~a = [0.1, 0.5, 0.8, 0.9, 1];
+p = Prout({
+	var x;
+	loop({
+		x = (~pstan.next[0] * ~a.size);
+		x.yield;
+	})
+});
+);
+
+(
+~durations = [0.25, 0.5, 0.75];
+q = Prout({
+	var x;
+	loop({
+		x = (~pstan.next[1] * ~durations.size);
+		x.yield;
+	})
+});
+);
+
+(
+~klkpat =
+Pdef(\klkpat,
+	Pbind(
+		\instrument, \klk,
+		\a, Pswitch1(~a, p),
+		//\dur, Pxrand([0.25, 0.5, 0.75], inf),
+		\dur, Pswitch1(~durations, q),
+		\level, 0.5,
+))
+);
+
+/*
+~klkpat.play(t, quant: 1);
+~klkpat.isPlaying;
+~klkpat.stop;
+*/
+
+(
+~kikpat =
+Pdef(\kikpat,
+	Pbind(
+		\instrument, \klk,
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\minfreq, 1000,
+		\maxfreq, 10000,
+		\ffreq, 200,
+		\level, 0.8,
+))
+);
+
+/*
+~kikpat.play(t, quant: 1);
+~kikpat.isPlaying;
+~kikpat.stop;
+*/
+
+(
+~prcpat =
+Pdef(\prcpat,
+	Pbind(
+		\instrument, \klk,
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].mirror2, inf),
+		\ffreq, 2000,
+		\bwr, 0.3,
+		\level, Pxrand([0.5, 0.75, 1] * 0.3, inf),
+))
+);
+
+/*
+~prcpat.play(t, quant: 1);
+~prcpat.isPlaying;
+~prcpat.stop;
 */
