@@ -192,27 +192,6 @@ Pdef(\dronepat2,
 ~dronepat2.stop;
 */
 
-/*
-~kbus1 = Bus.control(s, 1);
-~kbus1.set(200);
-~drone = Synth(\drone);
-~drone.map(\freq, ~kbus1);
-~drone.release;
-
-(
-SynthDef(\kbusktrl, { | amp = 0.1, gate = 1 |
-	var env				=	Env.asr(0.1, amp, 1);
-	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var lfn				=	LFNoise1.kr(0.01).range(200, 300);
-	Out.kr(~kbus1, lfn);
-}).add;
-);
-
-~kbus1ktrl = Synth(\kbusktrl).register;
-~kbus1ktrl.isPlaying;
-~kbus1ktrl.release;
-*/
-
 //
 
 (
@@ -251,21 +230,78 @@ MIDIdef.cc(\dronepat2stopktrl, {
 }, 49, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
 
+(
+~pnopat1playktrl =
+MIDIdef.cc(\pnopat1playktrl, {
+	if(~pnopat1.isPlaying.not) {
+		~pnopat1.play(t, quant: 1);
+		"pnopat1 play".postln;
+	}
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~pnopat1stopktrl =
+MIDIdef.cc(\pnopat1stopktrl, {
+	if(~pnopat1.isPlaying) {
+		~pnopat1.pause;
+		"pnopat1 stop".postln;
+	}
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
+////////////////////////////////////////////////////////////////
+// pno
+
+(
+SynthDef(\pno, { | dur = 1, freq = 400, level = 0.02 |
+	var env				=	Env.perc(0.003, dur, level, -6);
+	var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var lfbnampmod		=	LFNoise0.kr(30.dup).range(0.5, 1).round(0.5);
+	var sin				=	SinOscFB.ar(freq, 0.4, envgen);
+	var lfbn1			=	LFBrownNoise2.ar(8000.dup, mul: envgen);
+	var rhpf			=	RHPF.ar(lfbn1, 7000, 0.01);
+	Out.ar(0, (sin + (rhpf)) * lfbnampmod);
+}).add;
+);
+
+(
+~pnopat1 =
+Pdef(\pnopat1,
+	Pbind(
+		\instrument, \pno,
+		\degree, Pshuf([[-5, -2], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
+		\dur, Pwhite(3, 37, inf).round(0.25),
+		\octave, 6,
+		\root, ~root,
+		\scale, ~scale));
+);
+
+/*
+~pnopat1.play(t, quant: 1);
+~pnopat1.isPlaying;
+~pnopat1.stop;
+*/
+
 ////////////////////////////////////////////////////////////////////////
 // clicks
 
 (
-SynthDef(\klk, { | minfreq = 18000, maxfreq = 20000, ffreq = 4000, bwr = 0.1, a = 1, level = 0.1 |
+SynthDef(\klk, { | minfreq = 18000, maxfreq = 20000, ffreq = 4000, bwr = 0.1, a = 1, b = 3, level = 0.1 |
 	var env				=	Env.perc(0.003, 0.0001, level, -64);
 	var envgen			=	EnvGen.ar(env, doneAction: 2);
 	//var blit			=	BlitB3.ar(0.dup, envgen);
-	var lat				=	Latoocarfian2DC.ar([minfreq, minfreq + 100], [maxfreq, maxfreq + 100], a, mul: envgen).clip(-0.9, 0.9);
+	var lat				=	Latoocarfian2DC.ar([minfreq, minfreq + 100], [maxfreq, maxfreq + 100], a, b, mul: envgen).clip(-0.9, 0.9);
 	var flt				=	Resonz.ar(lat, ffreq, bwr);
 	Out.ar(0, flt);
 }).add;
 );
 
+
+
 ~pstan = Pstandard.new.asStream;
+
+/*
+~pstan.next;
+*/
 
 (
 ~a = [0.1, 0.5, 0.8, 0.9, 1];
@@ -297,6 +333,7 @@ Pdef(\klkpat,
 		\a, Pswitch1(~a, p),
 		//\dur, Pxrand([0.25, 0.5, 0.75], inf),
 		\dur, Pswitch1(~durations, q),
+		\ffreq, Pwhite(5000, 6000, inf),
 		\level, 0.5,
 ))
 );
@@ -312,6 +349,8 @@ Pdef(\klkpat,
 Pdef(\prcpat,
 	Pbind(
 		\instrument, \klk,
+		\a, Pwhite(0.2, 1, inf),
+		\b, Pwhite(1.5, 1.9, inf),
 		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].mirror2, inf),
 		\ffreq, 2000,
 		\bwr, 0.3,
@@ -323,6 +362,22 @@ Pdef(\prcpat,
 ~prcpat.play(t, quant: 1);
 ~prcpat.isPlaying;
 ~prcpat.stop;
+*/
+
+(
+~prc2pat =
+Pdef(\prc2pat,
+	Pbindf(
+		~prcpat,
+		\ffreq, 3000,
+		\bwr, 0.1,
+))
+);
+
+/*
+~prc2pat.play(t, quant: 1);
+~prc2pat.isPlaying;
+~prc2pat.stop;
 */
 
 //
@@ -363,8 +418,96 @@ MIDIdef.cc(\prcpatstopktrl, {
 }, 50, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
 
+(
+~prc2patplayktrl =
+MIDIdef.cc(\prc2patplayktrl, {
+	if(~prc2pat.isPlaying.not) {
+		~prc2pat.play(t, quant: 1);
+		"prc2pat play".postln;
+	}
+}, 66, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~prc2patstopktrl =
+MIDIdef.cc(\prc2patstopktrl, {
+	if(~prc2pat.isPlaying) {
+		~prc2pat.pause;
+		"prc2pat stop".postln;
+	}
+}, 66, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
 ////////////////////////////////////////////////////////////////
-// Bees
+// bass
+
+(
+SynthDef(\bass, { | bwr = 1, dur = 1, fb = 0, ffreq = 4000, freq = 440, gate = 1, level = 0.1 |
+	var env					=	Env.asr(0.005, level, 0.1, -64);
+	var envgen				=	EnvGen.kr(env, gate, doneAction: 2);
+	//var noise				=	LFBrownNoise0.ar(freq.dup).range(0.5, 0.8);
+	var sinfb				=	SinOscFB.ar(freq.dup, fb, envgen);
+	var sinfbwrap			=	sinfb.wrap(-0.01, 0.01);
+	var xline				=	XLine.ar(2, 0.25, 0.05);
+	var rlpf				=	RLPF.ar(sinfb + sinfbwrap, ffreq * xline, bwr);
+	Out.ar([0, 2], (rlpf / 4));
+}).add
+);
+
+(
+~basspat =
+Pdef(\basspat,
+	Pbind(
+		\instrument, \bass,
+		\bwr, Pwhite(0.05, 0.5, inf),
+		\dur, 0.25,
+		\degree, Pseq([
+			Pshuf([0, 1, 2, 3, 7].stutter(2)), Pseq([Rest], 32),
+			Pshuf([0, 1, 2, 3, 7].stutter(3)), Pseq([Rest], 48),
+			Pshuf([0, 1, 2, 3, 7].stutter(4)), Pseq([Rest], 64),
+		], inf),
+		\fb, Pwhite(0, 0.999, inf),
+		\ffreq, Pwhite(500, 5000, inf),
+		\octave, 3,
+		\root, ~root,
+		\scale, ~scale,
+));
+);
+
+/*
+~basspat.play(t, quant: 1);
+~basspat.isPlaying;
+~basspat.stop;
+*/
+
+(
+SynthDef(\verb, { | combfreq = 100, ffreq = 1000, invol = 0.1, mdepth = 0.1, outvol = 0.5, rq = 0.2, size = 0.1, t60 = 3  |
+	var in					=	In.ar(2, 2);
+	var verb				=	JPverbRaw.ar(in[0] * invol, in[1] * invol, earlydiff: 0.08, mdepth: mdepth, size: size, t60: t60);
+	var lfbncombfreqmod		=	LFBrownNoise0.kr(15.dup).range(0.25, 4);
+	var comb				=	CombC.ar(verb, 0.1, combfreq.reciprocal * lfbncombfreqmod, 1);
+	var lfbnampmod			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.5);
+	var rhpf				=	RHPF.ar(comb, ffreq, rq, lfbnampmod * outvol);
+	Out.ar(0, rhpf);
+}).add;
+);
+
+~verb = Synth(\verb).register;
+
+/*
+~verb.isPlaying;
+~verb.free;
+//
+~verb.set(\combfreq, 50);
+~verb.set(\ffreq, 2000);
+~verb.set(\mdepth, 50);
+~verb.set(\outvol, 0.8);
+~verb.set(\rq, 0.8);
+~verb.set(\size, 0.05);
+~verb.set(\t60, 12);
+~verb.set(\vol, 0.2);
+*/
+
+////////////////////////////////////////////////////////////////
+// bees
 
 (
 SynthDef(\bee, { | freq = 400, gate = 1, level = 0.03, lfbnfbmodamp = 0.99 |
@@ -410,8 +553,8 @@ Pdef(\beedronepat1,
 */
 
 (
-~beepnopat1 =
-Pdef(\beepnopat1,
+~beechordspat1 =
+Pdef(\beechordspat1,
 	Pbind(
 		\instrument, \pad,
 		\degree, Pshuf([[7, 10], [7, 12], [7, 13], [7, 14], [7, 15]], inf),
@@ -425,7 +568,7 @@ Pdef(\beepnopat1,
 );
 
 /*
-~beepnopat1.play(t, quant: 1);
-~beepnopat1.isPlaying;
-~beepnopat1.stop;
+~beechordspat1.play(t, quant: 1);
+~beechordspat1.isPlaying;
+~beechordspat1.stop;
 */
