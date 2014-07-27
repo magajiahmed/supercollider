@@ -22,25 +22,23 @@ t = TempoClock(140/60);
 
 ~lmamediadir = "/media/lma";
 
-(
 ~filteredcrickets.free;
-~jungle.free;
-);
-
-(
 ~filteredcrickets = Buffer.read(s, ~lmamediadir ++ "/samples/FilteredCrickets01.wav");
-~bees = Buffer.read(s, ~lmamediadir ++ "/samples/1693.Dmitry_Urupin.Solovetsky_Islands.Bumblebees_and_bees.aif");
-);
+~filteredcrickets.bufnum;
 
-/*
-~filteredcrickets.numFrames;
-*/
+~bees.free;
+~bees = Buffer.read(s, ~lmamediadir ++ "/samples/1693.Dmitry_Urupin.Solovetsky_Islands.Bumblebees_and_bees.aif");
+~bees.bufnum;
+
+/////////////////////////////////////////////////////////////////
 
 (
 SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, rate = 1, startPos = 0, vol = 0 |
-	var env			 	=	Env.asr(1, vol, 1);
+	var env			 	=	Env.asr(0.1, vol, 0.1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var playbuf			=	PlayBuf.ar(2, bufnum, BufRateScale.kr(bufnum) * rate, startPos: startPos, loop: loop, doneAction: 2) * envgen;
+	var playbuf			=	PlayBuf.ar(
+		2, bufnum, BufRateScale.kr(bufnum) * rate, startPos: startPos, loop: loop, doneAction: 2
+	) * envgen;
 	Out.ar(0, playbuf);
 }).add
 );
@@ -56,11 +54,11 @@ SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, rate = 1, startPos = 0,
 	Pbind(
 		\instrument, \sndfileplayer,
 		\bufnum, ~filteredcrickets.bufnum,
-		\dur, Pwhite(30.0, 40.0, inf),
+		\dur, Pwhite(30.0, 90.0, inf),
 		\legato, 1,
 		\loop, 0,
-		\note, Pwrand([0, Rest], [2, 1].normalizeSum, inf),
-		\rate, Pshuf((1..7) / 5, inf),
+		\note, Pseq([0, Rest], inf),
+		\rate, Pwhite(0.1, 2, inf),
 		\startPos, Pwhite(0, ~filteredcrickets.numFrames / 2),
 		\vol, 0.1
 ));
@@ -97,62 +95,6 @@ MIDIdef.cc(\crparstopktrl, {
 	}
 }, 32, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
-
-/*
-(
-~crickets1playktrl =
-MIDIdef.cc(\cricketc1playktrl, {
-	if(~filteredcricketsplay.isPlaying.not) {
-		~filteredcricketsplay = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \vol, 0.1]).register;
-		"crickets play".postln;
-	}
-}, 32, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
-
-~cricketc1stopktrl =
-MIDIdef.cc(\cricketc1stopktrl, {
-	if(~filteredcricketsplay.isPlaying) {
-		~filteredcricketsplay.release;
-		"crickets stop".postln;
-	}
-}, 32, srcID: ~nanoktrl2.uid, argTemplate: 0)
-);
-
-(
-~crickets2playktrl =
-MIDIdef.cc(\cricketc2playktrl, {
-	if(~filteredcricketsplay_up5th.isPlaying.not) {
-		~filteredcricketsplay_up5th = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \rate, 1.5, \vol, 0.1]).register;
-		"crickets up 5th play".postln;
-	}
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
-
-~cricketc2stopktrl =
-MIDIdef.cc(\cricketc2stopktrl, {
-	if(~filteredcricketsplay_up5th.isPlaying) {
-		~filteredcricketsplay_up5th.release;
-		"crickets up 5th stop".postln;
-	}
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0)
-);
-
-(
-~crickets3playktrl =
-MIDIdef.cc(\cricketc3playktrl, {
-	if(~filteredcricketsplay_upoct.isPlaying.not) {
-		~filteredcricketsplay_upoct = Synth(\sndfileplayer, [\bufnum, ~filteredcrickets.bufnum, \loop, 1, \rate, 2, \vol, 0.1]).register;
-		"crickets up oct play".postln;
-	}
-}, 64, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
-
-~cricketc3stopktrl =
-MIDIdef.cc(\cricketc3stopktrl, {
-	if(~filteredcricketsplay_upoct.isPlaying) {
-		~filteredcricketsplay_upoct.release;
-		"crickets up oct stop".postln;
-	}
-}, 64, srcID: ~nanoktrl2.uid, argTemplate: 0)
-);
-*/
 
 ////////////////////////////////////////////////////////////////
 
@@ -259,10 +201,10 @@ MIDIdef.cc(\dronepat2stopktrl, {
 SynthDef(\pno, { | dur = 1, freq = 400, level = 0.02 |
 	var env				=	Env.perc(0.003, dur, level, -6);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.25, 1).round(0.25);
-	var sin				=	SinOscFB.ar(freq, 0.4, envgen);
-	var lfbn1			=	LFBrownNoise2.ar(8000.dup, mul: envgen);
-	var rhpf			=	RHPF.ar(lfbn1, 7000, 0.01);
+	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.5, 1).round(0.25);
+	var sin				=	SinOscFB.ar(freq, 0.05, envgen);
+	var lfbn1			=	LFBrownNoise2.ar(10000.dup, mul: envgen * lfbnampmod);
+	var rhpf			=	RHPF.ar(lfbn1, 6000, 0.1);
 	Out.ar(0, (sin + (rhpf)) * lfbnampmod);
 }).add;
 );
@@ -272,9 +214,9 @@ SynthDef(\pno, { | dur = 1, freq = 400, level = 0.02 |
 Pdef(\pnopat1,
 	Pbind(
 		\instrument, \pno,
-		\degree, Pshuf([[-5, -2], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
-		\dur, Pwhite(3, 37, inf).round(0.25),
-		\octave, 6,
+		\degree, Pshuf([[-5, -2], [-6, -5, 0], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+		\octave, 7,
 		\root, ~root,
 		\scale, ~scale));
 );
@@ -307,11 +249,11 @@ MIDIdef.cc(\pnopat1stopktrl, {
 // clicks
 
 (
-SynthDef(\klk, { | minfreq = 18000, maxfreq = 20000, ffreq = 4000, bwr = 0.5, a = 1, b = 3, level = 0.1 |
+SynthDef(\klk, { | minfreq = 18000, maxfreq = 20000, ffreq = 4000, bwr = 0.1, a = 1, b = 3, level = 0.1 |
 	var env				=	Env.perc(0.003, 0.05, level, -64);
 	var envgen			=	EnvGen.ar(env, doneAction: 2);
-	var lat				=	Latoocarfian2DC.ar([minfreq, minfreq + 100], [maxfreq, maxfreq + 100], a, b, mul: envgen).fold(-0.5, 0.5);
-	var flt				=	Resonz.ar(lat, ffreq, bwr);
+	var lat				=	Latoocarfian2DN.ar([minfreq, minfreq + 100], [maxfreq, maxfreq + 100], a, b, mul: envgen).wrap(-0.5, 0.5);
+	var flt				=	Resonz.ar(lat, ffreq, bwr, 3);
 	Out.ar(0, flt);
 }).add;
 );
@@ -350,9 +292,8 @@ Pdef(\klkpat,
 	Pbind(
 		\instrument, \klk,
 		\a, Pswitch1(~a, p),
-		//\dur, Pxrand([0.25, 0.5, 0.75], inf),
 		\dur, Pswitch1(~durations, q),
-		\ffreq, Pwhite(5000, 6000, inf),
+		\ffreq, 6000,
 		\level, 0.5,
 ))
 );
@@ -496,32 +437,37 @@ Pdef(\basspat,
 ~basspat.stop;
 */
 
-(
-SynthDef(\verb, { | combfreq = 30, ffreq = 2000, invol = 0.1, modfreq = 15, outvol = 0.3, rq = 0.5, size = 0.1, t60 = 15 |
-	var in					=	In.ar(2, 2);
-	var verb				=	JPverbRaw.ar(in[0] * invol, in[1] * invol, earlydiff: 0.08, size: size, t60: t60);
-	var lfbncombfreqmod		=	LFBrownNoise0.kr(modfreq.dup).range(0.25, 4);
-	var comb				=	CombC.ar(verb, 0.2, combfreq.reciprocal * lfbncombfreqmod, 1);
-	var lfbnampmod			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.5);
-	var rhpf				=	RHPF.ar(comb, ffreq, rq, lfbnampmod * outvol);
-	Out.ar(0, rhpf);
-}).add;
-);
+~waitforverbtoload = Routine({
+	(
+		SynthDef(\verb, { | combfreq = 30, ffreq = 2000, invol = 0.1, modfreq = 15, outvol = 0.3, rq = 0.5, size = 0.1, t60 = 15 |
+			var in					=	In.ar(2, 2);
+			var verb				=	JPverbRaw.ar(in[0] * invol, in[1] * invol, earlydiff: 0.08, size: size, t60: t60);
+			var lfbncombfreqmod		=	LFBrownNoise0.kr(modfreq.dup).range(0.25, 4);
+			var comb				=	CombC.ar(verb, 0.2, combfreq.reciprocal * lfbncombfreqmod, 1);
+			var lfbnampmod			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.5);
+			var rhpf				=	RHPF.ar(comb, ffreq, rq, lfbnampmod * outvol);
+			Out.ar(0, rhpf);
+		}).add;
+	);
 
-~verb = Synth(\verb).register;
+	s.sync;
 
-/*
-~verb.isPlaying;
-~verb.free;
-//
-~verb.set(\combfreq, 30);
-~verb.set(\ffreq, 2000);
-~verb.set(\modfreq, 15);
-~verb.set(\outvol, 0.3);
-~verb.set(\rq, 0.5);
-~verb.set(\size, 0.05);
-~verb.set(\t60, 15);
-*/
+	~verb = Synth(\verb).register;
+
+
+	/*
+	~verb.isPlaying;
+	~verb.free;
+	//
+	~verb.set(\combfreq, 30);
+	~verb.set(\ffreq, 2000);
+	~verb.set(\modfreq, 15);
+	~verb.set(\outvol, 0.3);
+	~verb.set(\rq, 0.5);
+	~verb.set(\size, 0.05);
+	~verb.set(\t60, 15);
+	*/
+});
 
 (
 ~basspatplayktrl =
@@ -556,10 +502,64 @@ MIDIdef.cc(\basspatstopktrl, {
 ~beesplay2.release;
 */
 
+(
+~beepat1 =
+Pdef(\beepat1,
+	Pmono(
+		\sndfileplayer,
+		\bufnum, ~bees.bufnum,
+		\loop, 1,
+		\vol, 0.4
+));
+);
+
+/*
+~beepat1.play(t, quant: 1);
+~beepat1.isPlaying;
+~beepat1.stop;
+*/
+
+(
+~beepat2 =
+Pdef(\beepat2, Pbindf(~beepat1, \startPos, ~bees.numFrames / 2));
+);
+
+/*
+~beepat2.play(t, quant: 1);
+~beepat2.isPlaying;
+~beepat2.stop;
+*/
+
+~beepar = Pdef(\beepar, Ppar([~beepat1, ~beepat2], inf));
+
+/*
+~beepar.play(t, quant: 1);
+~beepar.isPlaying;
+~beepar.stop;
+*/
+
+(
+~beeparplayktrl =
+MIDIdef.cc(\beeparplayktrl, {
+	if(~beepar.isPlaying.not) {
+		~beepar.play(t, quant: 1);
+		"beepar play".postln;
+	}
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~beeparstopktrl =
+MIDIdef.cc(\beeparstopktrl, {
+	if(~beepar.isPlaying) {
+		~beepar.pause;
+		"beepar stop".postln;
+	}
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
 //
 
 (
-SynthDef(\bee, { | freq = 400, gate = 1, level = 0.03, lfbnfbmodamp = 0.99 |
+SynthDef(\bee, { | freq = 400, gate = 1, level = 0.04, lfbnfbmodamp = 0.999 |
 	var env				=	Env.asr(0.005, level, 0.8);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var lfnfreqmod		=	LFNoise2.kr(0.1.dup, 0.002, 1);
@@ -589,6 +589,24 @@ Pdef(\beedronepat1,
 ~beedronepat1.stop;
 */
 
+(
+~beedroneplayktrl =
+MIDIdef.cc(\beedroneplayktrl, {
+	if(~beedronepat1.isPlaying.not) {
+		~beedronepat1.play(t, quant: 1);
+		"beedronepat1 play".postln;
+	}
+}, 67, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~beedronestopktrl =
+MIDIdef.cc(\beedronestopktrl, {
+	if(~beedronepat1.isPlaying) {
+		~beedronepat1.pause;
+		"beedronepat1 stop".postln;
+	}
+}, 67, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
 //
 
 (
@@ -601,8 +619,8 @@ SynthDef(\pad, { | dur = 1, freq = 400, gate = 1, level = 0.03 |
 	var lfnampmod		=	LFNoise0.kr(15.dup).range(0.5, 1).round(0.5);
 	var sin				=	SinOscFB.ar(freq * lfnfreqmod, lfbnfbmod, mul: envgen * lfnampmod);
 	//var rlpf			=	RLPF.ar(sin.round(0.01), freq * 32);
-	//var rhpf			=	RHPF.ar(sin.round(0.01), 4000, 0.05);
-	Out.ar(0, sin.round(0.005));
+	var rhpf			=	RHPF.ar(sin.round(0.01), 4000, 0.1);
+	Out.ar(0, sin.round(0.01) + (rhpf / 2));
 }).add;
 );
 
@@ -611,7 +629,7 @@ SynthDef(\pad, { | dur = 1, freq = 400, gate = 1, level = 0.03 |
 Pdef(\beechordspat1,
 	Pbind(
 		\instrument, \pad,
-		\degree, Pshuf([[7, 10], [7, 12], [7, 13], [7, 14], [7, 15]], inf),
+		\degree, Pshuf([[7, 10, 12], [7, 12, 13], [7, 12, 14], [7, 12, 15]], inf),
 		\dur, 53,
 		\legato, 1,
 		\lfbnfbmodamp, 0.2,
@@ -627,41 +645,72 @@ Pdef(\beechordspat1,
 ~beechordspat1.stop;
 */
 
-//
-
-(
-SynthDef(\beeano, {
-	| a = 1, b = 3, c = 0.5, d = 0.5, dur = 1, startfreq = 0.5, freq = 400, level = 0.1 |
-	var env				=	Env.perc(0.005, dur, level, -4);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var xline			=	Line.ar(startfreq, 1, 5);
-	var sin				=	SinOscFB.ar([freq, freq * 1.001] * xline, 0.1, mul: envgen);
-	var rhpf			=	RHPF.ar(sin.round(0.005), 4000, 0.1);
-	Out.ar(0, rhpf);
-}).add;
-);
-
-(
-~glisses = [Rest, [1, 9/10], [1, 16/15], Rest, [1, 9/8], [1, 6/5]];
-~beeanopat1 =
-Pdef(\beeanopat1,
-	Pbind(
-		\instrument, \beeano,
-		//\degree, Pshuf([0, 1, 2, 3, 7].mirror2, inf),
-		\dur, Pshuf([
-			7,
-			9,
-			11
-		], inf),
-		\octave, 6,
-		\root, ~root,
-		\scale, ~scale,
-		\startfreq, Pshuf(~glisses, inf),
-));
-);
+~beechordspat2 = Pdef(\beechordspat2, Pbindf(~beechordspat1, \degree, 6, \octave, 4));
 
 /*
-~beeanopat1.play(t, quant: 1);
-~beeanopat1.isPlaying;
-~beeanopat1.stop;
+~beechordspat2.play(t, quant: 1);
+~beechordspat2.isPlaying;
+~beechordspat2.stop;
 */
+
+~beechordspat3 = Pdef(\beechordspat3, Pbindf(~beechordspat1, \degree, [7, 10], \octave, 4));
+
+/*
+~beechordspat3.play(t, quant: 1);
+~beechordspat3.isPlaying;
+~beechordspat3.stop;
+*/
+
+(
+~beechords1playktrl =
+MIDIdef.cc(\beechords1playktrl, {
+	if(~beechordspat1.isPlaying.not) {
+		~beechordspat1.play(t, quant: 1);
+		"beechordspat1 play".postln;
+	}
+}, 36, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~beechords1stopktrl =
+MIDIdef.cc(\beechords1stopktrl, {
+	if(~beechordspat1.isPlaying) {
+		~beechordspat1.pause;
+		"beechordspat1 stop".postln;
+	}
+}, 36, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
+(
+~beechords2playktrl =
+MIDIdef.cc(\beechords2playktrl, {
+	if(~beechordspat2.isPlaying.not) {
+		~beechordspat2.play(t, quant: 1);
+		"beechordspat2 play".postln;
+	}
+}, 52, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~beechords2stopktrl =
+MIDIdef.cc(\beechords2stopktrl, {
+	if(~beechordspat2.isPlaying) {
+		~beechordspat2.pause;
+		"beechordspat2 stop".postln;
+	}
+}, 52, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
+(
+~beechords3playktrl =
+MIDIdef.cc(\beechords3playktrl, {
+	if(~beechordspat3.isPlaying.not) {
+		~beechordspat3.play(t, quant: 1);
+		"beechordspat3 play".postln;
+	}
+}, 68, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~beechords3stopktrl =
+MIDIdef.cc(\beechords3stopktrl, {
+	if(~beechordspat3.isPlaying) {
+		~beechordspat3.pause;
+		"beechordspat3 stop".postln;
+	}
+}, 68, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
