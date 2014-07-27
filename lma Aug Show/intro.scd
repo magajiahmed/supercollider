@@ -33,13 +33,13 @@ t = TempoClock(140/60);
 /////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, rate = 1, startPos = 0, vol = 0 |
+SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, out = 0, rate = 1, startPos = 0, vol = 0 |
 	var env			 	=	Env.asr(0.1, vol, 0.1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var playbuf			=	PlayBuf.ar(
 		2, bufnum, BufRateScale.kr(bufnum) * rate, startPos: startPos, loop: loop, doneAction: 2
 	) * envgen;
-	Out.ar(0, playbuf);
+	Out.ar(out, playbuf);
 }).add
 );
 
