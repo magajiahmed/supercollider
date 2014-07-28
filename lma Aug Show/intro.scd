@@ -54,10 +54,11 @@ SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, out = 0, rate = 1, star
 	Pbind(
 		\instrument, \sndfileplayer,
 		\bufnum, ~filteredcrickets.bufnum,
-		\dur, Pwhite(30.0, 90.0, inf),
+		\dur, Prand((30..90).round(5), inf),
 		\legato, 1,
 		\loop, 0,
-		\note, Pseq([0, Rest], inf),
+		\note, Pshuf([0, Rest, Rest], inf),
+		\out, [0, 4],
 		\rate, Pwhite(0.1, 2, inf),
 		\startPos, Pwhite(0, ~filteredcrickets.numFrames / 2),
 		\vol, 0.1
@@ -65,15 +66,15 @@ SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, out = 0, rate = 1, star
 );
 
 /*
-~crpat1.play;
+~crpat1.play(t, quant: 1);
 ~crpat1.isPlaying;
 ~crpat1.stop;
 */
 
-~crpar = Pdef(\crpar, Ppar(Array.fill(3, { ~crpat1 })));
+~crpar = Pdef(\crpar, Ppar(Array.fill(6, { ~crpat1 })));
 
 /*
-~crpar.play;
+~crpar.play(t, quant: 1);
 ~crpar.isPlaying;
 ~crpar.stop;
 */
@@ -94,6 +95,55 @@ MIDIdef.cc(\crparstopktrl, {
 		"crpar stop".postln;
 	}
 }, 32, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
+////////////////////////////////////////////////////////////////
+
+(
+SynthDef(\cricketdelay,{ | decay = 0.1, freq = 100, gate = 1, level = 0.1 |
+	var in				=	In.ar(4, 2);
+	var env				=	Env.asr(0.1, level, 0.1);
+	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
+	var comb			=	CombC.ar(in, 1, [freq, freq * 1.005].reciprocal, decay, envgen);
+	Out.ar(0, comb);
+}).add;
+);
+
+(
+~cdpat =
+Pdef(\cdpat,
+	Pmono(
+		\cricketdelay,
+		\decay, 5,
+		\degree, [0, 7, 12],
+		\level, 0.2,
+		\octave, 1,
+		\root, ~root,
+		\scale, ~scale));
+);
+
+/*
+~cdpat.play(t, quant: 1);
+~cdpat.isPlaying;
+~cdpat.stop;
+*/
+
+(
+~cdpatplayktrl =
+MIDIdef.cc(\cdpatplayktrl, {
+	if(~cdpat.isPlaying.not) {
+		~cdpat.play(t, quant: 1);
+		"cricket processing play".postln;
+	}
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~cdpatstopktrl =
+MIDIdef.cc(\cdpatstopktrl, {
+	if(~cdpat.isPlaying) {
+		~cdpat.pause;
+		"cricket processing stop".postln;
+	}
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
 
 ////////////////////////////////////////////////////////////////
@@ -198,13 +248,13 @@ MIDIdef.cc(\dronepat2stopktrl, {
 // pno
 
 (
-SynthDef(\pno, { | dur = 1, freq = 400, level = 0.02 |
+SynthDef(\pno, { | dur = 1, fb = 0, freq = 400, level = 0.02 |
 	var env				=	Env.perc(0.003, dur, level, -6);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.5, 1).round(0.25);
-	var sin				=	SinOscFB.ar(freq, 0.05, envgen);
+	var sin				=	SinOscFB.ar(freq, fb, envgen);
 	var lfbn1			=	LFBrownNoise2.ar(10000.dup, mul: envgen * lfbnampmod);
-	var rhpf			=	RHPF.ar(lfbn1, 6000, 0.1);
+	var rhpf			=	RHPF.ar(lfbn1, (freq * 16).clip(30, SampleRate.ir / 3), 0.05);
 	Out.ar(0, (sin + (rhpf)) * lfbnampmod);
 }).add;
 );
@@ -214,9 +264,10 @@ SynthDef(\pno, { | dur = 1, freq = 400, level = 0.02 |
 Pdef(\pnopat1,
 	Pbind(
 		\instrument, \pno,
-		\degree, Pshuf([[-5, -2], [-6, -5, 0], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
-		\octave, 7,
+		\degree, Pshuf([[-5, -2], [-5, 0], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
+		\dur, Pshuf([2, 3, 4, 6, 8, 12, 16, 24, 32, 48], inf),
+		\fb, Pwhite(0, 0.5, inf),
+		\octave, 6,
 		\root, ~root,
 		\scale, ~scale));
 );
@@ -406,7 +457,19 @@ MIDIdef.cc(\prc2patstopktrl, {
 );
 
 ////////////////////////////////////////////////////////////////
-// bass
+// bass + verb
+
+(
+SynthDef(\verb, { | combfreq = 30, ffreq = 2000, invol = 0.1, modfreq = 15, outvol = 0.3, rq = 0.5, size = 0.1, t60 = 15 |
+	var in					=	In.ar(2, 2);
+	var verb				=	JPverbRaw.ar(in[0] * invol, in[1] * invol, earlydiff: 0.08, size: size, t60: t60);
+	var lfbncombfreqmod		=	LFBrownNoise0.kr(modfreq.dup).range(0.25, 4);
+	var comb				=	CombC.ar(verb, 0.2, combfreq.reciprocal * lfbncombfreqmod, 1);
+	var lfbnampmod			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.5);
+	var rhpf				=	RHPF.ar(comb, ffreq, rq, lfbnampmod * outvol);
+	Out.ar(0, rhpf);
+	}).add;
+);
 
 (
 SynthDef(\bass, { | bwr = 1, dur = 1, fb = 0.4, ffreq = 2000, freq = 440, gate = 1, level = 0.1 |
@@ -437,37 +500,20 @@ Pdef(\basspat,
 ~basspat.stop;
 */
 
-~waitforverbtoload = Routine({
-	(
-		SynthDef(\verb, { | combfreq = 30, ffreq = 2000, invol = 0.1, modfreq = 15, outvol = 0.3, rq = 0.5, size = 0.1, t60 = 15 |
-			var in					=	In.ar(2, 2);
-			var verb				=	JPverbRaw.ar(in[0] * invol, in[1] * invol, earlydiff: 0.08, size: size, t60: t60);
-			var lfbncombfreqmod		=	LFBrownNoise0.kr(modfreq.dup).range(0.25, 4);
-			var comb				=	CombC.ar(verb, 0.2, combfreq.reciprocal * lfbncombfreqmod, 1);
-			var lfbnampmod			=	LFBrownNoise0.kr(15).range(0.5, 1).round(0.5);
-			var rhpf				=	RHPF.ar(comb, ffreq, rq, lfbnampmod * outvol);
-			Out.ar(0, rhpf);
-		}).add;
-	);
+~verb = Synth(\verb).register;
 
-	s.sync;
-
-	~verb = Synth(\verb).register;
-
-
-	/*
-	~verb.isPlaying;
-	~verb.free;
-	//
-	~verb.set(\combfreq, 30);
-	~verb.set(\ffreq, 2000);
-	~verb.set(\modfreq, 15);
-	~verb.set(\outvol, 0.3);
-	~verb.set(\rq, 0.5);
-	~verb.set(\size, 0.05);
-	~verb.set(\t60, 15);
-	*/
-});
+/*
+~verb.isPlaying;
+~verb.free;
+//
+~verb.set(\combfreq, 30);
+~verb.set(\ffreq, 2000);
+~verb.set(\modfreq, 15);
+~verb.set(\outvol, 0.3);
+~verb.set(\rq, 0.5);
+~verb.set(\size, 0.05);
+~verb.set(\t60, 15);
+*/
 
 (
 ~basspatplayktrl =
