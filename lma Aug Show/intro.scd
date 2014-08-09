@@ -36,7 +36,8 @@ u = TempoClock(88/60);
 ~jungle = Buffer.read(s, ~lmamediadir ++ "/samples/Jarra Schirris - Vang Vieng - Vang Vieng Jungle.aif");
 ~jungle.bufnum;
 
-/////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// A) CRICKETS
 
 (
 SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, out = 0, rate = 1, startPos = 0, vol = 0 |
@@ -254,8 +255,8 @@ MIDIdef.cc(\dronepat2stopktrl, {
 // pno
 
 (
-SynthDef(\pno, { | dur = 1, fb = 0, freq = 400, level = 0.02 |
-	var env				=	Env.perc(0.003, dur, level, -6);
+SynthDef(\pno, { | curve = -6, dur = 1, fb = 0, freq = 400, level = 0.02 |
+	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.5, 1).round(0.25);
 	var sin				=	SinOscFB.ar(freq, fb, envgen);
@@ -540,7 +541,7 @@ MIDIdef.cc(\basspatstopktrl, {
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PART BEE
+// B) PART BEE
 
 /*
 ~beesplay1 = Synth(\sndfileplayer, [\bufnum, ~bees.bufnum, \loop, 1, \vol, 0.2]).register;
@@ -790,7 +791,7 @@ MIDIdef.cc(\beechords3stopktrl, {
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// JUNGLE MUSIC
+// C) JUNGLE MUSIC
 
 (
 ~junglepat =
@@ -798,11 +799,13 @@ Pdef(\junglepat,
 	Pbind(
 		\instrument, \sndfileplayer,
 		\bufnum, ~jungle.bufnum,
-		\dur, Prand([1, 1.5, 2, 3, 4, 6], inf),
+		\dur, Prand((5..9).nthPrime, inf),
 		\legato, 1,
 		\loop, 1,
-		\startPos, Pshuf(~jungle.numFrames / (2..50), inf),
-		\vol, 0.4
+		\rate, Pshuf([0.25, 0.5, 1].stutter(7), inf),
+		//\startPos, Pshuf(~jungle.numFrames / (2..7), inf),
+		\startPos, Pwhite(0, ~jungle.numFrames / 1.1, inf),
+		\vol, 0.2
 ));
 );
 
@@ -812,12 +815,18 @@ Pdef(\junglepat,
 ~junglepat.stop;
 */
 
-~junglepar = Pdef(\junglepar, );
+~junglepar = Pdef(\junglepar, Ppar(Array.fill(2, { ~junglepat })));
+
+/*
+~junglepar.play(t, quant: 1);
+~junglepar.isPlaying;
+~junglepar.stop;
+*/
 
 //
 
 (
-SynthDef(\jungledrone, { | curve = 0, fb = 0.3, dur = 1, freq = 400, gate = 1, level = 0.02 |
+SynthDef(\jungledrone, { | curve = 0, fb = 0.3, dur = 1, freq = 400, gate = 1, level = 0.03 |
 	var env				=	Env.asr(0.003, level, 1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var fenv			=	XLine.ar(8, 1, 0.005);
@@ -886,6 +895,8 @@ Pdef(\jbass,
 
 /*
 ~jbasspat.play(t, quant: 1);
+~jbasspat.isPlaying;
+~jbasspat.stop;
 */
 
 //
@@ -895,7 +906,9 @@ Pdef(\jbass,
 Pdef(\jpnopat1,
 	Pbind(
 		\instrument, \pno,
+		\curve, -6,
 		\degree, 7,
+		\dur, Pshuf([1, 2, 2.5].stutter(3), inf),
 		\root, ~root,
 		\scale, ~scale
 ))
@@ -905,6 +918,14 @@ Pdef(\jpnopat1,
 ~jpnopat1.play(t, quant: 1);
 ~jpnopat1.isPlaying;
 ~jpnopat1.stop;
+*/
+
+~jpnopar = Pdef(\jpnopar, Ppar(Array.fill(2, { ~jpnopat1 })));
+
+/*
+~jpnopar.play(t, quant: 1);
+~jpnopar.isPlaying;
+~jpnopar.stop;
 */
 
 //
@@ -926,7 +947,7 @@ Pdef(\jklkpat,
 	Pbind(
 		\instrument, \jklk,
 		\dur, Pshuf([1.5, 2, 3].stutter(3), inf),
-		\fb, 2.5,
+		\fb, Pshuf(((1..5) / 7) + 2, inf),
 		\level, Pshuf([0.5, 1].stutter(7) * 0.1, inf),
 		\octave, 4,
 		\root, ~root,
@@ -945,4 +966,12 @@ Pdef(\jklkpat,
 ~jklkpat4.play(t, quant: 1);
 ~jklkpat4.isPlaying;
 ~jklkpat4.stop;
+*/
+
+~jklkpar = Pdef(\jklkpar, Ppar([~jklkpat1, ~jklkpat4], inf));
+
+/*
+~jklkpar.play(t, quant: 1);
+~jklkpar.isPlaying;
+~jklkpar.stop;
 */
