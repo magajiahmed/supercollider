@@ -17,6 +17,8 @@ s.scope(2);
 ~root2 = 10;
 
 t = TempoClock(140/60);
+u = TempoClock(88/60);
+
 
 ////////////////////////////////////////////////////////////////
 
@@ -29,6 +31,10 @@ t = TempoClock(140/60);
 ~bees.free;
 ~bees = Buffer.read(s, ~lmamediadir ++ "/samples/1693.Dmitry_Urupin.Solovetsky_Islands.Bumblebees_and_bees.aif");
 ~bees.bufnum;
+
+~jungle.free;
+~jungle = Buffer.read(s, ~lmamediadir ++ "/samples/Jarra Schirris - Vang Vieng - Vang Vieng Jungle.aif");
+~jungle.bufnum;
 
 /////////////////////////////////////////////////////////////////
 
@@ -61,7 +67,7 @@ SynthDef(\sndfileplayer, { | bufnum, gate = 1, loop = 0, out = 0, rate = 1, star
 		\out, [0, 4],
 		\rate, Pwhite(0.1, 2, inf),
 		\startPos, Pwhite(0, ~filteredcrickets.numFrames / 2),
-		\vol, 0.1
+		\vol, 0.05
 ));
 );
 
@@ -114,7 +120,7 @@ SynthDef(\cricketdelay,{ | decay = 0.1, freq = 100, gate = 1, level = 0.1 |
 Pdef(\cdpat,
 	Pmono(
 		\cricketdelay,
-		\decay, 5,
+		\decay, 3,
 		\degree, [0, 7, 12],
 		\level, 0.2,
 		\octave, 1,
@@ -534,7 +540,7 @@ MIDIdef.cc(\basspatstopktrl, {
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// bees
+// PART BEE
 
 /*
 ~beesplay1 = Synth(\sndfileplayer, [\bufnum, ~bees.bufnum, \loop, 1, \vol, 0.2]).register;
@@ -567,7 +573,7 @@ Pdef(\beepat1,
 
 (
 ~beepat2 =
-Pdef(\beepat2, Pbindf(~beepat1, \startPos, ~bees.numFrames / 2));
+Pdef(\beepat2, Pbindf(~beepat1, \startPos, ~bees.numFrames / 4));
 );
 
 /*
@@ -576,7 +582,29 @@ Pdef(\beepat2, Pbindf(~beepat1, \startPos, ~bees.numFrames / 2));
 ~beepat2.stop;
 */
 
-~beepar = Pdef(\beepar, Ppar([~beepat1, ~beepat2], inf));
+(
+~beepat3 =
+Pdef(\beepat3, Pbindf(~beepat1, \startPos, ~bees.numFrames / 2));
+);
+
+/*
+~beepat3.play(t, quant: 1);
+~beepat3.isPlaying;
+~beepat3.stop;
+*/
+
+(
+~beepat4 =
+Pdef(\beepat4, Pbindf(~beepat1, \startPos, (~bees.numFrames * 3) / 4));
+);
+
+/*
+~beepat3.play(t, quant: 1);
+~beepat3.isPlaying;
+~beepat3.stop;
+*/
+
+~beepar = Pdef(\beepar, Ppar([~beepat1, ~beepat2, ~beepat3, ~beepat4], inf));
 
 /*
 ~beepar.play(t, quant: 1);
@@ -760,3 +788,161 @@ MIDIdef.cc(\beechords3stopktrl, {
 	}
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// JUNGLE MUSIC
+
+(
+~junglepat =
+Pdef(\junglepat,
+	Pbind(
+		\instrument, \sndfileplayer,
+		\bufnum, ~jungle.bufnum,
+		\dur, Prand([1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\loop, 1,
+		\startPos, Pshuf(~jungle.numFrames / (2..50), inf),
+		\vol, 0.4
+));
+);
+
+/*
+~junglepat.play(t, quant: 1);
+~junglepat.isPlaying;
+~junglepat.stop;
+*/
+
+~junglepar = Pdef(\junglepar, );
+
+//
+
+(
+SynthDef(\jungledrone, { | curve = 0, fb = 0.3, dur = 1, freq = 400, gate = 1, level = 0.02 |
+	var env				=	Env.asr(0.003, level, 1);
+	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
+	var fenv			=	XLine.ar(8, 1, 0.005);
+	var freqmod			=	LFNoise2.kr(1.dup, 0.003, 1);
+	var fbmod			=	LFNoise0.kr(11.dup).range(0, fb);
+	var ampmod			=	LFBrownNoise0.kr(15.dup).range(0.75, 1).round(0.25);
+	var sin				=	SinOscFB.ar(freq * fenv * freqmod, fbmod).round(0.2) * (envgen * ampmod);
+	Out.ar(0, sin);
+}).add;
+);
+
+(
+~jdronepat1 =
+Pdef(\jdronepat1,
+	Pmono(
+		\jungledrone,
+		\degree, [-5, 0],
+		\fb, 0.1,
+		\octave, 5,
+		\root, ~root,
+		\scale, ~scale
+	));
+);
+
+/*
+~jdronepat1.play(t, quant: 1);
+~jdronepat1.isPlaying;
+~jdronepat1.stop;
+*/
+
+(
+~chords = [[-12, -11, -5, -2], [-5, 0, 1], [-5, 0, 1, 2], [-5, 0, 1, 6], [-5, 0, 1, 8], [-5, 0, 1, 9], [-5, 0, 1, 11]];
+~chorddurs = ((0..4) + 9).nthPrime;
+~jdronepat2 =
+Pdef(\jdronpat2,
+	Pbind(
+		\instrument, \jungledrone,
+		\degree, Pshuf(~chords, inf),
+		\dur, Pshuf(~chorddurs, inf),
+		\fb, Prand((1..4) / 10, inf),
+		\legato, 0.5,
+		\root, ~root,
+		\scale, ~scale)
+);
+);
+
+/*
+~jdronepat2.play(t, quant: 1);
+~jdronepat2.isPlaying;
+~jdronepat2.stop;
+*/
+
+(
+~jbassdegrees = (0..11);
+~jbasspat =
+Pdef(\jbass,
+	Pbind(
+		\instrument, \jungledrone,
+		\degree, Pshuf(~jbassdegrees, inf),
+		\dur, Pshuf(~chorddurs, inf),
+		\fb, 0,
+		\octave, [2, 3],
+		\root, ~root,
+		\scale, ~scale))
+);
+
+/*
+~jbasspat.play(t, quant: 1);
+*/
+
+//
+
+(
+~jpnopat1 =
+Pdef(\jpnopat1,
+	Pbind(
+		\instrument, \pno,
+		\degree, 7,
+		\root, ~root,
+		\scale, ~scale
+))
+);
+
+/*
+~jpnopat1.play(t, quant: 1);
+~jpnopat1.isPlaying;
+~jpnopat1.stop;
+*/
+
+//
+
+(
+SynthDef(\jklk, { | fb = 0, freq = 8000, level = 0.2, pan = 0 |
+	var env				=	Env.new([0, level, 0], [0.003, 0.001], \cub);
+	var envgen			=	EnvGen.ar(env, doneAction: 2);
+	var fenv			=	XLine.ar(4, 1, 0.001);
+	var sin				=	SinOscFB.ar(freq * fenv, fb, envgen);
+	var pan2			=	Pan2.ar(sin, pan);
+	Out.ar(0, pan2);
+}).add;
+);
+
+(
+~jklkpat1 =
+Pdef(\jklkpat,
+	Pbind(
+		\instrument, \jklk,
+		\dur, Pshuf([1.5, 2, 3].stutter(3), inf),
+		\fb, 2.5,
+		\level, Pshuf([0.5, 1].stutter(7) * 0.1, inf),
+		\octave, 4,
+		\root, ~root,
+		\scale, ~scale));
+);
+
+/*
+~jklkpat1.play(t, quant: 1);
+~jklkpat1.isPlaying;
+~jklkpat1.stop;
+*/
+
+~jklkpat4 = Pdef(\jklkpat4, Pbindf(~jklkpat1, \degree, 0, \octave, 9));
+
+/*
+~jklkpat4.play(t, quant: 1);
+~jklkpat4.isPlaying;
+~jklkpat4.stop;
+*/
