@@ -160,17 +160,17 @@ MIDIdef.cc(\cdpatstopktrl, {
 (
 ~drone =
 SynthDef(\drone, { | a = 1.1, c = 0.5, fb = 0.1, freq = 440, gate = 1, im = 1, level = 0.02 |
-	var env				=	Env.asr(0.01, level, 0.5, 0);
+	var env				=	Env.asr(0.01, level, 0.05, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var lfn1			=	LFNoise2.kr(0.1.dup, 0.008, 1);
-	var lfn2			=	LFNoise1.kr(0.1.dup, 0.0003, 1);
+	var lfn1			=	LFNoise2.kr(0.1.dup, 0.01, 1);
+	var lfn2			=	LFNoise1.kr(0.1.dup, 0.0005, 1);
 	var fbsin			=	FBSineC.ar([freq, freq * 1.004] * 8 * lfn1, im, fb, a, c, mul: envgen).round(0.0003);
 	var sinfb			=	SinOscFB.ar(freq.dup * lfn2, 0.2, mul: envgen);
 	var sin				=	SinOsc.ar(freq, mul: envgen / 4);
 	var kbn1			=	LFBrownNoise0.kr(15.dup).range(0, 1).round(1);
-	var rhpf1			=	RHPF.ar(fbsin, freq * 16, 0.01, kbn1);
+	var rhpf1			=	RHPF.ar(fbsin, (freq * 8).clip(50, SampleRate.ir / 3), 0.01, kbn1);
 	var kbn2			=	LFBrownNoise0.kr(15.dup).range(0, 1).round(1);
-	var rhpf2			=	RHPF.ar(fbsin, freq * 12, 0.01, kbn2);
+	var rhpf2			=	RHPF.ar(fbsin, (freq * 16).clip(50, SampleRate.ir / 3), 0.01, kbn2);
 	var rlpf			=	BLowPass4.ar(sinfb + sin, freq * 2, 0.5);
 	//Out.ar(0, rlpf + (rhpf1 * 12) + rhpf2);
 	Out.ar(0, rlpf + rhpf1 + rhpf2);
@@ -200,7 +200,7 @@ Pdef(\dronepat1,
 Pdef(\dronepat2,
 	Pbind(
 		\instrument, \drone,
-		\degree, Pshuf([-2, 1, 2], inf),
+		\degree, Pshuf([[-5, -2], [-5, 0, 1], [-5, 0, 2]], inf),
 		\dur, 30,
 		\legato, 0.8,
 		\octave, 5,
@@ -257,13 +257,13 @@ MIDIdef.cc(\dronepat2stopktrl, {
 // pno
 
 (
-SynthDef(\pno, { | curve = -6, dur = 1, fb = 0, freq = 400, level = 0.02 |
+SynthDef(\pno, { | curve = -8, dur = 1, fb = 0, ffreqmult = 8, freq = 400, level = 0.02 |
 	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.75, 1).round(0.25);
 	var sin				=	SinOscFB.ar(freq, fb, envgen);
 	var lfbn1			=	LFBrownNoise2.ar(10000.dup, mul: envgen * lfbnampmod);
-	var rhpf			=	RHPF.ar(lfbn1, (freq * 16).clip(30, SampleRate.ir / 3), 0.05);
+	var rhpf			=	RHPF.ar(lfbn1, (freq * ffreqmult).clip(30, SampleRate.ir / 3), 0.05);
 	Out.ar(0, (sin + (rhpf)) * lfbnampmod);
 }).add;
 );
@@ -276,7 +276,7 @@ Pdef(\pnopat1,
 		\degree, Pshuf([[-5, -2], [-5, 0], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
 		\dur, Pshuf([2, 3, 4, 6, 8, 12, 16, 24, 32, 48], inf),
 		\fb, Pwhite(0, 0.5, inf),
-		\octave, 8,
+		\octave, 7,
 		\root, ~root,
 		\scale, ~scale));
 );
@@ -587,7 +587,9 @@ Pdef(\beepat1,
 	Pmono(
 		\sndfileplayer,
 		\bufnum, ~bees.bufnum,
+		\dur, Pshuf([7, 9, 11], inf),
 		\loop, 1,
+		\rate, Pshuf([0.5, 1], inf),
 		\vol, 0.2
 ));
 );
@@ -712,16 +714,16 @@ MIDIdef.cc(\beedronestopktrl, {
 //
 
 (
-SynthDef(\pad, { | a = 1, b = 3, c = 0.5, d = 0.5, dur = 1, freq = 400, freqmodamt = 0.3, gate = 1, level = 0.9 |
-	var env				=	Env.asr(0.3, level, 0.1, 0);
+SynthDef(\pad, { | a = 1, b = 3, c = 0.5, d = 0.5, dur = 1, freq = 400, freqmodamt = 0.3, gate = 1, level = 0.2 |
+	var env				=	Env.asr(0.1, level, 0.1, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var fbmodfreq		=	LFNoise0.kr(1.dup).range(0.1, 15);
 	var ampmodfreq		=	LFNoise0.kr(1.dup).range(0.1, 15);
 	var lfbnfbmod		=	LFBrownNoise0.kr(fbmodfreq).range(0.2, 0.3).round(0.1);
 	var lfnampmod		=	LFNoise0.kr(ampmodfreq).range(0.9, 1.0).round(0.1);
-	var sin				=	SinOscFB.ar((freq.dup).clip(50, SampleRate.ir / 3), lfbnfbmod, mul: envgen * lfnampmod);
-	var rhpf			=	RHPF.ar(sin.fold2(0.01), (freq * 16).clip(50, SampleRate.ir / 3), 0.3);
-	Out.ar(0, (sin.fold2(0.01)) + (rhpf * 0.5));
+	var sin				=	SinOscFB.ar((freq.dup).clip(50, SampleRate.ir / 3), lfbnfbmod, envgen * lfnampmod).fold2(0.01) * 3;
+	var rhpf			=	RHPF.ar(sin.fold2(0.01), (freq * 16).clip(50, SampleRate.ir / 3), 0.3, 0.5);
+	Out.ar(0, sin + rhpf);
 }).add;
 );
 
@@ -752,7 +754,7 @@ Pdef(\bpadmelos,
 ~bpadcontrapunctus.stop;
 */
 
-~bpaddrone1 = Pdef(\bpaddrone1, Pmono(\pad, \degree, [-5, 0].stutter(2), \octave, 3, \root, ~root2, \scale, ~scale));
+~bpaddrone1 = Pdef(\bpaddrone1, Pmono(\pad, \degree, [-5, 0].stutter(2), \octave, 5, \root, ~root2, \scale, ~scale));
 
 /*
 ~bpaddrone1.play(t, quant: 1);
@@ -760,7 +762,7 @@ Pdef(\bpadmelos,
 ~bpaddrone1.stop;
 */
 
-~bpaddrone2 = Pdef(\bpaddrone2, Pmono(\pad, \degree, [0, 2].stutter(2), \octave, 3, \root, ~root2, \scale, ~scale));
+~bpaddrone2 = Pdef(\bpaddrone2, Pmono(\pad, \degree, [0, 2].stutter(2), \octave, 5, \root, ~root2, \scale, ~scale));
 
 /*
 ~bpaddrone2.play(t, quant: 1);
@@ -1015,7 +1017,7 @@ MIDIdef.cc(\jungleparstopktrl, {
 //
 
 (
-SynthDef(\jungledrone, { | curve = 0, fb = 0.3, dur = 1, freq = 400, gate = 1, level = 0.03 |
+SynthDef(\jungledrone, { | curve = 0, fb = 0.3, dur = 1, freq = 400, gate = 1, level = 0.05 |
 	var env				=	Env.asr(0.003, level, 0.3);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var fenv			=	XLine.ar(4, 1, 0.0001);
@@ -1154,9 +1156,9 @@ MIDIdef.cc(\jchordpatstopktrl, {
 Pdef(\jpnopat1,
 	Pbind(
 		\instrument, \pno,
-		\curve, -6,
 		\degree, [0, 7],
 		\dur, Pseq([0.5, Pshuf([1, 2, 5].stutter(3))], inf),
+		\ffreqmult, 16,
 		\level, 0.02,
 		\root, ~root,
 		\scale, ~scale
@@ -1314,7 +1316,7 @@ Pdef(\jhatpat1,
 		// 	1, 1, 1, 1.5,
 		// 	1, 1, 1, 1, 1.5
 		// ], inf),
-		\dur, Pshuf([1, 1, 1, 1.5, 2], inf),
+		\dur, Pshuf([1, 1, 1, 1.5, 2].stutter(5), inf),
 		\ffreq, Pshuf([4000, 4000, 8000].stutter(7), inf),
 		\lag, Pwhite(-0.01, 0.01, inf),
 		\level, Pshuf([0.1, 1, 1].stutter(5) * 0.2, inf),
@@ -1354,7 +1356,7 @@ Pdef(\jhatpat3,
 		\dur, 0.25,
 		\ffreq, 12000,
 		\lag, 0,
-		\level, Pseq(((0..109) / 3000).mirror2, inf),
+		\level, Pseq(((0..109) / 2000).mirror2, inf),
 		\pan, Pseq(((((0..53) / 53) * 2) - 1).mirror2, inf)
 ));
 );
