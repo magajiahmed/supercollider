@@ -2,49 +2,43 @@
 
 s.scope;
 
-t = TempoClock(90/60);
+t = TempoClock(80/60);
 
 (
 SynthDef(\string, { |dur = 1, freq = 440, level = 0.05|
 	var env				=	Env.sine(dur, level);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var lfn				=	LFNoise1.kr(0.05, 0.5, 1);
-	var sin				=	SinOsc.ar(freq!2 * lfn, mul: 0.5, add: 1);
-	var sinfb			=	SinOscFB.ar(freq!2, sin, envgen).fold2(level / 2);
-	var rlpf			=	RLPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.3);
-	var rhpf			=	RHPF.ar(sinfb, (freq * 8).clip(50, SampleRate.ir / 3), 0.3);
-	Out.ar(0, rlpf + rhpf);
+	var sin				=	SinOsc.ar(freq!2, mul: envgen);
+	var fbmod			=	SinOsc.ar([freq - 0.1, freq + 0.1], mul: 0.9, add: 1);
+	var sinfb			=	SinOscFB.ar(freq, fbmod, envgen).fold2(level / 2);
+	var rlpf			=	RLPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3));
+	var rhpf			=	RHPF.ar(sinfb, (freq * 16).clip(50, SampleRate.ir / 3), 0.1);
+	var ampmod			=	LFNoise0.kr(15!2).range(0.7, 1).round(0.3);
+	Out.ar(0, (sin + rlpf + rhpf) * ampmod);
 }).add;
 );
 
 //
 
-~chords = (0..11).collect({ |item, i| [7, 12] ++ [item] });
-~rests = [Rest].stutter(~chords.size);
-~chordsandrests = ~chords ++ ~rests;
-
 (
+//~chords = [-2, 0, 1, 2, 3, 6, 7].collect({ |item, i| [item] ++ [0, 7] });
+~chords = [[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [-5, 0, 3], [0, 6, 7], [0, 7, 7]];
+//~rests = [Rest].stutter(~chords.size);
+//~chordsandrests = ~chords ++ ~rests;
+
 ~stringpat =
 Pdef(\stringpat,
 	Pbind(
 		\instrument, \string,
 		\dur, Pshuf(Array.fill(5, { |i| (i + 5).nthPrime }), inf),
-		\note, Pshuf(~chordsandrests, inf),
-		\octave, 4,
+		\legato, 1,
+		\note, Pshuf(~chords, inf).trace,
 		\root, ~root,
 ));
 );
 
 ~stringpat.play(t, quant: 0.5);
 ~stringpat.stop;
-
-//
-
-~stringpar = Pdef(\stringpar, Ppar(Array.fill(2, {~stringpat}), inf));
-
-~stringpar.play(t, quant: 0.5);
-~stringpar.isPlaying;
-~stringpar.stop;
 
 ////////////////////////////////////////////////////////////////
 
@@ -53,14 +47,15 @@ SynthDef(\bass, { |dur = 1, freq = 440, level = 0.3|
 	var env				=	Env.perc(0.01, dur, level, -2);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var n				=	8;
-	var mix				=	Mix.fill(n, {
-		|i|
-		var bn				=	LFBrownNoise0.kr(freq, mul: 0.005, add: 1);
+	var mix				=	Mix.fill(n, { |i|
+		var bn				=	LFBrownNoise0.kr(freq, mul: 0.001, add: 1);
 		var crackl			=	Crackle.kr(1.5!2, 0.9, 1);
 		var sinfb			=	SinOscFB.ar(freq * bn, crackl, envgen / n).fold2(level);
 		sinfb;
 	});
-	Out.ar(0, mix);
+	var rlpf			=	RLPF.ar(mix, freq * 2);
+	var rhpf			=	RHPF.ar(mix, 3000, 0.2) / 2;
+	Out.ar(0, rlpf + rhpf);
 }).add;
 );
 
@@ -99,7 +94,7 @@ Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
 		\curve, -16,
-		\dur, Prand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\dur, Prand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
 		\k, Pwhite(0.1, 4.0, inf),
 		\level, 0.2,
 		\root, ~root,
@@ -124,6 +119,13 @@ Pdef(\prcpat1,
 ~prcpat2.play(t, quant: 0.5);
 ~prcpat2.stop;
 
+//
+
+~prcpat2a = Pdef(\prcpat2a, Pbindf(~prcpat2, \level, 0.03));
+
+~prcpat2a.play(t, quant: 0.5);
+~prcpat2a.stop;
+
 ////////////////////////////////////////////////////////
 
 (
@@ -131,7 +133,7 @@ SynthDef(\hat, { |curve = -16, dur = 1, fb = 5, freq = 440, level = 0.02|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var sinfb			=	SinOscFB.ar([freq, freq * 1.002], fb, envgen);
-	var rlpf			=	RHPF.ar(sinfb, (freq * 4).clip(50, SampleRate.ir / 3), 0.1);
+	var rlpf			=	RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
 	Out.ar(0, rlpf);
 }).add;
 );
@@ -141,34 +143,12 @@ SynthDef(\hat, { |curve = -16, dur = 1, fb = 5, freq = 440, level = 0.02|
 Pdef(\hatpat,
 	Pbind(
 		\instrument, \hat,
-		\curve, Pwrand([-16, 0], [64, 1].normalizeSum, inf),
-		\dur, 0.25,
+		\dur, Prand([0.5, 0.75, 1, 1.5], inf),
 		\fb, Pshuf((1..6), inf),
-		\octave, 7,
-		\root, 7
+		\octave, 8,
+		\root, ~root
 ));
 );
 
 ~hatpat.play(t, quant: 1);
 ~hatpat.stop;
-
-//
-
-~hatpar = Pdef(\hatpar, Ppar([~hatpat].stutter(4), inf));
-
-~hatpar.play(t, quant: 1);
-~hatpar.stop;
-
-//
-
-~pnopat1 = Pdef(\pnopat1, Pbind(\instrument, \hat, \dur, Prand([0.5, 0.75], inf), \fb, 0.1, \level, 0.8, \root, ~root));
-
-~pnopat1.play(t, quant: 0.5);
-~pnopat1.stop;
-
-//
-
-~pnopat2 = Pdef(\pnopat2, Pbindf(~pnopat1, \level, 0.3));
-
-~pnopat2.play(t, quant: 0.5);
-~pnopat2.stop;
