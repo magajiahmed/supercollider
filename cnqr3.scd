@@ -11,9 +11,11 @@ t = TempoClock(80/60);
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\string, { |dur = 1, freq = 440, level = 0.05, xlinestart = 1|
-	var env				=	Env.sine(dur, level);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
+SynthDef(\string, { |dur = 1, freq = 440, gate = 1, level = 0.05, xlinestart = 1|
+	//var env				=	Env.sine(dur, level);
+	//var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var env				=	Env.asr(5, level, 15, 0);
+	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var xline			=	XLine.kr(xlinestart, 1, dur / 2);
 	var fbmod			=	SinOsc.ar([freq - 0.1, freq + 0.1] * xline, mul: 0.9, add: 1);
 	var n				=	4;
@@ -38,8 +40,8 @@ SynthDef(\string, { |dur = 1, freq = 440, level = 0.05, xlinestart = 1|
 ~rests = Rest!(~chords.size / 2);
 ~chordsandrests = ~chords ++ ~rests;
 
-~stringpat =
-Pdef(\stringpat,
+~stringpat1 =
+Pdef(\stringpat1,
 	Pbind(
 		\instrument, \string,
 		\dur, Pshuf(Array.fill(4, { |i| (i + 5).nthPrime }), inf),
@@ -52,15 +54,17 @@ Pdef(\stringpat,
 );
 
 /*
-~stringpat.play(t, quant: 0.5);
-~stringpat.stop;
+~stringpat1.play(t, quant: 0.5);
+~stringpat1.isPlaying;
+~stringpat1.stop;
 */
 
 (
 ~stringpat2 =
 Pdef(\stringpat2,
 	Pbindf(
-		~stringpat,
+		~stringpat1,
+		\legato, 0.5,
 		\note, [7, 12],
 		\xlinestart, 1,
 ));
@@ -68,7 +72,36 @@ Pdef(\stringpat2,
 
 /*
 ~stringpat2.play(t, quant: 0.5);
+~stringpat2.isPlaying;
 ~stringpat2.stop;
+*/
+
+(
+~stringpat3 =
+Pdef(\stringpat3,
+	Pbindf(
+		~stringpat2,
+		\note, [10, 14],
+));
+);
+
+/*
+~stringpat3.play(t, quant: 0.5);
+~stringpat3.stop;
+*/
+
+(
+~stringpat4 =
+Pdef(\stringpat4,
+	Pbindf(
+		~stringpat2,
+		\note, [14, 19],
+));
+);
+
+/*
+~stringpat4.play(t, quant: 0.5);
+~stringpat4.stop;
 */
 
 ////////////////////////////////////////////////////////////////
@@ -105,6 +138,7 @@ Pdef(\basspat,
 
 /*
 ~basspat.play(t, quant: 0.5);
+~basspat.isPlaying;
 ~basspat.stop;
 */
 
@@ -128,7 +162,7 @@ Pdef(\prcpat1a,
 	Pbind(
 		\instrument, \prc,
 		\curve, -64,
-		\dur, Prand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
 		\k, Pwhite(0.1, 4.0, inf),
 		\level, 0.2,
 		\note, 0,
@@ -247,7 +281,7 @@ Pdef(\pulsepat1a,
 );
 
 /*
-~pulsepat1a.play(t, quant: 1);
+~pulsepat1a.play(t, quant: 0.5);
 ~pulsepat1a.stop;
 */
 
@@ -256,16 +290,16 @@ Pdef(\pulsepat1a,
 ~pulsepat1b = Pdef(\pulsepat1b, Pbindf(~pulsepat1a, \level, 0.008));
 
 /*
-~pulsepat1b.play(t, quant: 1);
+~pulsepat1b.play(t, quant: 0.5);
 ~pulsepat1b.stop;
 */
 
 //
 
-~pulsepat1c = Pdef(\pulsepat1c, Pbindf(~pulsepat1b, \level, 0.01));
+~pulsepat1c = Pdef(\pulsepat1c, Pbindf(~pulsepat1b, \level, 0.008));
 
 /*
-~pulsepat1c.play(t, quant: 1);
+~pulsepat1c.play(t, quant: 0.5);
 ~pulsepat1c.stop;
 */
 
@@ -274,6 +308,6 @@ Pdef(\pulsepat1a,
 ~pulsepar = Pdef(\pulsepar, Ppar([~pulsepat1a, ~pulsepat1b, ~pulsepat1c]));
 
 /*
-~pulsepar.play(t, quant: 1);
+~pulsepar.play(t, quant: 0.5);
 ~pulsepar.stop;
 */
