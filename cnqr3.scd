@@ -66,7 +66,7 @@ Pdef(\stringpat2,
 		~stringpat1,
 		\legato, 0.5,
 		\note, [7, 12],
-		\xlinestart, 1,
+		\xlinestart, 0.25,
 ));
 );
 
@@ -87,6 +87,7 @@ Pdef(\stringpat3,
 
 /*
 ~stringpat3.play(t, quant: 0.5);
+~stringpat3.isPlaying;
 ~stringpat3.stop;
 */
 
@@ -101,25 +102,40 @@ Pdef(\stringpat4,
 
 /*
 ~stringpat4.play(t, quant: 0.5);
+~stringpat4.isPlaying;
 ~stringpat4.stop;
 */
 
 ////////////////////////////////////////////////////////////////
 
+/*
 (
 SynthDef(\bass, { |dur = 1, freq = 440, level = 0.3|
 	var env				=	Env.perc(0.01, dur, level, -2);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var n				=	16;
-	var mix				=	Mix.fill(n, { |i|
-		var bn				=	LFBrownNoise0.kr(1, mul: 0.001, add: 1);
-		var crackl			=	Crackle.kr(1.5!2, 0.9, 1);
-		var sinfb			=	SinOscFB.ar(freq * bn, crackl, envgen / n).fold2(level);
+	var n				=	1;
+	var mix				=	Mix.fill(n, {
+		//var bn				=	LFBrownNoise2.kr(freq, mul: 0.001, add: 1);
+		var crackl			=	Crackle.ar(1.5!2).range(0.0, 2.0);
+		var sinfb			=	SinOscFB.ar(freq, crackl, envgen / n).fold2(level);
 		sinfb;
 	});
-	var rlpf			=	RLPF.ar(mix, freq * 2);
-	var rez				=	Resonz.ar(mix, 8000, 0.1) * 4;
-	Out.ar(0, rlpf + rez);
+	var rlpf			=	RLPF.ar(mix, freq * 4);
+	//var rez				=	Resonz.ar(mix, 8000, 0.1) * 4;
+	var rhpf			=	RHPF.ar(mix, 12000);
+	Out.ar(0, rlpf + rhpf);
+}).add;
+);
+*/
+
+(
+SynthDef(\bass, { |dur = 1, fb = 2.0, freq = 440, level = 0.02|
+	var env				=	Env.perc(0.01, dur, level).kr(2);
+	var imp				=	Impulse.ar(0, mul: env * 10);
+	var sinfb			=	SinOscFB.ar(freq!2, fb, mul: env);
+	var comb			=	CombL.ar(sinfb, (freq).reciprocal, (freq).reciprocal).softclip;
+	//var lpf				=	MoogVCF.ar(comb, 2000, 0.1);
+	Out.ar(0, imp + comb);
 }).add;
 );
 
@@ -129,6 +145,7 @@ Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
 		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24].stutter(3), inf),
+		\fb, Pwhite(2.0, 3.0, inf),
 		\note, Pshuf([-2, 0, 1, 2, 3, 6, 7], inf),
 		\octave, 2,
 		\root, ~root,
@@ -145,14 +162,15 @@ Pdef(\basspat,
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc, { |curve = -16, freq = 440, k = 1.4, level = 0.2, x = 4.97897, y = 5.74734|
-	var env				=	Env.perc(0.01, 0.2, level, curve);
+SynthDef(\prc, { |curve = -4, freq = 440, k = 1.4, level = 0.2, x = 4.97897, y = 5.74734|
+	var env				=	Env.perc(0.01, 0.3, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var stan			=	Standard2DC.ar(k: k, x0: x, y0: y).range(0, 1);
-	var sinfb			=	SinOscFB.ar(freq!2, stan + 4, envgen).wrap2(level);
-	var rlpf			= 	RLPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.5);
-	var rez				=	Resonz.ar(sinfb, (freq * 8).clip(50, SampleRate.ir / 3), 0.3) * 2;
-	Out.ar(0, rlpf + rez);
+	var stan			=	Standard2DC.ar(k: k, x0: x, y0: y).range(0.0, 1.0);
+	var sinfb			=	SinOscFB.ar(freq!2, stan + 5, envgen).wrap2(level);
+	var rlpf			= 	RLPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.3);
+	var rez				=	Resonz.ar(sinfb, (freq * 8).clip(50, SampleRate.ir / 3), 0.1) * 2;
+	var ampmod			=	LFSaw.ar(freq!2, mul: 0.5, add: 1);
+	Out.ar(0, (rlpf + rez) * ampmod);
 }).add;
 );
 
@@ -161,8 +179,8 @@ SynthDef(\prc, { |curve = -16, freq = 440, k = 1.4, level = 0.2, x = 4.97897, y 
 Pdef(\prcpat1a,
 	Pbind(
 		\instrument, \prc,
-		\curve, -64,
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\curve, -16,
+		\dur, Pshuf([Pseq([5/6, 1/12, 1/12]), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
 		\k, Pwhite(0.1, 4.0, inf),
 		\level, 0.2,
 		\note, 0,
@@ -229,29 +247,34 @@ Pdef(\prcpat1a,
 
 /*
 ~prcpar.play(t, quant: 0.5);
+~prcpar.isPlaying;
 ~prcpar.stop;
 */
 
 ////////////////////////////////////////////////////////
 
 (
-SynthDef(\hat, { |curve = -16, dur = 1, fb = 5, freq = 440, level = 0.02|
+SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.05|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var sinfb			=	SinOscFB.ar([freq, freq * 1.002], [fb, fb + 0.05], envgen);
+	var lfn				=	LFNoise0.kr(50!2, 0.0005, 1);
+	var sinfb			=	SinOscFB.ar(freq!2 * lfn, fb).fold2(0.03) * envgen * 40;
 	var rhpf			=	RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
 	Out.ar(0, rhpf);
 }).add;
 );
 
 (
-~hatpat =
-Pdef(\hatpat,
+~hatpat1 =
+Pdef(\hatpat1,
 	Pbind(
 		\instrument, \hat,
+		\curve, -16,
 		\dur, Prand([Pseq([0.125], 2), 0.5, 0.75, 1, 1.5, 6], inf),
-		\fb, Pshuf((1..6), inf),
-		\note, Pwrand([0, 3], [2, 1].normalizeSum, inf),
+		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
+		\level, 0.08,
+		//\note, Pwrand([0, 3], [2, 1].normalizeSum, inf),
+		\note, 0,
 		\octave, 8,
 		\root, ~root,
 		\scale, ~scale
@@ -259,8 +282,25 @@ Pdef(\hatpat,
 );
 
 /*
-~hatpat.play(t, quant: 1);
-~hatpat.stop;
+~hatpat1.play(t, quant: 1);
+~hatpat1.isPlaying;
+~hatpat1.stop;
+*/
+
+~hatpat2 = Pdef(\hatpat2, Pbindf(~hatpat1, \dur, Prand([0.25, 0.5, 0.75], inf), \level, 0.02));
+
+/*
+~hatpat2.play(t, quant: 1);
+~hatpat2.isPlaying;
+~hatpat2.stop;
+*/
+
+~hatpar = Pdef(\hatpar, Ppar([~hatpat1, ~hatpat2], inf));
+
+/*
+~hatpar.play(t, quant: 1);
+~hatpar.isPlaying;
+~hatpar.stop;
 */
 
 //
@@ -271,7 +311,7 @@ Pdef(\pulsepat1a,
 	Pbind(
 		\instrument, \hat,
 		\curve, -4,
-		\dur, Prand([0.5, 0.75], inf),
+		\dur, Pshuf([0.5, 0.75].stutter(5), inf),
 		\fb, Pwhite(2.7, 3.2, inf),
 		\note, 0,
 		\octave, 3,
@@ -309,5 +349,6 @@ Pdef(\pulsepat1a,
 
 /*
 ~pulsepar.play(t, quant: 0.5);
+~pulsepar.isPlaying;
 ~pulsepar.stop;
 */
