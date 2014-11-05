@@ -6,7 +6,7 @@
 
 s.scope;
 
-t = TempoClock(80/60);
+t = TempoClock(90/60);
 
 ////////////////////////////////////////////////////////////////
 
@@ -112,9 +112,9 @@ Pdef(\stringpat4,
 SynthDef(\bass, { |dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpffrq = 2000|
 	var env				=	Env.perc(0.01, dur, level, -2).kr(2);
 	var imp				=	Impulse.ar(0);
-	var sinfb			=	SinOscFB.ar(freq!2, fb, mul: env);
+	var sinfb			=	SinOscFB.ar([freq, freq * 1.01], fb, mul: env);
 	var comb			=	CombL.ar(imp + sinfb, (freq).reciprocal, (freq).reciprocal).softclip;
-	var lpf				=	MoogVCF.ar(comb, 2000, 0.1);
+	var lpf				=	MoogVCF.ar(comb, 1000, 0.1);
 	var xline			=	XLine.kr(1, 0.5, dur);
 	var rhpfrqmod		=	LFBrownNoise0.kr(freq!2).range(0.3, 1);
 	var rhpf			=	RHPF.ar(comb, (rhpffrq * xline).clip(50, SampleRate.ir / 3), rhpfrqmod);
@@ -131,7 +131,8 @@ Pdef(\basspat,
 		\fb, Pwhite(2.0, 3.0, inf),
 		\note, Pshuf([-2, 0, 1, 2, 3, 6, 7], inf),
 		\octave, 2,
-		\rhpffrq, Pwhite(3000, 6000, inf),
+		//\rhpffrq, Pwhite(3000, 6000, inf),
+		\rhpffrq, 8000,
 		\root, ~root,
 		\scale, ~scale
 ));
@@ -146,15 +147,15 @@ Pdef(\basspat,
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc, { |curve = -4, dur = 1, freq = 440, freqstart = 2, k = 1.4, level = 0.2, x = 4.97897, y = 5.74734|
+SynthDef(\prc, { |curve = -4, dur = 1, fb = 5.0, freq = 440, freqstart = 2, k = 1.4, level = 0.2, x = 4.97897, y = 5.74734|
 	var env				=	Env.perc(0.01, 0.3, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var stan			=	Standard2DC.ar(freq / 2, freq, k: k, x0: x, y0: y).range(5.0, 6.0);
-	var sinfb			=	SinOscFB.ar(freq!2, stan, envgen).wrap2(level);
-	var rlpf			= 	RLPF.ar(sinfb, (freq * 8).clip(50, SampleRate.ir / 3));
-	var rez				=	Resonz.ar(sinfb, (XLine.kr(freq * 16, freq, 0.1)).clip(50, SampleRate.ir / 3));
-	//var rhpf			=	RHPF.ar(sinfb, 12000, 0.1);
-	Out.ar(0, rez);
+	var stan			=	Standard2DC.ar(freq / 2, freq, k: k, x0: x, y0: y).range(fb, fb + 1);
+	var sinfb			=	SinOscFB.ar([freq, freq * 1.02], stan, envgen).wrap2(level);
+	//var rez				=	Resonz.ar(sinfb, (freq).clip(50, SampleRate.ir / 3), 0.3);
+	var rlpf			= 	BLowPass4.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.5);
+	var rhpf			=	RHPF.ar(sinfb, 10000, 0.3);
+	Out.ar(0, rlpf + rhpf);
 }).add;
 );
 
@@ -163,72 +164,44 @@ SynthDef(\prc, { |curve = -4, dur = 1, freq = 440, freqstart = 2, k = 1.4, level
 Pdef(\prcpat1a,
 	Pbind(
 		\instrument, \prc,
-		\curve, 0,
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(3), inf),
+		\fb, Prand([0, 5, 6], inf),
+		\curve, ((Pkey(\fb) + 1).reciprocal * -24),
 		\freqstart, Pshuf([7/8, 1, 7/6, 3/2, 2], inf),
 		\k, Pwhite(0.1, 4.0, inf),
-		\level, 0.2,
+		\level, 0.1,
 		\note, 0,
 		\octave, 5,
 		\root, ~root,
 		\scale, ~scale,
 		\x, Pwhite(0.1, 9.0, inf),
 ));
+~prcpat1b = Pdef(\prcpat1b, Pbindf(~prcpat1a));
+~prcpat1c = Pdef(\prcpat1c, Pbindf(~prcpat1a, \level, 0.05));
+~prcpar1 = Pdef(\prcpar1, Ppar([~prcpat1a, ~prcpat1b, ~prcpat1c]));
 );
 
 /*
-~prcpat1a.play(t, quant: 0.5);
-~prcpat1a.stop;
-*/
-
-//
-
-~prcpat1b = Pdef(\prcpat1b, Pbindf(~prcpat1a, \level, 0.05));
-
-/*
-~prcpat1b.play(t, quant: 0.5);
-~prcpat1b.stop;
-*/
-
-//
-
-~prcpar1 = Pdef(\prcpar1, Ppar([~prcpat1a, ~prcpat1b]));
-
-/*
 ~prcpar1.play(t, quant: 0.5);
+~prcpar1.isPlaying;
 ~prcpar1.stop;
 */
 
 //
 
-~prcpat2a = Pdef(\prcpat2a, Pbindf(~prcpat1a, \curve, 0, \octave, [0, 1, 2]));
-
-/*
-~prcpat2a.play(t, quant: 0.5);
-~prcpat2a.stop;
-*/
-
-//
-
+~prcpat2a = Pdef(\prcpat2a, Pbindf(~prcpat1a, \curve, 0, \note, 0, \octave, [0, 1, 2]));
 ~prcpat2b = Pdef(\prcpat2b, Pbindf(~prcpat2a, \dur, Prand([0.25, 0.5, 0.75, 3], inf), \level, 0.05));
-
-/*
-~prcpat2b.play(t, quant: 0.5);
-~prcpat2b.stop;
-*/
-
-//
-
 ~prcpar2 = Pdef(\prcpar2, Ppar([~prcpat2a, ~prcpat2b]));
 
 /*
 ~prcpar2.play(t, quant: 0.5);
+~prcpar2.isPlaying;
 ~prcpar2.stop;
 */
 
-//
+////
 
-~prcpar = Pdef(\prcpar, Ppar([~prcpar1, ~prcpar2]));
+~prcpar = Pdef(\prcpar, Ppar([~prcpar1, ~prcpar1, ~prcpar2]));
 
 /*
 ~prcpar.play(t, quant: 0.5);
@@ -264,23 +237,9 @@ Pdef(\hatpat1,
 		\root, ~root,
 		\scale, ~scale
 ));
-);
-
-/*
-~hatpat1.play(t, quant: 1);
-~hatpat1.isPlaying;
-~hatpat1.stop;
-*/
-
 ~hatpat2 = Pdef(\hatpat2, Pbindf(~hatpat1, \dur, Prand([0.25, 0.5, 0.75], inf), \level, 0.02));
-
-/*
-~hatpat2.play(t, quant: 1);
-~hatpat2.isPlaying;
-~hatpat2.stop;
-*/
-
 ~hatpar = Pdef(\hatpar, Ppar([~hatpat1, ~hatpat2], inf));
+);
 
 /*
 ~hatpar.play(t, quant: 1);
@@ -303,34 +262,14 @@ Pdef(\pulsepat1a,
 		\root, ~root,
 		\scale, ~scale
 ));
+
+~pulsepat1b = Pdef(\pulsepat1b, Pbindf(~pulsepat1a, \level, 0.02));
+~pulsepat1c = Pdef(\pulsepat1c, Pbindf(~pulsepat1b, \level, 0.02));
+~pulsepat2a = Pdef(\pulsepat2a, Pbindf(~pulsepat1a, \note, Pshuf([3, -2, Rest, Rest, Rest, Rest, Rest, Rest, Rest].stutter(5), inf)));
+~pulsepat2b = Pdef(\pulsepat1b, Pbindf(~pulsepat2a, \level, 0.02));
+~pulsepat2c = Pdef(\pulsepat1c, Pbindf(~pulsepat2b, \level, 0.02));
+~pulsepar = Pdef(\pulsepar, Ppar([~pulsepat1a, ~pulsepat1b, ~pulsepat1c, ~pulsepat2a, ~pulsepat2b, ~pulsepat2c]));
 );
-
-/*
-~pulsepat1a.play(t, quant: 0.5);
-~pulsepat1a.stop;
-*/
-
-//
-
-~pulsepat1b = Pdef(\pulsepat1b, Pbindf(~pulsepat1a, \level, 0.008));
-
-/*
-~pulsepat1b.play(t, quant: 0.5);
-~pulsepat1b.stop;
-*/
-
-//
-
-~pulsepat1c = Pdef(\pulsepat1c, Pbindf(~pulsepat1b, \level, 0.008));
-
-/*
-~pulsepat1c.play(t, quant: 0.5);
-~pulsepat1c.stop;
-*/
-
-//
-
-~pulsepar = Pdef(\pulsepar, Ppar([~pulsepat1a, ~pulsepat1b, ~pulsepat1c]));
 
 /*
 ~pulsepar.play(t, quant: 0.5);
