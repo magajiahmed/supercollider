@@ -40,7 +40,8 @@ SynthDef(\string, { |dur = 1, freq = 440, gate = 1, level = 0.05, xlinestart = 1
 
 (
 ~chords = [
-	[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [-5, 0, 3], [0, 6, 7], [0, 7, 7]
+	//[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [-5, 0, 3], [0, 6, 7], [0, 7, 7]
+	[-5, -2, 0], [-5, -1, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [0, 3, 7], [0, 4, 7], [0, 6, 7], [0, 7, 7]
 ];
 ~rests = Rest!(~chords.size / 2);
 ~chordsandrests = ~chords ++ ~rests;
@@ -165,8 +166,8 @@ Pdef(\stringpat7,
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\bass, { |dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpffrq = 2000|
-	var env				=	Env.perc(0.01, dur, level, -2).kr(2);
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpffrq = 2000|
+	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0);
 	var sinfb			=	SinOscFB.ar([freq, freq * 1.005], fb, mul: env);
 	var comb			=	CombL.ar(imp + sinfb, (freq).reciprocal, (freq).reciprocal).softclip;
@@ -193,7 +194,7 @@ Pdef(\basspat1,
 		//].stutter(3), inf),
 		\dur, Pshuf(~bassdurs, inf),
 		\fb, Pwhite(2.0, 3.0, inf),
-		\note, Pshuf((-2..6), inf),
+		\note, Pshuf((-2..6).stutter(3), inf),
 		\octave, 2,
 		\rhpffrq, 8000,
 		\root, ~root,
@@ -207,7 +208,7 @@ Pdef(\basspat1,
 ~basspat1.stop;
 */
 
-~basspat2 = Pdef(\basspat2, Pbindf(~basspat1, \note, Pshuf([0, 7, 10, 12, 14], inf)));
+~basspat2 = Pdef(\basspat2, Pbindf(~basspat1, \curve, -8, \note, Prand([0, 7, 12], inf)));
 
 /*
 ~basspat2.play(t, quant: 0.5);
@@ -312,7 +313,6 @@ Pdef(\hatpat1,
 		\dur, Prand([Pseq([0.125], 2), 0.5, 0.75, 1, 1.5, 6], inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
 		\level, 0.08,
-		//\note, Pwrand([0, 3], [2, 1].normalizeSum, inf),
 		\note, 0,
 		\octave, 8,
 		\root, ~root,
