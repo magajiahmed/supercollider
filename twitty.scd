@@ -1,6 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                          INIT
-(
 
 t = TempoClock(96/60);
 ~keyfrq = 64;
@@ -26,6 +25,7 @@ s.stopRecording;
 
 // compressor
 
+(
 ~compressor =
 SynthDef(\compressor, {
 	var in	   		= 	In.ar(2, 2);                          // stereo input bus
@@ -33,11 +33,13 @@ SynthDef(\compressor, {
 							slopeAbove: 1/128); // compressor
 	Out.ar(0, compressor);
 }).play;
+);
 
 // bass
 
+(
 ~sawbass =
-SynthDef(\sawbass, { |dur = 1, freq = 440, peak = 0.5|
+SynthDef(\sawbass, { |dur = 1, freq = 440, peak = 0.1|
 	var env			=	Env.new([0, peak, 0], [0.002, dur / 1.5]);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var envgendiv	=	6;
@@ -53,9 +55,11 @@ SynthDef(\sawbass, { |dur = 1, freq = 440, peak = 0.5|
 	var flt			=   RLPF.ar(saw1 + saw2 + saw3 + tri, cutoff, 0.75);
 	Out.ar([0, 1], flt);
 }).add;
+);
 
 // drone
 
+(
 ~drone =
 SynthDef(\drone, { |freq = 256, freqratio = #[1, 1.5], gate = 1, kbnammul = 0.85, kbnfmmul = 0.005, peak = 1|
 	var kbnfmfreq	=	freq;
@@ -78,9 +82,11 @@ SynthDef(\drone, { |freq = 256, freqratio = #[1, 1.5], gate = 1, kbnammul = 0.85
 	var sin3b		=	SinOsc.ar(freq * 4.01 * freqratio, 				mul: (envgen / 16) * kbnamod3);
 	Out.ar([0, 1], (sin1a + sin1b + sin2a + sin2b + sin3a + sin3b) / 256);
 }).add;
+);
 
 // pad
 
+(
 ~pad =
 SynthDef(\pad, { |dur = 1, envgendivisor = 8, freq = 512, gate = 1, kbnmul = 0.005, peak = 1|
 	var kbnfreq		=	freq;
@@ -100,6 +106,7 @@ SynthDef(\pad, { |dur = 1, envgendivisor = 8, freq = 512, gate = 1, kbnmul = 0.0
 	var rhpf		=	RHPF.ar(deci, hpffrq, kbn5, mul: envgen);
 	Out.ar([0,1], rlpf + rhpf);
 }).add;
+);
 
 /*
 ~padtest = Synth(\pad, [\dur, 20, \freq, 2500]).register;
@@ -113,6 +120,7 @@ d.stop;
 
 // squirp
 
+(
 ~squirp =
 SynthDef(\squirp, { |amp = 1, dur = 8, freq = 512, squirpamp = 0.05|
 	var env			=	Env.perc(0.002, releaseTime: dur, level: amp / 1.5, curve: 0);
@@ -125,9 +133,11 @@ SynthDef(\squirp, { |amp = 1, dur = 8, freq = 512, squirpamp = 0.05|
 	var sin3		=	SinOsc.ar(freq * 8 * squirp3, mul: (envgen / 72));
 	Out.ar([0, 1], [sin1 + sin3, sin2 + sin3]);
 }).add;
+);
 
 // kords
 
+(
 ~kords =
 SynthDef(\kords, { | freq = 512, gate = 1, level = 0.25 |
 	var env 		=	Env.asr(sustainLevel: level);
@@ -137,12 +147,14 @@ SynthDef(\kords, { | freq = 512, gate = 1, level = 0.25 |
 	var sin2		=	SinOsc.ar(freq * 2.02, mul: (envgen * bn) / 2);
 	Out.ar([0, 1], sin1 + sin2);
 }).add;
+);
 
 /*
 ~kordtest = Synth(\kords).register;
 ~kordtest.release;
 */
 
+(
 ~kords2 =
 SynthDef(\kords2, { | freq = 512, gate = 1, level = 0.1, ratio = 1.125 |
 	var env		= 	Env.asr(attackTime: 5, sustainLevel: level, releaseTime: 5, curve: 0);
@@ -158,8 +170,7 @@ SynthDef(\kords2, { | freq = 512, gate = 1, level = 0.1, ratio = 1.125 |
 	var klank	=	DynKlank.ar(`[frqs, amps, rt], bn);
 	Out.ar(0, klank).clip(-0.9, 0.9);
 }).add;
-
-[1,2,3,4].mirror.postln;
+);
 
 /*
 ~kords2test = Synth(\kords2).register;
@@ -169,6 +180,7 @@ SynthDef(\kords2, { | freq = 512, gate = 1, level = 0.1, ratio = 1.125 |
 
 // pling
 
+(
 ~burn =
 SynthDef(\sin, { |amp = 1, curve = -4, dur = 1, envgendiv = 32, freq = 440, mulkbn = 0.9, mulcrckl = 0.01, xaos = 1.99|
 	////////////////////////////////////////////////////////////////////////////////
@@ -191,23 +203,26 @@ SynthDef(\sin, { |amp = 1, curve = -4, dur = 1, envgendiv = 32, freq = 440, mulk
 	///////////////////////////////////////////////////////////////////
 	Out.ar(0, sin1 + sin1a + sin2 + sin2a + sin3 + sin3a);
 }).add;
+);
 
 // ox
 
+(
 ~ox =
-SynthDef(\ox, { |dur = 1, end = 0.5, freq= 440, length = 0.25, peak = 1|
-	var env			=	Env.perc(0.002, releaseTime: dur / 2, level: peak / 8, curve: -64);
+SynthDef(\ox, { |curve = -64, dur = 1, freq = 440, length = 0.25, peak = 0.5 |
+	var env			=	Env.perc(0.002, releaseTime: 0.5, level: peak / 8, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
-	var penv		=	XLine.kr(end: end, dur: dur / 32, add: 1);
-	var kbn1		=	LFBrownNoise0.kr(freq, add: 1);
-	var kbn2		=	LFBrownNoise0.kr(freq, add: 1);
-	var kimp		=	Impulse.kr(freq * penv, mul: kbn1, add: 1);
-	var sin			=	SinOsc.ar(freq * kimp * penv, mul: envgen * kbn2);
-	Out.ar([2, 3], sin);
+	var kbn1		=	LFBrownNoise0.kr(freq!2, add: 1);
+	var kbn2		=	LFBrownNoise0.kr(freq!2, add: 1);
+	var kimp		=	Impulse.ar(freq, mul: kbn1, add: 1);
+	var sin			=	SinOsc.ar(freq * kimp, mul: envgen * kbn2);
+	Out.ar(2, sin);
 }).add;
+);
 
 // pad2
 
+(
 ~pad2 =
 SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 1, peak = 1, width = 0.5|
 	var env			=	Env.adsr(3, 1, peak, 3, peak, curve: -4);
@@ -221,9 +236,11 @@ SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 1, peak = 1, width = 0.5|
 	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.3);
 	Out.ar(0, rlpf);
 }).add;
+);
 
 // prc based on xaotic fn
 
+(
 ~foibles =
 SynthDef(\latte, { |a = 1, b = 3, curve = -8, length = 0.2, pan = 0, peak = 1|
 	var env			=	Env.perc(releaseTime: length, level: peak, curve: curve);
@@ -232,9 +249,12 @@ SynthDef(\latte, { |a = 1, b = 3, curve = -8, length = 0.2, pan = 0, peak = 1|
 	var pan2		= 	Pan2.ar(lat, pan);
 	Out.ar(2, pan2);
 }).add;
+);
 
 // clicky prc
 
+/*
+(
 ~germ =
 SynthDef(\imp, { |frq = 2000, pan = 0, peak = 1, rq = 1|
 	var env			=	Env.perc(0.005, level: peak);
@@ -242,12 +262,28 @@ SynthDef(\imp, { |frq = 2000, pan = 0, peak = 1, rq = 1|
 	var imp			=	Impulse.ar(0, mul: envgen);
 	var flt			=	RLPF.ar(imp, frq, rq);
 	var pan2		=	Pan2.ar(flt, pan);
-	Out.ar(2, pan2);
+	Out.ar(2, imp);
 }).add;
+);
+*/
+
+(
+SynthDef(\imp, { |fb = 0, freq = 4000, pan = 0, peak = 0.1|
+	var env			=	Env.new([0, peak, 0], [0.003, 0.001], );
+	var envgen		=	EnvGen.ar(env, doneAction: 2);
+	var sinfb		=	SinOscFB.ar(freq, fb, envgen);
+	var pan2		=	Pan2.ar(sinfb, pan);
+	var rhpf		=	RHPF.ar(pan2, 8000, 0.01);
+	Out.ar(2, rhpf);
+}).add;
+);
+
+~imptest = Synth(\imp);
 
 ////////////////////////////////////////////////////////////////////////////////////
 //							PATTERNS
 
+(
 // bass
 ~morse =
 Pdef(\mutter,
@@ -259,14 +295,16 @@ Pdef(\mutter,
 							1/1, 1/1, 9/8,
 							1/1, 1/1, 1/1, 6/5, 16/15
 						] * ~keyfrq, inf),
-		\peak, 			0.1
+		\peak, 			0.08,
 ));
+);
 
 /*
 ~morse.play(t, quant: 1);
 ~morse.stop;
 */
 
+(
 ~squirpy1 =
 Pdef(\squirpy,
 Pbind(
@@ -274,6 +312,7 @@ Pbind(
 	\dur, 				Prand([0.25, 4, 6, 8, 12, 16, 24], inf),
 	\freq, 				Pshuf([9/10, 1/1, 16/15, 9/8, 6/5, 3/2, 9/5, 32/15, 9/4, 13/5] * ~keyfrq * 8, inf),
 ));
+);
 
 /*
 ~squirpy1.play(t, quant: 1);
@@ -289,6 +328,7 @@ Pbind(
 
 // kords
 
+(
 ~kordsdurarray = [16, 24, 32, 48].scramble;
 
 ~kordpat1 =
@@ -302,6 +342,7 @@ Pdef(\kordpat1,
 		\level, 0.03,
 		\ratio, Pshuf([13/11, 17/11, 23/11, 29/11], inf),
 ));
+);
 
 /*
 ~kordpat1.play(t, quant: 1);
@@ -319,6 +360,7 @@ Pdef(\kordpat1,
 
 // pad ///////////////////////////////////////////////
 
+(
 ~padpat =
 Pdef(\padpat,
 	Pbind(
@@ -327,16 +369,19 @@ Pdef(\padpat,
 		\freq, 			Pshuf([1/1, 16/15, 9/8, 8/7, 6/5, 9/7, 11/8, 7/5, 10/7, 3/2, 11/7, 8/5, 13/8, 12/7, 9/5, 13/7, 11/5, 13/5, 13/3] * ~keyfrq * 4, inf),
 		\peak, 			0.2,
 ));
+);
 
 /*
 ~padpat.play(t, quant: 1);
 ~padpat.stop;
 */
 
+(
 ~padchords =
 Pdef(\padchords,
 Ppar([~padpat, ~padpat, ~padpat], inf
 ));
+);
 
 /*
 ~padchords.play(t, quant: 1);
@@ -345,6 +390,7 @@ Ppar([~padpat, ~padpat, ~padpat], inf
 
 // prc1a /////////////////////////////////////////////
 
+(
 ~gazelle =
 Pdef(\moisture,
 	Pbind(
@@ -353,8 +399,9 @@ Pdef(\moisture,
 		\b, 			Pwhite(1, 3, inf),
 		\dur, 			Pwrand([Pseq([0.25 / 2], 4), 0.5, 0.75, 6, 9], [1, 16, 16, 4, 4].normalizeSum, inf),
 		\pan, 			Pshuf([-1, -0.5, 0, 0.5, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 7,
+		\peak, 			Pwhite(0.75, 1, inf) / 9,
 ));
+);
 
 /*
 ~gazelle.play(t, quant: 1);
@@ -362,12 +409,13 @@ Pdef(\moisture,
 */
 
 // prc1b
-
+(
 ~gauze =
 Pdef(\gumboots,
 	Ppar(
 		[~gazelle, ~gazelle], inf
 ));
+);
 
 /*
 ~gauze.play(t, quant: 1);
@@ -376,11 +424,13 @@ Pdef(\gumboots,
 
 // prc1c
 
+(
 ~bandage =
 Pdef(\gobble,
 	Ppar(
 		[~gauze, ~gauze], inf
 ));
+);
 
 /*
 ~bandage.play(t, quant: 1);
@@ -389,16 +439,18 @@ Pdef(\gobble,
 
 // imp (clicky) //////////////////////////
 
+(
 ~godliness =
 Pdef(\huddled,
 	Pbind(
 		\instrument, 	\imp,
 		\dur, 			Pxrand([0.5, 0.75, 1.5], inf),
-		\frq, 			Prand([4000, 8000, 16000], inf),
+		\fb,            Pshuf((0..6), inf),
+		\freq,          ~keyfrq * 2.pow(8),
 		\pan, 			Prand([-1, 0, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 4,
-		\rq, 0.1
+		\peak, 			Pwhite(0.75, 1, inf) / 20,
 ));
+);
 
 /*
 ~godliness.play(t, quant: 1);
@@ -407,17 +459,16 @@ Pdef(\huddled,
 
 // clicky echo ///////////////////////////
 
+(
 ~gumption =
 Pdef(\homesick,
 	Pbindf(~godliness,
 		\dur, 			Pwrand([Pseq([0.125], 2), Pseq([0.125], 4), 0.5, 0.75, 1.5], [1, 1, 16, 16, 16].normalizeSum, inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 12,
-		\rq, 			0.05
+		\peak, 			Pwhite(0.75, 1, inf) / 100,
 ));
+);
 
-~desert =
-Pdef(\fluster,
-	Ppar([~gumption, ~gumption], inf));
+~desert = Pdef(\fluster, Ppar([~gumption, ~gumption], inf));
 
 /*
 ~desert.play(t, quant: 1);
@@ -426,32 +477,50 @@ Pdef(\fluster,
 
 // imp for 2nd section
 
+(
 ~klikk2 =
 Pdef(\klikk,
 	Pbind(
 		\instrument, \imp,
 		\dur, Pshuf([0.75, 1, 1.5, 2].mirror2, inf),
-		\peak, Pwhite(0.75, 1, inf),
+		\fb, 6,
+		\freq, ~keyfrq * 2.pow(6),
+		\peak, Pwhite(0.75, 1, inf) / 50,
+		//\peak, 0,
 ));
+~klikk2a = Pdef(\klikk2a, Pbindf(~klikk2, \dur, 1.25, \fb, 0, \peak, 1 / 250));
+);
 
 /*
-~klikk2.play(t, quant: 1);
+~klikk2.play(t, quant: 0.5);
+~klikk2a.play(t, quant: 0.5);
 ~klikk2.stop;
+~klikk2a.stop;
 */
+
+~klikkpar = Pdef(\klikkpar, Ppar([~klikk2, ~klikk2a], inf));
+
+/*
+~klikkpar.play(t, quant: 1);
+~klikkpar.stop;
+*/
+
 // kik ///////////////////
 
+(
 ~bonk =
 Pdef(\borne,
 	Pbind(
 		\instrument, 	\latte,
 		\a, 			3,
 		\b, 			Pwhite(0.11, 0.114, inf),
-		\curve, 		-4,
-		\dur, 			Pxrand([0.25, 0.5, 0.75, 1, 1.5, 4, 6, 16, 24], inf),
-		\length, 		0.25,
+		\curve, 		-64,
+		\dur, 			Pxrand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+		\length, 		0.1,
 		\pan, 			Pwhite(-0.5, 0.5, inf),
 		\peak, 			Pwhite(0.4, 0.5, inf),
 ));
+);
 
 /*
 ~bonk.play(t, quant: 1);
@@ -460,17 +529,19 @@ Pdef(\borne,
 
 // snr ////////////////////
 
+(
 ~guzzle =
 Pdef(\horned,
 	Pbind(
 		\instrument, 	\latte,
 		\a, 			Pwhite(0.925, 0.926, inf),
-		\curve, 		-16,
-		\dur, 			Pxrand([0.75, 1, 1.5, 2, 4, 6, 16, 24], inf),
+		\curve, 		-64,
+		\dur, 			Pxrand([0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
 		\length, 		0.1,
 		\note, 			Pseq([Rest, 1], inf),
-		\peak, 			0.3,
+		\peak, 			0.2,
 ));
+);
 
 /*
 ~guzzle.play(t, quant: 1);
@@ -479,6 +550,7 @@ Pdef(\horned,
 
 // pling /////////////////////////////////////////////////////////////
 
+(
 ~forked =
 Pdef(\fillery,
 	Pbind(
@@ -487,40 +559,47 @@ Pdef(\fillery,
 		\dur, 			Pshuf([0.25, 4, 6, 8, 12, 16, 24, 32, 48], inf),
 		\freq, 			Pseq([9/10, 1/1, 16/15, 9/8, 6/5, 3/2, 9/5, 13/5] * ~keyfrq * 8, inf),
 ));
+);
 
 /*
 ~forked.play(t, quant: 1);
 ~forked.stop;
 */
 
+(
 ~formula =
 Pdef(\borked,
 	Ppar(
 		[~forked, ~forked], inf
 ));
+);
 
 /*
 ~formula.play(t, quant: 1);
 ~formula.stop;
 */
 
+(
 ~familyman =
 Pdef(\vooom,
 	Pbindf(
 		~forked,
 		\freq, Pshuf([9/10, 1/1, 16/15, 9/8, 6/5, 3/2, 9/5, 13/5] * ~keyfrq * 8 * (3/2), inf),
 ));
+);
 
 /*
 ~familyman.play(t, quant: 1);
 ~familyman.stop;
 */
 
+(
 ~families =
 Pdef(\goam,
 Ppar(
 		[~familyman, ~familyman], inf
 ));
+);
 
 /*
 ~families.play(t, quant: 1);
@@ -529,6 +608,8 @@ Ppar(
 
 // pad2
 
+/*
+(
 ~pad2pat1 =
 Pdef(\pad2pat,
 Pbind(
@@ -538,42 +619,53 @@ Pbind(
 		\peak, 			0.3,
 		\width, 		Pwhite(0.2, 0.8, inf),
 ));
+);
 
 /*
 ~pad2pat.play(t, quant: 1);
 ~pad2pat.stop;
 */
 
+(
 ~pad2chords =
 Pdef(\pad2chords,
 Ppar(
 		Array.fill(5, { ~pad2pat1 }), inf
 ));
+);
 
 /*
 ~pad2chords.play(t, quant: 1);
 ~pad2chords.stop;
 */
 
+*/
+
 // ox
 
+(
 ~oxpastpat =
 Pdef(\oxtestpat,
 Pbind(
 		\instrument, 	\ox,
-		\dur, 			Pxrand([0.25, 0.5, 0.75, 1, 1.5, 2, 3], inf),
-		\end, 			Pxrand([0.25, 0.5], inf),
-		\freq, 			Pxrand([1/1, 3/2, 2/1, 3/1] * 256, inf),
-		\peak, 			Pbrown(0.5, 1, 0.5, inf) / 1.5
+		\curve,         -64,
+		\dur, 			Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 2, 3, 4, 6, 8, 12], inf),
+		\freq, 			~keyfrq * 2.pow(4),
+		\peak, 			Pbrown(0.5, 1, 0.5, inf) / 2
 ));
-
-/*
-PdefAllGui.new;
-*/
-
+~oxpastpar = Pdef(\oxpastpar, (Ppar(~oxpastpat!3, inf)));
 );
 
-(
+/*
+~oxpastpat.play(t, quant: 0.5);
+~oxpastpat.stop;
+*/
+
+/*
+~oxpastpar.play(t, quant: 0.5);
+~oxpastpar.stop;
+*/
+
 /////////////////////////////////////////////////////////////////////////////////
 // 							MIDI KONTROL
 
@@ -589,6 +681,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 
 // bass
 
+(
 ~flub =
 MIDIdef.cc(\flub, {
 	if (~morse.isPlaying.not) {
@@ -599,9 +692,11 @@ MIDIdef.cc(\flub, {
 		"bass stop".postln;
 	};
 }, 32, srcID: ~nanoktrl);
+);
 
 // drone
 
+(
 ~dronectl =
 MIDIdef.cc(\dronectl, {
 	if (~dronenode.isPlaying.not) {
@@ -612,9 +707,11 @@ MIDIdef.cc(\dronectl, {
 		"drone stop".postln;
 	};
 }, 48, srcID: ~nanoktrl);
+);
 
 // pad
 
+(
 ~padctrl =
 MIDIdef.cc(\padctrl, {
 	if (~padchords.isPlaying.not) {
@@ -625,9 +722,11 @@ MIDIdef.cc(\padctrl, {
 		"pad stop".postln;
 	}
 }, 64, srcID: ~nanoktrl);
+);
 
 // prc1a-c
 
+(
 ~gassy1 =
 MIDIdef.cc(\morp, {
 	if (~gazelle.isPlaying.not) {
@@ -638,7 +737,9 @@ MIDIdef.cc(\morp, {
 		"prc1 stop".postln;
 	};
 }, 33, srcID: ~nanoktrl);
+);
 
+(
 ~gassy2 =
 MIDIdef.cc(\morp2, {
 	if (~gauze.isPlaying.not) {
@@ -649,7 +750,9 @@ MIDIdef.cc(\morp2, {
 		"prc2 stop".postln;
 	};
 }, 49, srcID: ~nanoktrl);
+);
 
+(
 ~gassy3 =
 MIDIdef.cc(\morp3, {
 	if (~bandage.isPlaying.not) {
@@ -660,9 +763,11 @@ MIDIdef.cc(\morp3, {
 		"prc3 stop".postln;
 	};
 }, 65, srcID: ~nanoktrl);
+);
 
 // squirp
 
+(
 ~squirpplayer1 =
 MIDIdef.cc(\squipplayer1, {
 	if (~squirpy1.isPlaying.not) {
@@ -673,7 +778,9 @@ MIDIdef.cc(\squipplayer1, {
 		"squirpy1 stop".postln;
 	}
 }, 34, srcID: ~nanoktrl);
+);
 
+(
 ~squirpplayer2 =
 MIDIdef.cc(\squipplayer2, {
 	if (~squirpy2.isPlaying.not) {
@@ -684,9 +791,11 @@ MIDIdef.cc(\squipplayer2, {
 		"squirpy2 stop".postln;
 	}
 }, 50, srcID: ~nanoktrl);
+);
 
 // kords
 
+(
 ~kordsplayer =
 MIDIdef.cc(\kordplayer, {
 	if (~kordpar.isPlaying.not) {
@@ -697,9 +806,11 @@ MIDIdef.cc(\kordplayer, {
 		"kord stop".postln;
 	}
 }, 66, srcID: ~nanoktrl);
+);
 
 // clicky 'hat'
 
+(
 ~elastics =
 MIDIdef.cc(\kaiser, {
 	if (~godliness.isPlaying.not) {
@@ -710,9 +821,11 @@ MIDIdef.cc(\kaiser, {
 		"hat stop".postln;
 	}
 }, 35, srcID: ~nanoktrl);
+);
 
 // clicky 'hat' echo
 
+(
 ~thumble =
 MIDIdef.cc(\geyser, {
 	if (~desert.isPlaying.not) {
@@ -723,9 +836,11 @@ MIDIdef.cc(\geyser, {
 		"hat echo stop".postln;
 	}
 }, 51, srcID: ~nanoktrl);
+);
 
 // klikk2
 
+(
 ~klikk2player =
 MIDIdef.cc(\klikk2player, {
 	if (~klikk2.isPlaying.not) {
@@ -736,9 +851,11 @@ MIDIdef.cc(\klikk2player, {
 		"klikk2 stop".postln;
 	}
 }, 67, srcID: ~nanoktrl);
+);
 
 // kik
 
+(
 ~grassrooties =
 MIDIdef.cc(\formals, {
 	if (~bonk.isPlaying.not) {
@@ -749,9 +866,11 @@ MIDIdef.cc(\formals, {
 		"kik stop".postln;
 	}
 }, 36, srcID: ~nanoktrl);
+);
 
 // 'snr'
 
+(
 ~corndogs =
 MIDIdef.cc(\armedstruggle, {
 	if (~guzzle.isPlaying.not) {
@@ -762,9 +881,11 @@ MIDIdef.cc(\armedstruggle, {
 		"snr stop".postln;
 	}
 }, 52, srcID: ~nanoktrl);
+);
 
 // pling
 
+(
 ~boring =
 MIDIdef.cc(\cookies, {
 	if (~formula.isPlaying.not) {
@@ -775,7 +896,9 @@ MIDIdef.cc(\cookies, {
 		"pling1 stop".postln;
 	}
 }, 37, srcID: ~nanoktrl);
+);
 
+(
 ~coring =
 MIDIdef.cc(\morecookies, {
 	if (~families.isPlaying.not) {
@@ -786,22 +909,27 @@ MIDIdef.cc(\morecookies, {
 		"pling2 stop".postln;
 	}
 }, 53, srcID: ~nanoktrl);
+);
 
 // ox
 
+(
 ~oxpat =
 MIDIdef.cc(\oxpat, {
-	if (~oxpastpat.isPlaying.not) {
-		~oxpastpat.play(t, quant: 0.5);
+	if (~oxpastpar.isPlaying.not) {
+		~oxpastpar.play(t, quant: 0.5);
 		"ox play".postln;
 	} {
-		~oxpastpat.stop;
+		~oxpastpar.stop;
 		"ox stop".postln;
 	}
 }, 68, srcID: ~nanoktrl);
+);
 
 // pad2
 
+/*
+(
 ~pad2pctl =
 MIDIdef.cc(\pad2ctl, {
 	if (~pad2chords.isPlaying.not) {
@@ -812,5 +940,5 @@ MIDIdef.cc(\pad2ctl, {
 		"pad2 stop".postln;
 	}
 }, 38, srcID: ~nanoktrl);
-
 );
+*/
