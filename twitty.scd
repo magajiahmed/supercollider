@@ -210,13 +210,15 @@ SynthDef(\sin, { |amp = 1, curve = -4, dur = 1, envgendiv = 32, freq = 440, mulk
 (
 ~ox =
 SynthDef(\ox, { |curve = -64, dur = 1, freq = 440, length = 0.25, peak = 0.5 |
-	var env			=	Env.perc(0.002, releaseTime: 0.5, level: peak / 8, curve: curve);
+	var env			=	Env.perc(0.002, releaseTime: dur / 4, level: peak / 8, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var kbn1		=	LFBrownNoise0.kr(freq!2, add: 1);
 	var kbn2		=	LFBrownNoise0.kr(freq!2, add: 1);
 	var kimp		=	Impulse.ar(freq, mul: kbn1, add: 1);
-	var sin			=	SinOsc.ar(freq * kimp, mul: envgen * kbn2);
-	Out.ar(2, sin);
+	var sin			=	SinOsc.ar(freq * kimp, mul: kbn2);
+	var foldfactor	=	4;
+	var fold		=	sin.fold2(1 / foldfactor) * foldfactor * envgen;
+	Out.ar(2, fold);
 }).add;
 );
 
@@ -488,7 +490,7 @@ Pdef(\klikk,
 		\peak, Pwhite(0.75, 1, inf) / 50,
 		//\peak, 0,
 ));
-~klikk2a = Pdef(\klikk2a, Pbindf(~klikk2, \dur, 1.25, \fb, 0, \peak, 1 / 250));
+~klikk2a = Pdef(\klikk2a, Pbindf(~klikk2, \dur, 1.25, \fb, 2, \peak, 1 / 150));
 );
 
 /*
@@ -501,7 +503,7 @@ Pdef(\klikk,
 ~klikkpar = Pdef(\klikkpar, Ppar([~klikk2, ~klikk2a], inf));
 
 /*
-~klikkpar.play(t, quant: 1);
+~klikkpar.play(t, quant: 0.5);
 ~klikkpar.stop;
 */
 
@@ -649,10 +651,11 @@ Pdef(\oxtestpat,
 Pbind(
 		\instrument, 	\ox,
 		\curve,         -64,
-		\dur, 			Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 2, 3, 4, 6, 8, 12], inf),
-		\freq, 			~keyfrq * 2.pow(4),
+		\dur, 			Pshuf((17..19).stutter(3) / 4, inf),
+		\freq, 			Prand([2.pow(2), 2.pow(4), 2.pow(8)], inf) * ~keyfrq,
 		\peak, 			Pbrown(0.5, 1, 0.5, inf) / 2
 ));
+//~oxpastpat2 = Pdef(\oxpastpat2, Pbindf(~oxpastpat, \dur, Prand([0.5, 0.75, 8, 12], inf), \peak, 0.2));
 ~oxpastpar = Pdef(\oxpastpar, (Ppar(~oxpastpat!3, inf)));
 );
 
@@ -843,12 +846,12 @@ MIDIdef.cc(\geyser, {
 (
 ~klikk2player =
 MIDIdef.cc(\klikk2player, {
-	if (~klikk2.isPlaying.not) {
-		~klikk2.play(t, quant: 0.5);
-		"klikk2 play".postln;
+	if (~klikkpar.isPlaying.not) {
+		~klikkpar.play(t, quant: 0.5);
+		"klikkpar play".postln;
 	} {
-		~klikk2.stop;
-		"klikk2 stop".postln;
+		~klikkpar.stop;
+		"klikkpar stop".postln;
 	}
 }, 67, srcID: ~nanoktrl);
 );
