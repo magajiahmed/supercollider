@@ -80,7 +80,7 @@ SynthDef(\drone, { |freq = 256, freqratio = #[1, 1.5], gate = 1, kbnammul = 0.85
 	var sin2b		=	SinOsc.ar(freq * 2.005 * freqratio, 			mul: (envgen / 4) * kbnamod2);
 	var sin3a		=	SinOsc.ar(freq * 4 * freqratio * kbnfmod3, 		mul: (envgen / 16) * kbnamod3);
 	var sin3b		=	SinOsc.ar(freq * 4.01 * freqratio, 				mul: (envgen / 16) * kbnamod3);
-	Out.ar([0, 1], (sin1a + sin1b + sin2a + sin2b + sin3a + sin3b) / 256);
+	Out.ar([0, 1], (sin1a + sin1b + sin2a + sin2b + sin3a + sin3b) / 128);
 }).add;
 );
 
@@ -123,14 +123,14 @@ d.stop;
 (
 ~squirp =
 SynthDef(\squirp, { |amp = 1, dur = 8, freq = 512, squirpamp = 0.05|
-	var env			=	Env.perc(0.002, releaseTime: dur, level: amp / 1.5, curve: 0);
+	var env			=	Env.perc(0.002, releaseTime: dur, level: amp / 1.5, curve: -4);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var squirp1		=	LinCongC.ar(freq, mul: squirpamp, add: 1);
-	var sin1		=	SinOsc.ar(freq * squirp1, mul: (envgen / 5));
+	var sin1		=	SinOsc.ar(freq * squirp1, mul: (envgen / 3));
 	var squirp2		=	LinCongC.ar((freq + 0.1), mul: squirpamp, add: 1);
-	var sin2		=	SinOsc.ar((freq + 0.1) * squirp2, mul: (envgen / 5));
+	var sin2		=	SinOsc.ar((freq + 0.1) * squirp2, mul: (envgen / 3));
 	var squirp3		=	LinCongC.ar(freq * 8, mul: squirpamp * 8, add: 1);
-	var sin3		=	SinOsc.ar(freq * 8 * squirp3, mul: (envgen / 72));
+	var sin3		=	SinOsc.ar(freq * 8 * squirp3, mul: (envgen / 36));
 	Out.ar([0, 1], [sin1 + sin3, sin2 + sin3]);
 }).add;
 );
@@ -235,7 +235,7 @@ SynthDef(\pad2, { |freq = 256, gate = 1, kbnmul = 1, peak = 1, width = 0.5|
 	var saw2		=	VarSaw.ar(([freq, freq + 0.1] + 0.1), width: width, mul: (envgen / 128) * kbn2);
 	var kbn3		=	LFBrownNoise0.kr(mul: [0.05, 0.5], add: 1);
 	var cutoff		=	(freq * 2 * kbn3).clip(50, SampleRate.ir / 3);
-	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.3);
+	var rlpf		=	RLPF.ar(saw1 + saw2, cutoff, 0.1);
 	Out.ar(0, rlpf);
 }).add;
 );
@@ -297,7 +297,7 @@ Pdef(\mutter,
 							1/1, 1/1, 9/8,
 							1/1, 1/1, 1/1, 6/5, 16/15
 						] * ~keyfrq, inf),
-		\peak, 			0.08,
+		\peak, 			0.15,
 ));
 );
 
@@ -341,7 +341,7 @@ Pdef(\kordpat1,
 		\dur, Pshuf([8, 12, 16, 24, 32, 48], inf),
 		\freq, Pshuf([1/1, 3/2, 7/4, 9/4, 13/5].mirror * ~keyfrq * 16, inf),
 		\legato, 0.5,
-		\level, 0.03,
+		\level, 0.05,
 		\ratio, Pshuf([13/11, 17/11, 23/11, 29/11], inf),
 ));
 );
@@ -369,7 +369,7 @@ Pdef(\padpat,
 		\instrument, 	\pad,
 		\dur, 			Pshuf([21, 23, 25, 27, 29], inf),
 		\freq, 			Pshuf([1/1, 16/15, 9/8, 8/7, 6/5, 9/7, 11/8, 7/5, 10/7, 3/2, 11/7, 8/5, 13/8, 12/7, 9/5, 13/7, 11/5, 13/5, 13/3] * ~keyfrq * 4, inf),
-		\peak, 			0.2,
+		\peak, 			0.4,
 ));
 );
 
@@ -401,7 +401,7 @@ Pdef(\moisture,
 		\b, 			Pwhite(1, 3, inf),
 		\dur, 			Pwrand([Pseq([0.25 / 2], 4), 0.5, 0.75, 6, 9], [1, 16, 16, 4, 4].normalizeSum, inf),
 		\pan, 			Pshuf([-1, -0.5, 0, 0.5, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 9,
+		\peak, 			Pwhite(0.75, 1, inf) / 4,
 ));
 );
 
@@ -415,7 +415,7 @@ Pdef(\moisture,
 ~gauze =
 Pdef(\gumboots,
 	Ppar(
-		[~gazelle, ~gazelle], inf
+		~gazelle!4, inf
 ));
 );
 
@@ -450,7 +450,7 @@ Pdef(\huddled,
 		\fb,            Pshuf((0..6), inf),
 		\freq,          ~keyfrq * 2.pow(8),
 		\pan, 			Prand([-1, 0, 1], inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 20,
+		\peak, 			Pwhite(0.75, 1, inf) / 10,
 ));
 );
 
@@ -466,7 +466,7 @@ Pdef(\huddled,
 Pdef(\homesick,
 	Pbindf(~godliness,
 		\dur, 			Pwrand([Pseq([0.125], 2), Pseq([0.125], 4), 0.5, 0.75, 1.5], [1, 1, 16, 16, 16].normalizeSum, inf),
-		\peak, 			Pwhite(0.75, 1, inf) / 100,
+		\peak, 			Pwhite(0.75, 1, inf) / 50,
 ));
 );
 
@@ -487,10 +487,10 @@ Pdef(\klikk,
 		\dur, Pshuf([0.75, 1, 1.5, 2].mirror2, inf),
 		\fb, 6,
 		\freq, ~keyfrq * 2.pow(6),
-		\peak, Pwhite(0.75, 1, inf) / 50,
+		\peak, Pwhite(0.75, 1, inf) / 30,
 		//\peak, 0,
 ));
-~klikk2a = Pdef(\klikk2a, Pbindf(~klikk2, \dur, 1.25, \fb, 2, \peak, 1 / 150));
+~klikk2a = Pdef(\klikk2a, Pbindf(~klikk2, \dur, 1.25, \fb, 2, \peak, 1 / 80));
 );
 
 /*
@@ -520,7 +520,7 @@ Pdef(\borne,
 		\dur, 			Pxrand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
 		\length, 		0.1,
 		\pan, 			Pwhite(-0.5, 0.5, inf),
-		\peak, 			Pwhite(0.4, 0.5, inf),
+		\peak, 			Pwhite(0.6, 0.8, inf),
 ));
 );
 
@@ -541,7 +541,7 @@ Pdef(\horned,
 		\dur, 			Pxrand([0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
 		\length, 		0.1,
 		\note, 			Pseq([Rest, 1], inf),
-		\peak, 			0.2,
+		\peak, 			0.4,
 ));
 );
 
@@ -557,7 +557,8 @@ Pdef(\horned,
 Pdef(\fillery,
 	Pbind(
 		\instrument, 	\sin,
-		\amp, 			0.05,
+		\amp, 			0.1,
+		\curve,         -4,
 		\dur, 			Pshuf([0.25, 4, 6, 8, 12, 16, 24, 32, 48], inf),
 		\freq, 			Pseq([9/10, 1/1, 16/15, 9/8, 6/5, 3/2, 9/5, 13/5] * ~keyfrq * 8, inf),
 ));
@@ -572,7 +573,7 @@ Pdef(\fillery,
 ~formula =
 Pdef(\borked,
 	Ppar(
-		[~forked, ~forked], inf
+		~forked!2, inf
 ));
 );
 
@@ -599,7 +600,7 @@ Pdef(\vooom,
 ~families =
 Pdef(\goam,
 Ppar(
-		[~familyman, ~familyman], inf
+		~familyman!2, inf
 ));
 );
 
@@ -653,7 +654,7 @@ Pbind(
 		\curve,         -64,
 		\dur, 			Pshuf((17..19).stutter(3) / 4, inf),
 		\freq, 			Prand([2.pow(2), 2.pow(4), 2.pow(8)], inf) * ~keyfrq,
-		\peak, 			Pbrown(0.5, 1, 0.5, inf) / 2
+		\peak, 			Pbrown(0.5, 1, 0.5, inf) / 1.5
 ));
 //~oxpastpat2 = Pdef(\oxpastpat2, Pbindf(~oxpastpat, \dur, Prand([0.5, 0.75, 8, 12], inf), \peak, 0.2));
 ~oxpastpar = Pdef(\oxpastpar, (Ppar(~oxpastpat!3, inf)));
