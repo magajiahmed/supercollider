@@ -23,8 +23,9 @@ SynthDef(\string, { |dur = 1, freq = 440, gate = 1, level = 0.05, xlinestart = 1
 		sinfb;
 	});
 	var rhpf			=	RHPF.ar(mix, (freq * 8).clip(50, SampleRate.ir / 3), 0.1);
+	var rez				=	RHPF.ar(mix, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
 	var ampmod			=	LFNoise0.ar(30!2).range(0.25, 1).round(0.25);
-	Out.ar(0, (mix + rhpf) * ampmod);
+	Out.ar(0, (mix + rhpf + rez) * ampmod);
 }).add;
 );
 
@@ -166,6 +167,59 @@ Pdef(\stringpat7,
 ////////////////////////////////////////////////////////////////
 
 (
+SynthDef(\sin, {
+	|amp = 0.1, curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
+	var env				=	Env.perc(0.005, dur, amp, curve);
+	var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var noiz			=	LFNoise0.kr(30!2).range(0.999, 1);
+	var sin				=	SinOscFB.ar([freq, freq * 1.0005], fb).round(amp / 2).fold2((amp * noiz) / foldfactor) * (foldfactor * noiz) * envgen;
+	var rlpf			=	RLPF.ar(sin, rlpf_freq.clip(50, SampleRate.ir / 3), rlpf_rq).fold2(amp / foldfactor) * foldfactor;
+	var rhpf 			=	RHPF.ar(sin, rhpf_freq.clip(50, SampleRate.ir / 3), rhpf_rq).fold2(amp / foldfactor) * foldfactor;
+	Out.ar(0, rlpf + rhpf);
+}).add;
+);
+
+(
+~wat1 =
+Pdef(\wat1,
+	Pbind(
+		\instrument, \sin,
+		\amp, 0.03,
+		\dur, Prand([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 12], inf),
+		\fb, Pwhite(0.0, 2.5, inf),
+		\foldfactor, Pwhite(10.0, 100.0, inf),
+		//\note, Prand((-2..6), inf),
+		\note, Pshuf([-2, 0, 1, 2, 3, 7], inf),
+		//\note, 0,
+		//\octave, Pwhite(4, 7, inf),
+		\octave, 5,
+		\rlpf_freq, Pwhite(100.0, 10000.0, inf),
+		\rlpf_rq, Pwhite(0.01, 1.0, inf),
+		\rhpf_freq, Pwhite(1000.0, 15000.0, inf),
+		\rhpf_rq, Pwhite(0.01, 1.0, inf),
+		\root, ~root,
+		\scale, ~scale,
+));
+//~wat2 = Pdef(\wat2, Pbindf(~wat1, \note, Prand([0, 7], inf)));
+///
+~watpar = Pdef(\watpar, Ppar(~wat1!4, inf));
+);
+
+/*
+~wat1.play(t, quant: 0.5);
+~wat1.isPlaying;
+~wat1.stop;
+*/
+
+/*
+~watpar.play(t, quant: 0.5);
+~watpar.isPlaying;
+~watpar.stop;
+*/
+
+////////////////////////////////////////////////////////////////
+
+(
 SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpffrq = 2000|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0);
@@ -175,16 +229,19 @@ SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpf
 	var xline			=	XLine.kr(1, 0.5, dur);
 	var rhpfrqmod		=	LFBrownNoise0.kr(freq!2).range(0.3, 1);
 	var rhpf			=	RHPF.ar(comb, (rhpffrq * xline).clip(50, SampleRate.ir / 3), rhpfrqmod);
-	Out.ar(0, lpf + rhpf);
+	var leakdc			=	LeakDC.ar(lpf + rhpf);
+	Out.ar(0, leakdc);
 }).add;
 );
 
 (
 ~durs = (1..3);
 ~shortestdurs = ~durs.collect({ |i| Pseq([0.25], i) });
+~shorterdurs = ~durs.collect({ |i| Pseq([0.5], i) });
+~shortdurs = ~durs.collect({ |i| Pseq([0.75], i) });
 ~mediumdurs = ~durs.collect({ |i| 1 * i });
 ~longdurs = ~durs.collect({ |i| 1.5 * i });
-~bassdurs = ~shortestdurs ++ [0.5] ++ [0.75] ++ ~mediumdurs ++ ~longdurs;
+~bassdurs = ~shortestdurs ++ ~shorterdurs ++ ~shortdurs ++ ~mediumdurs ++ ~longdurs;
 ~basspat1 =
 Pdef(\basspat1,
 	Pbind(
