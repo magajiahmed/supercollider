@@ -23,26 +23,55 @@ SynthDef(\string, { |delaytime = 0.1, dur = 1, freq = 440, gate = 1, level = 0.0
 		sinfb;
 	});
 	var delay			=	DelayC.ar(mix, 0.2, delaytime.clip(0.00008, 0.1));
-	var rhpf1			=	RHPF.ar(mix + delay, (freq * 4).clip(50, SampleRate.ir / 3), 0.1) * 2;
-	//var rhpf2			=	RHPF.ar(mix + delay, (freq * 8).clip(50, SampleRate.ir / 3), 0.1);
-	var ampmod			=	LFNoise0.ar(30!2).range(0.25, 1).round(0.25);
-	Out.ar(0, (mix + delay + rhpf1) * ampmod);
+	var rhpf1			=	RHPF.ar(mix + delay, (freq * 8).clip(50, SampleRate.ir / 3), 0.3) * 1.5;
+	//var ampmod			=	LFNoise0.ar(30!2).range(0.25, 1).round(0.25);
+	Out.ar(0, (mix + delay + rhpf1));
+}).add;
+);
+
+(
+SynthDef(\stringdelayktrl, {|delaytime = 0.01, dur = 1, outbus = 0|
+	// var env				=	Env.new([0.01, delaytime, delaytime, 0.01], [0.05, dur, 0.05]);
+	// var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var setdelaytime	=	Line.kr(delaytime, delaytime, dur, doneAction: 2);
+	Out.kr(outbus, setdelaytime);
 }).add;
 );
 
 //
 
 (
+~stringpat0delayktrlbus = Bus.control(s);
+
+~stringpat0setdelaytime =
+Pdef(\stringpat0setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.0001, 0.01, inf),
+		\dur, Prand([0.75, 1, 1.5, 2], inf),
+		\legato, 1,
+		\outbus, ~stringpat0delayktrlbus,
+));
+
 ~stringpat0 =
 Pdef(\stringpat0,
 	Pmono(
 		\string,
+		\delaytime, ~stringpat0delayktrlbus.asMap,
 		\dur, Pwhite(3, 5, inf),
 		\note, [-5, 0],
 		\root, ~root,
 		\scale, ~scale,
-		\xlinestart, 1));
+		\xlinestart, 1
+
+));
 );
+
+~stringpat0setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat0setdelaytime.isPlaying;
+~stringpat0setdelaytime.stop;
+*/
 
 /*
 ~stringpat0.play(t, quant: 0.5);
@@ -51,6 +80,18 @@ Pdef(\stringpat0,
 */
 
 (
+~stringpat1delayktrlbus = Bus.control(s);
+
+~stringpat1setdelaytime =
+Pdef(\stringpat1setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.02, 0.01, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat1delayktrlbus,
+));
+
 ~chords = [
 	//[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [-5, 0, 3], [0, 6, 7], [0, 7, 7]
 	[-5, -2, 0], [-5, -1, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [0, 3, 7], [0, 4, 7], [0, 6, 7], [0, 7, 7]
@@ -62,16 +103,22 @@ Pdef(\stringpat0,
 Pdef(\stringpat1,
 	Pbind(
 		\instrument, \string,
-		\delaytime, Pwhite(0.0001, 0.01, inf),
+		\delaytime, ~stringpat1delayktrlbus.asMap,
 		\dur, Pshuf(Array.fill(4, { |i| (i + 5).nthPrime }), inf),
-		\legato, 0.5,
-		\note, Pshuf(~chordsandrests, inf),
+		\legato, 1,
+		\note, Pshuf(~chords, inf),
 		\octave, 5,
 		\root, ~root,
 		\scale, ~scale,
 		\xlinestart, Pshuf([0.25, 1/3, 0.5, 0.75, 1, 1.5, 2, 3, 4], inf),
 ));
 );
+
+~stringpat1setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat1setdelaytime.isPlaying;
+~stringpat1setdelaytime.stop;
+*/
 
 /*
 ~stringpat1.play(t, quant: 0.5);
@@ -80,15 +127,34 @@ Pdef(\stringpat1,
 */
 
 (
+~stringpat2delayktrlbus = Bus.control(s);
+
+~stringpat2setdelaytime =
+Pdef(\stringpat2setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.02, 0.01, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat2delayktrlbus,
+));
+
 ~stringpat2 =
 Pdef(\stringpat2,
 	Pbindf(
 		~stringpat1,
+		\delaytime, ~stringpat2delayktrlbus.asMap,
 		\legato, 1,
 		\note, [7, 12],
 		\xlinestart, 0.25,
 ));
 );
+
+~stringpat2setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat2setdelaytime.isPlaying;
+~stringpat2setdelaytime.stop;
+*/
 
 /*
 ~stringpat2.play(t, quant: 0.5);
@@ -97,14 +163,33 @@ Pdef(\stringpat2,
 */
 
 (
+~stringpat3delayktrlbus = Bus.control(s);
+
+~stringpat3setdelaytime =
+Pdef(\stringpat3setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.01, 0.02, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat3delayktrlbus,
+));
+
 ~stringpat3 =
 Pdef(\stringpat3,
 	Pbindf(
 		~stringpat2,
+		\delaytime, ~stringpat3delayktrlbus.asMap,
 		\note, [-2, 2],
 		\octave, 6
 ));
 );
+
+~stringpat3setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat3setdelaytime.isPlaying;
+~stringpat3setdelaytime.stop;
+*/
 
 /*
 ~stringpat3.play(t, quant: 0.5);
@@ -113,14 +198,33 @@ Pdef(\stringpat3,
 */
 
 (
+~stringpat4delayktrlbus = Bus.control(s);
+
+~stringpat4setdelaytime =
+Pdef(\stringpat4setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.01, 0.02, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat4delayktrlbus,
+));
+
 ~stringpat4 =
 Pdef(\stringpat4,
 	Pbindf(
 		~stringpat2,
+		\delaytime, ~stringpat4delayktrlbus.asMap,
 		\note, [2, 7],
 		\octave, 6
 ));
 );
+
+~stringpat4setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat4setdelaytime.isPlaying;
+~stringpat4setdelaytime.stop;
+*/
 
 /*
 ~stringpat4.play(t, quant: 0.5);
@@ -129,14 +233,33 @@ Pdef(\stringpat4,
 */
 
 (
+~stringpat5delayktrlbus = Bus.control(s);
+
+~stringpat5setdelaytime =
+Pdef(\stringpat5setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.01, 0.02, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat5delayktrlbus,
+));
+
 ~stringpat5 =
 Pdef(\stringpat5,
 	Pbindf(~stringpat2,
+		\delaytime, ~stringpat5delayktrlbus.asMap,
 		\note, [0, 0, 7, 7, 12, 12],
 		\octave, 3,
 		\xlinestart, 4
 ));
 );
+
+~stringpat5setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat5setdelaytime.isPlaying;
+~stringpat5setdelaytime.stop;
+*/
 
 /*
 ~stringpat5.play(t, quant: 0.5);
@@ -145,14 +268,33 @@ Pdef(\stringpat5,
 */
 
 (
+~stringpat6delayktrlbus = Bus.control(s);
+
+~stringpat6setdelaytime =
+Pdef(\stringpat6setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.01, 0.02, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat6delayktrlbus,
+));
+
 ~stringpat6 =
 Pdef(\stringpat6,
 	Pbindf(~stringpat2,
+		\delaytime, ~stringpat6delayktrlbus.asMap,
 		\note, [-2, 0, 2, 7],
 		\octave, 7,
 		\xlinestart, 0.5
 ));
 );
+
+~stringpat6setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat6setdelaytime.isPlaying;
+~stringpat6setdelaytime.stop;
+*/
 
 /*
 ~stringpat6.play(t, quant: 0.5);
@@ -161,14 +303,33 @@ Pdef(\stringpat6,
 */
 
 (
+~stringpat7delayktrlbus = Bus.control(s);
+
+~stringpat7setdelaytime =
+Pdef(\stringpat7setdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pwhite(0.01, 0.02, inf),
+		\dur, Prand([0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+		\legato, 1,
+		\outbus, ~stringpat7delayktrlbus,
+));
+
 ~stringpat7 =
 Pdef(\stringpat7,
 	Pbindf(~stringpat2,
+		\delaytime, ~stringpat7delayktrlbus.asMap,
 		\note, [2, 7, 12],
 		\octave, 7,
 		\xlinestart, 0.5
 ));
 );
+
+~stringpat7setdelaytime.play(t, quant: 0.5);
+/*
+~stringpat7setdelaytime.isPlaying;
+~stringpat7setdelaytime.stop;
+*/
 
 /*
 ~stringpat7.play(t, quant: 0.5);
@@ -196,11 +357,11 @@ SynthDef(\banjo, {
 Pdef(\banjopat,
 	Pbind(
 		\instrument, \banjo,
-		\amp, 0.05,
+		\amp, 0.08,
 		\dur, Prand([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 6], inf),
 		\fb, Pwhite(0.0, 1.0, inf),
 		\foldfactor, Pwhite(1, 20, inf),
-		\note, Pshuf([-2, 0, 1, 7], inf),
+		\note, Pshuf([-2, 0, 1, 2, 3, 7], inf),
 		\octave, Pwhite(4, 6, inf),
 		//\octave, 4,
 		\rlpf_freq, Pwhite(100.0, 10000.0, inf),
@@ -275,7 +436,7 @@ Pdef(\basspat1,
 ~basspat1.stop;
 */
 
-~basspat2 = Pdef(\basspat2, Pbindf(~basspat1, \curve, -8, \note, Prand([0, 7, 12, Rest], inf)));
+~basspat2 = Pdef(\basspat2, Pbindf(~basspat1, \curve, -8, \note, Prand([0, 7, 12], inf)));
 
 /*
 ~basspat2.play(t, quant: 0.5);
@@ -311,8 +472,8 @@ Pdef(\prcpat1a,
 	Pbind(
 		\instrument, \prc,
 		\a, Pwhite(1.0, 2.0, inf).round(0.1),
-		\curve, -6,
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 2], inf),
+		\curve, -8,
+		\dur, Pshuf([Pseq([0.125], 4), 0.25, 0.5, 0.75, 1, 1.5, 2], inf),
 		//\foldfactor, Pwhite(3, 5, inf),
 		\foldfactor, Pwhite(1, 10, inf),
 		\level, Pshuf([0.25, 1, 1] * 0.1, inf),
@@ -320,19 +481,11 @@ Pdef(\prcpat1a,
 		\octave, 7,
 		\root, ~root,
 		\scale, ~scale,
-		\rez_freq, 4000,
-		\rez_rq, 0.1
+		\rez_freq, 2000,
+		\rez_rq, 0.5
 ));
-~prcpat1b = Pdef(\prcpat1b, Pbindf(~prcpat1a));
-//~prcpat1c = Pdef(\prcpat1c, Pbindf(~prcpat1a, \level, 0.04));
 ~prcpar1 = Pdef(\prcpar1, Ppar(~prcpat1a!2));
 );
-
-/*
-~prcpat1a.play(t, quant: 0.5);
-~prcpat1a.isPlaying;
-~prcpat1a.stop;
-*/
 
 /*
 ~prcpar1.play(t, quant: 0.5);
@@ -343,22 +496,30 @@ Pdef(\prcpat1a,
 //
 
 (
+SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.2|
+	var env				=	Env.perc(0.005, 1, level, -16);
+	var envgen			=	EnvGen.kr(env, doneAction: 2);
+	var lc				=	LinCongC.ar([freq, freq * 1.01], a, c, m, mul: envgen);
+	var rhpf			=	RHPF.ar(lc, ffreq, frq, 2);
+	Out.ar(0, lc + rhpf);
+}).add;
+);
+
+(
 ~prcpat2a =
 Pdef(\prcpat2a,
 	Pbind(
-		\instrument, \prc,
-		\a, Pwhite(1.4, 1.5, inf).round(0.01),
-		\curve, -8,
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
-		\foldfactor, Pshuf((10..20), inf),
+		\instrument, \kik,
+		\a, Pwhite(1.0, 2.0, inf).round(0.01),
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(5), inf),
+		\ffreq, 1000,
+		\frq, 0.1,
 		\level, 0.3,
-		\note, 0,
-		\octave, [3, 4],
-		\rez_freq, 100,
-		\rez_rq, 0.8
+		\note, [0, 7],
+		\octave, 5,
+		\root, ~root,
+		\scale, ~scale
 ));
-//~prcpat2b = Pdef(\prcpat2b, Pbindf(~prcpat2a, \dur, Prand([0.25, 0.5, 0.75, 1, 3], inf), \level, 0.08));
-//~prcpar2 = Pdef(\prcpar2, Ppar(~prcpat2a!2));
 );
 
 /*
