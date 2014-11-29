@@ -328,36 +328,17 @@ SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.15, pan = 0 |
 Pdef(\prc2bpat1,
 	Pbind(
 		\instrument, \prc2b,
-		//\curve, Pshuf([-4, -8], inf),
 		\curve, -4,
-		// \dur, Pshuf([
-		// 	Pseq([0.25, 0.75]),
-		// 	Pseq([Pseq([0.25], 2), 0.5]),
-		// 	Pshuf(~prc2bpatdurarr, 7),
-		// 	Pseq([Pseq([1/3], 3)]),
-		// 	3, 4
-		// ], inf),
-		// \dur, Pxrand([0.25, 0.5, 0.75, 1, 1, 1, 1, 1, 1.5], inf),
-		//\dur, Prand([0.75, 1], inf),
-		//\dur, Pswitch1([0.75, 1, 1], Pbrown(0, 2, 1, inf)),
 		\dur, Pshuf([Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1, 1]), Pseq([1], 3)], inf),
 		\freq, Pshuf([1000, 4000, 6000, 8000].stutter(3), inf),
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
-//~prc2bpat2 = Pdef(\prc2bpat2, Pbindf(~prc2bpat1, \level, 0.015));
-//~prc2bpar = Pdef(\prc2bpar, Ppar([~prc2bpat1, ~prc2bpat]));
 );
 
 /*
 ~prc2bpat1.play(t, quant: 1);
 ~prc2bpat1.isPlaying;
 ~prc2bpat1.pause;
-*/
-
-/*
-//~prc2bpar.play(t, quant: 1);
-//~prc2bpar.isPlaying;
-//~prc2bpar.pause;
 */
 
 // Midi Control
