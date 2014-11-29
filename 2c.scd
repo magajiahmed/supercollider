@@ -68,24 +68,19 @@ SynthDef(\dynamix, {
 // SynthDef
 
 (
-SynthDef(\bass, { arg a = 1, dur = 1, freq = 100, level = 0.05;
+SynthDef(\bass, { | dur = 1, foldfactor = 3, freq = 100, level = 0.05 |
  	var env				=	Env.perc(releaseTime: dur, level: level, curve: -2);
  	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var sin1			=	SinOsc.ar(freq);
 	var sinmix			=	Mix.fill(3, {
 		|i|
-		var freqmod			=	LFNoise1.kr(1!2, 0.002, 1);
+		var freqmod			=	LFNoise2.kr(3!2, 0.01, 1);
 		var sin				=	SinOsc.ar(freq * (i + 1) * freqmod);
 		sin / 2.pow(i);
 	});
 	var oscs			=	(sin1 + sinmix);
-	var foldfactor		=	3;
+	//var foldfactor		=	3;
 	var distoscs		=	oscs.fold2(level / foldfactor) * foldfactor * 2;
-	//var lat				=	Latoocarfian2DC.ar(a: [a, a - 0.01], mul: 0.5, add: 1);
-	//var sin2			=	SinOsc.ar(freq * lat, mul: 100, add: 1);
-	//var sin3			=	SinOsc.ar(freq * freqmod[6, 7], sin2, mul: envgen);
-	//var rlpf 			=	RLPF.ar(sin2, freq * 2);
-	//var rhpf			=	RHPF.ar(distoscs * envgen, 2000, 0.2);
 	Out.ar([0, 1, 2, 3], (oscs * envgen) + (distoscs * envgen));
 }).add;
 );
@@ -95,12 +90,17 @@ SynthDef(\bass, { arg a = 1, dur = 1, freq = 100, level = 0.05;
 
 (
 ~bassdurations = [0.25, 0.5, 0.75];
+//~bassdurations = [0.25];
+~bassrepeats = 17;
 ~basspat =
 Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
-		\note, Pseq([-1, 0, 0, 0, 0, 0], inf),
-		\dur, Pshuf([0.25, 0.5, 0.75].stutter(7), inf),
+		\foldfactor, Pshuf(Array.series(11, 1.0, 0.2), inf),
+		\note, Pseq([
+			Pseq([0], 53), Pxrand((-2..2), 6)
+		], inf),
+		\dur, Pshuf(~bassdurations.stutter(7), inf),
 		\octave, 3,
 		\scale, ~scale,
 ));
@@ -174,8 +174,8 @@ Pdef(\pbpat,
 		\instrument, \bufrd,
 		\delaytime, Pwhite(0.00001, 0.01, inf),
 		\dur, Prand([0.25, 0.5, 0.75, 1, 1.5], inf),
-		\filt_freq, Pwhite(2000, 4000, inf),
-		\f_rq, Pwhite(0.1, 1, inf),
+		\filt_freq, Pwhite(4000, 5000, inf),
+		\f_rq, Pwhite(0.1, 0.3, inf),
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
 );
@@ -306,15 +306,15 @@ Pdef(\pulsepat1,
 // PRC2B
 
 (
-SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.15, pan = 0 |
+SynthDef(\prc2b, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.15, pan = 0 |
 	var env				=	Env.perc(0.005, releaseTime: 0.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var kxline			=	XLine.kr(1, 0.1, dur / 5);
 	var sin				=	SinOsc.ar([100, 110] * kxline, 0.2, envgen);
-	var kbn				=	LFBrownNoise0.kr(20).range(0.2, 5);
-	var bn				=	LFBrownNoise1.ar(freq, mul: envgen);
-	var rez				=	RLPF.ar(bn, (freq * kxline * kbn).clip(30, SampleRate.ir / 4), 0.5);
-	var delay			=	DelayC.ar(sin + rez, 0.1, 50.reciprocal, 0.5);
+	var filtmod			=	LFNoise0.kr(20!4, add: 1);
+	var bn				=	LFBrownNoise1.ar(brightness, mul: envgen);
+	var rez				=	RLPF.ar(bn, (brightness * kxline * filtmod[0, 1]).clip(30, SampleRate.ir / 4), (filtmod[2, 3] * 0.5) + 0.1);
+	var delay			=	DelayC.ar(sin + rez, 0.5, freq.clip(50, SampleRate.ir / 3).reciprocal, 0.5);
 	var pan2			=	Pan2.ar(rez + delay, pan);
 	Out.ar(4, pan2);
 }).add;
@@ -328,9 +328,11 @@ SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.15, pan = 0 |
 Pdef(\prc2bpat1,
 	Pbind(
 		\instrument, \prc2b,
+		\brightness, Pshuf([1000, 4000, 6000, 8000].stutter(7), inf),
 		\curve, -4,
-		\dur, Pshuf([Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1, 1]), Pseq([1], 3)], inf),
-		\freq, Pshuf([1000, 4000, 6000, 8000].stutter(3), inf),
+		\dur, Pshuf([Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 1.5]), 0.5], inf),
+		\note, [-2, 0],
+		\octave, 3,
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
 );
@@ -359,13 +361,13 @@ Pdef(\prc2bpat1,
 // PRC2C
 
 (
-SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.5, pan = 0 |
+SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.5, pan = 0, xlinestart = 1, xlineend = 0.2 |
 	var env				=	Env.perc(0.005, 1, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var clip			=	ClipNoise.ar(envgen);
-	var xline			=	XLine.kr(1, 0.2, 0.2);
+	var xline			=	XLine.kr(xlinestart, xlineend, 0.2);
 	var stan			=	Standard2DC.ar.clip(0.1, 1);
-	var rez				=	Resonz.ar(clip, freq * xline, stan);
+	var rez				=	Resonz.ar(clip, (freq * xline).clip(50, SampleRate.ir / 3), stan);
 	var pan2			= 	Pan2.ar(rez, pan);
 	Out.ar(4, pan2);
 }).add;
@@ -381,18 +383,11 @@ SynthDef(\prc2c, { | curve = -16, freq = 400, level = 0.5, pan = 0 |
 Pdef(\prc2cpat1,
 	Pbind(
 		\instrument, \prc2c,
-		//\curve, Prand([-16, -24, -32, -48], inf),
 		\curve, -8,
-		//\dur, Prand([0.25, 0.5, 0.75], inf),
 		\dur, Pseq(~prc2cpatdurs, inf),
-		//\freq, Pxrand([100, 120, 130, 500, 520, 530, 1000, 1200, 1300], inf),
-		// \freq, Pseq([
-		// 	1000, 1500, 1000,
-		// 	1000, 1500, 1000, 1500,
-		// 	1000, 1500, 1000, 1500, 1000
-		// ], inf),
 		\freq, Pshuf([530, 1000, 1200, 1500], inf),
 		\pan, 0,
+		\xline, Pwhite(0.05, 0.5, inf)
 ));
 ~prc2cpat2 = Pdef(\prc2cpat2, Pbindf(~prc2cpat1, \dur, Pshuf(~prc2cpatdurs.mirror2, inf), \level, 0.25, \pan, -1));
 ~prc2cpat3 = Pdef(\prc2cpat3, Pbindf(~prc2cpat2, \pan, 1));
@@ -400,7 +395,7 @@ Pdef(\prc2cpat1,
 );
 
 /*
-~prc2cpar.play(t, quant: 1);
+~prc2cpar.play(t, quant: 0.5);
 ~prc2cpar.isPlaying;
 ~prc2cpar.pause;
 */
@@ -408,7 +403,7 @@ Pdef(\prc2cpat1,
 (
 ~prc2cktrl = MIDIdef.cc(\prc2cktrl, {
 	if(~prc2cpar.isPlaying.not) {
-		~prc2cpar.play(t, quant: 1);
+		~prc2cpar.play(t, quant: 0.5);
 		"prc2c play".postln;
 	} {
 		~prc2cpar.pause;
