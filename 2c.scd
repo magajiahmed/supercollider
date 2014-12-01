@@ -127,7 +127,7 @@ Pdef(\basspat1,
 		\octave, 3,
 		\scale, ~scale
 ));
-)
+);
 
 /*
 ~basspat1.play(t, quant: 1);
@@ -394,13 +394,13 @@ Pdef(\pulsepat1,
 SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2, freq = 10000, level = 0.3, pan = 0 |
 	var env				=	Env.perc(releaseTime: 1, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var cusp			=	CuspL.ar(freq * 4, a, 3, add: 1);
-	var sin				=	SinOsc.ar(freq * (cusp));
-	var sinwrap			=	sin.wrap2(foldfactor.reciprocal).softclip * foldfactor * envgen;
-	var rez				=	Resonz.ar(sinwrap, 6000, 0.1);
-	var delay			=	DelayC.ar(rez, 0.2, delaytime.clip(0.0001, 0.2));
-	var pan2			=	Pan2.ar(rez + delay, pan);
-	Out.ar(4, pan2).softclip;
+	var cusp			=	CuspL.ar([freq, freq - 10] * 4, a, 3, add: 1);
+	var sin				=	SinOsc.ar(freq * cusp, mul: envgen);
+	//var sinwrap			=	sin.wrap2(foldfactor.reciprocal).softclip * foldfactor * envgen;
+	//var rez				=	Resonz.ar(sinwrap, 6000, 0.1);
+	var delay			=	DelayC.ar(sin, 0.2, delaytime.clip(0.0001, 0.2));
+	//var pan2			=	Pan2.ar(rez + delay, pan);
+	Out.ar(4, sin + delay).softclip;
 }).add;
 );
 
@@ -454,25 +454,28 @@ Pdef(\pinglepar,
 */
 
 (
+~mainlevel = 0.1;
+~echolevel = ~mainlevel / 4;
 ~pinglepat =
 Pdef(\pinglepat,
 	Pbind(
 		\instrument, \pingle,
-		\curve, -64,
-		\delaytime, Pwhite(0.0001, 0.01, inf),
-		\dur, Prand([
-			Pseq([0.125] / 4, 8), Pseq([0.125] / 2, 4), Pseq([0.125], 2),
-			Prand([0.75, 1, 1.25], 31)
+		\a, 0.01,
+		\curve, -16,
+		\delaytime, Pshuf((1..11) / 2000, inf),
+		\dur, Pshuf([
+			Pseq([1/12], 3),
+			Pseq([1/8], 2),
+			Pxrand([0.75, 1, 1.25], 31)
 		], inf),
-		\lag, Pwhite(-0.005, 0.005, inf),
-		\level, 0.2,
+		\level, ~mainlevel,
 		\pan, Pwhite(-1.0, 1.0, inf),
-		\note, [-2, 0],
-		\octave, 7,
+		\note, Pshuf([0, 2, -2, [-2, 0], [0, 2]], inf),
+		\octave, 8,
 		\scale, ~scale
 ));
-~pinglepatt  = Pdef(\pinglepatt, Pbindf(~pinglepat, \dur, 0.25, \level, 0.02));
-~pingleparf = Pdef(\pingleparf, Ppar(~pinglepat!5 ++ [~pinglepatt], inf));
+~pinglepatt  = Pdef(\pinglepatt, Pbindf(~pinglepat, \dur, 0.25, \level, ~echolevel));
+~pingleparf = Pdef(\pingleparf, Ppar(~pinglepat!3, inf));
 );
 
 /*
