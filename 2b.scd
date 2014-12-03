@@ -11,9 +11,9 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-//~nanoktrl2 = 1310720;
+~nanoktrl2 = 1310720;
 //~nanoktrl2 = 1835008;
-~nanoktrl2 = 1572864;
+//~nanoktrl2 = 1572864;
 );
 
 (
@@ -272,7 +272,7 @@ Pdef(\prc2apat,
 */
 
 (
-~prc2apat1a = Pdef(\prc2pat1a, Pbindf(~prc2apat1, \level, 0.1, \pan, -1));
+~prc2apat1a = Pdef(\prc2pat1a, Pbindf(~prc2apat1, \level, 0.06, \pan, -1));
 ~prc2apat1b = Pdef(\prc2pat1b, Pbindf(~prc2apat1a, \pan, 1));
 ~prc2apar = Pdef(\prc2apar, Ppar([~prc2apat1, ~prc2apat1a, ~prc2apat1b], inf));
 );
@@ -294,118 +294,6 @@ Pdef(\prc2apat,
 	};
 }, 34, srcID: ~nanoktrl2);
 );
-
-////////////////////////////////////////////////////////////////
-// PRC2B
-
-(
-SynthDef(\prc2b, { | curve = -8, dur = 1, freq = 1000, level = 0.15, pan = 0 |
-	var env				=	Env.perc(releaseTime: 0.5, level: level, curve: curve);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var kxline			=	XLine.kr(1, 0.1, dur / 5);
-	var kbn				=	LFBrownNoise0.kr(30).range(0.2, 5);
-	var bn				=	LFBrownNoise1.ar(freq, mul: envgen);
-	var rez				=	RLPF.ar(bn, (freq * kxline * kbn).clip(30, SampleRate.ir / 4), 0.5);
-	var delay			=	DelayC.ar(rez, 0.1, 50.reciprocal, 0.5);
-	var pan2			=	Pan2.ar(rez + delay, pan);
-	Out.ar(4, pan2);
-}).add;
-);
-
-// Pattern
-
-(
-~prc2bpatdurarr = Array.fill(4, { arg i; (i + 1) / 4 });
-~prc2bpat =
-Pdef(\prc2bpat,
-	Pbind(
-		\instrument, \prc2b,
-		\dur, Pshuf([
-			Pseq([Pseq([0.125], 2), 0.75]),
-			Pseq([Pseq([0.25], 2), 0.5]),
-			Pshuf(~prc2bpatdurarr, 7),
-			Pseq([Pseq([1/3], 3)]),
-			3, 4
-		], inf),
-		\freq, Pxrand([500, 1000, 5000], inf),
-		\pan, Prand([-0.5, 0, 0.5], inf)
-));
-);
-
-/*
-~prc2bpat.play(t, quant: 1);
-~prc2bpat.isPlaying;
-~prc2bpat.pause;
-*/
-
-~prc2bpat2 = Pdef(\prc2bpat2, Pbindf(~prc2bpat));
-~prc2bpar = Pdef(\prc2bpar, Ppar([~prc2bpat, ~prc2bpat2]));
-
-/*
-~prc2bpar.play(t, quant: 1);
-~prc2bpar.isPlaying;
-~prc2bpar.pause;
-*/
-
-// Midi Control
-
-(
-~prc2bktrl = MIDIdef.cc(\prc2bktrl, {
-	if(~prc2bpar.isPlaying.not) {
-		~prc2bpar.play(t, quant: 1);
-		"prc2b play".postln;
-	} {
-		~prc2bpar.pause;
-		"prc2b stop".postln;
-	};
-}, 50, srcID: ~nanoktrl2);
-);
-
-////////////////////////////////////////////////////////////////
-// PRC2C
-
-(
-SynthDef(\prc2c, { | curve = -32, freq = 400, level = 0.5, pan = 0 |
-	var env				=	Env.perc(0.005, 1, level, curve);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var clip			=	ClipNoise.ar(envgen);
-	var xline			=	XLine.kr(1, 0.3, 0.05);
-	var stan			=	Standard2DC.ar.clip(0.05, 0.5);
-	var rez				=	Resonz.ar(clip, freq * xline, stan);
-	var pan2			= 	Pan2.ar(rez, pan);
-	Out.ar(4, pan2);
-}).add;
-);
-
-(
-~prc2cpat =
-Pdef(\prc2cpat,
-	Pbind(
-		\instrument, \prc2c,
-		\dur, Pshuf([Pseq([0.25], 3), Pseq([0.5], 3), Pseq([0.75], 4)], inf),
-		\freq, Pxrand([100, 120, 130, 500, 520, 530, 1000, 1200, 1300], inf),
-		\pan, Prand([-0.5, 0, 0.5], inf),
-));
-);
-
-/*
-~prc2cpat.play(t, quant: 1);
-~prc2cpat.isPlaying;
-~prc2cpat.pause;
-*/
-
-(
-~prc2cktrl = MIDIdef.cc(\prc2cktrl, {
-	if(~prc2cpat.isPlaying.not) {
-		~prc2cpat.play(t, quant: 1);
-		"prc2c play".postln;
-	} {
-		~prc2cpat.pause;
-		"prc2c stop".postln;
-	};
-}, 66, srcID: ~nanoktrl2);
-);
-
 
 ////////////////////////////////////////////////////////////////
 // PRC3C
@@ -540,57 +428,6 @@ Pdef(\prc4par2,
 );
 
 ////////////////////////////////////////////////////////////////
-// PRC4C
-
-// Synth
-
-(
-SynthDef(\prc4c, { | a = 1.1, curve = -16, freq = 400, level = 0.2 |
-	var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var lc				=	LinCongC.ar(freq, a: [a, a - 0.05], mul: envgen);
-	//var rlpf			=	RLPF.ar(lc, 4000, 0.1);
-	var rhpf			=	RHPF.ar(lc, 8000, 0.01);
-	Out.ar(4, rhpf);
-}).add;
-);
-
-// Pattern
-
-(
-~prc4cpataarr = Array.fill(20, { arg i; (i + 1) / 10 });
-~prc4cpat =
-Pdef(\prc4cpat,
-	Pbind(
-		\instrument, \prc4c,
-		\a, Pshuf(~prc4cpataarr, inf),
-		\dur, Pseq([Pshuf([
-			0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75
-		].stutter(7)), Pseq([1/3], 3)], inf),
-		\octave, 10,
-		\scale, ~scale
-));
-);
-
-/*
-~prc4cpat.play(t, quant: 1);
-~prc4cpat.isPlaying;
-~prc4cpat.pause;
-*/
-
-(
-~prc4cpatktrl = MIDIdef.cc(\prc4cpatktrl, {
-	if(~prc4cpat.isPlaying.not) {
-		~prc4cpat.play(t, quant: 1);
-		"prc4c play".postln;
-	} {
-		~prc4cpat.pause;
-		"prc4c stop".postln;
-	};
-}, 68, srcID: ~nanoktrl2);
-);
-
-////////////////////////////////////////////////////////////////
 // PLUNK
 
 (
@@ -708,16 +545,13 @@ Pdef(\plunkpat3,
 SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.2, shapermin = 0.0005, shapermax = 0.005 |
 	var env				=	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var mix				=	Mix.fill(8, {
-		var freqmod			=	LFNoise1.kr(0.1!2, 0.002, 1);
+	var mix				=	Mix.fill(3, {
+		var freqmod			=	LFNoise1.kr(0.3!2, 0.001, 1);
 		var tri				=	LFTri.ar((freq * freqmod).clip(50, s.sampleRate / 3), mul: envgen);
-		//var kbnfm			=	LFNoise2.kr(1!2).range(0.3, 3);
 		var kbn				=	LFBrownNoise1.kr(0.05!2).range(shapermin, shapermax);
-		//var shape			=	SineShaper.ar(tri, [limit, limit + 0.0001]);
 		var shape			=	SineShaper.ar(tri, kbn);
 		shape;
 	});
-	//var lpf				=	BLowPass4.ar(mix, (freq * 8).clip(50, SampleRate.ir / 3), 0.3);
 	var hpf				=	HPF.ar(mix, (freq * 4).clip(50, SampleRate.ir / 3), 0.5);
 	Out.ar(0, (hpf));
 }).add;
@@ -770,126 +604,39 @@ MIDIdef.cc(\pgnktrl, {
 );
 
 ////////////////////////////////////////////////////////////////
-// PAD1
-
-/*
-(
-SynthDef(\pad1, { | freq = 400, gate = 1, level = 0.01 |
-	// var env				=	Env.asr(0.05, level, 2, 0);
-	// var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var env				=	Env.perc(releaseTime: 4, level: level, curve: -64);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var n 				=	8;
-	var mixfill			=	Mix.fill(n, {
-		var lfn			=	LFBrownNoise2.kr(1.5.dup, mul: 0.00001, add: 1);
-		var sinfb		=	SinOscFB.ar(freq.dup, 0.99, envgen / n);
-		sinfb;
-	});
-	var deci 			=	Decimator.ar(mixfill * 32, 5000, bits: 3, mul: envgen);
-	var lpf				=	BLowPass4.ar(mixfill, freq * 8);
-	var rhpf			=	RHPF.ar(deci, 4000, 0.05);
-	var kbnenv			=	LFBrownNoise0.kr(25.dup).range(0.25, 1).round(0.25);
-	Out.ar(0, (lpf + rhpf));
-}).add;
-);
-*/
-
-(
-SynthDef(\pad1, { | freq = 400, gate = 1, level = 0.05 |
-	var env				=	Env.new([0, level, level / 96, 0], [0.01, 0.1, 3]);
-	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var mixfill			=	Mix.fill(4, {
-		var noiz		=	LFNoise0.ar(freq.dup, mul: 0.02, add: 1);
-		var sin 		=	LFTri.ar([freq, freq + 1] * noiz, mul: envgen / 4);
-		sin;
-	});
-	var shape			=	SineShaper.ar(mixfill, 0.008);
-	var lpf				=	BLowPass4.ar(shape, freq);
-	var rhpf			=	RHPF.ar(shape, 8000, 0.05);
-	var kbnenv			=	LFBrownNoise0.kr(13.dup).range(0.3, 1);
-	Out.ar(0, (lpf + rhpf) * kbnenv);
-}).add;
-);
-
-(
-~padchords1 = ~scaledegrees.powerset.reject({ arg i; i.size != 6 });
-//~padchords1 = Array.fill(7, { arg i; [i, i + 7] });
-~paddegrees = [0, 1, 2, 3, 7];
-~pad1pat =
-Pdef(\pad1pat,
-	Pbind(
-		\instrument, \pad1,
-		// \degree, Pseq([
-		// 	Pbrown(0, 3, 1, 1), Rest,
-		// 	Pbrown(0, 3, 1, 2), Rest,
-		// 	Pbrown(0, 3, 1, 3), Rest,
-		// ],  inf),
-		// \degree, Pseq([
-		// 	Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 1)), Rest,
-		// 	Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 2)), Rest,
-		// 	Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 3)), Rest,
-		// ], inf),
-		\degree, Pseq([Pswitch1(~padchords1, Pbrown(0, ~padchords1.size, 2, 1)), Rest], inf),
-		\dur, Pseq([0.25, 3, 0.25, 5, 0.25, 7, 0.25, 9, 0.25, 11], inf),
-		\octave, 8,
-		\scale, ~scale,
-));
-);
-
-/*
-~pad1pat.play(t, quant: 1);
-~pad1pat.isPlaying;
-~pad1pat.pause;
-*/
-
-(
-~pad1ktrl = MIDIdef.cc(\pad1ktrl, {
-	if(~pad1pat.isPlaying.not) {
-		~pad1pat.play(t, quant: 1);
-		"pad1 play".postln;
-	} {
-		~pad1pat.pause;
-		"pad1 stop".postln;
-	};
-}, 39, srcID: ~nanoktrl2);
-);
-
-////////////////////////////////////////////////////////////////
-// PAD2 ////////////////////////////////////////////////////////
+// PAD2
 
 // Synth
 
 (
 ~pad2 =
-SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.003 |
+SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.005 |
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var kbnenv1			=	(LFBrownNoise0.kr(15).range(0.25, 1).round(0.25));
-	var kbnenv2			=	(LFBrownNoise1.kr(15).range(0, 1)).round(0.5);
-	var klfn			=	LFNoise1.kr(0.1.dup, 0.001, 1);
+	//var kbnenv1			=	(LFBrownNoise0.kr(15).range(0.25, 1).round(0.25));
+	//var kbnenv2			=	(LFBrownNoise1.kr(15).range(0, 1)).round(0.5);
+	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
+	var saw1freqmod		=	LFNoise1.kr(0.1.dup, 0.0001, 1);
 	var saw0			=	LFSaw.ar(freq.dup, mul: envgen / 2);
-	var saw1			=	LFSaw.ar(freq.dup * klfn, mul: envgen / 2);
+	var saw1			=	LFSaw.ar(freq * saw1freqmod, mul: envgen / 2);
 	var sawmix			=	saw0 + saw1;
-	var bn				=	LFNoise0.ar(1, 0.1);
-	var mixfill			=	Mix.fill(4, {
-		var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
-		var shape			=	SineShaper.ar(sawmix + bn, 0.002 * kbnshaper);
-		shape;
-	});
-	var lpf				=	BLowPass4.ar((sawmix / 4) + mixfill, freq, 1, kbnenv1);
-	var rhpf			=	BHiPass4.ar((sawmix / 4) + mixfill, 6000, 0.05, mul: kbnenv2);
-	var filtmix			=	lpf + rhpf;
-	Out.ar(0, filtmix);
+	var bn				=	LFNoise2.ar(0.1!2, 0.1);
+	var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
+	//var shape			=	SineShaper.ar(sawmix + bn, 0.002 * kbnshaper);
+	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 20;
+	var lpf				=	BLowPass4.ar(sawmix + shape, freq, mul: filtmulmods[0, 1]);
+	var rhpf			=	BHiPass4.ar(sawmix + shape, 6000, 0.05, filtmulmods[2, 3]);
+	//var filtmix			=	lpf + rhpf;
+	Out.ar(0, lpf + rhpf);
 }).add;
 );
 
 // Pattern
 
 (
-~padchords2 = ~scaledegrees.powerset.reject({ arg i; i.size != 4 });
-);
+~padchords2 = ~scaledegrees.powerset.reject({ arg i; i.size != 5 });
+//~padchords2 = [[0, 7]];
 
-(
 ~pad2pat =
 Pdef(\pad2pat,
 	Pbind(
@@ -900,7 +647,7 @@ Pdef(\pad2pat,
 		 	Prand(~padchords2, 3), Rest
 		 ], inf),
 		\dur, Pshuf([11, 13, 15], inf),
-		\level, 0.007,
+		\level, 0.01,
 		\octave, 5,
 		\scale, ~scale,
 ));
@@ -924,54 +671,4 @@ Pdef(\pad2pat,
 		"pad2 stop".postln;
 	};
 }, 55, srcID: ~nanoktrl2);
-);
-
-////////////////////////////////////////////////////////////////
-// PULSE
-
-(
-SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.03, pan = 0 |
-	var env				=	Env.new([0, level, 0], [0.01, dur]);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var xline			=	XLine.ar(0.999, 0.001, dur);
-	var lfn				=	LFBrownNoise0.ar(freq).range(0.2, 5);
-	var sinfb			=	SinOscFB.ar(freq, xline * lfn, envgen);
-	var pan2			=	Pan2.ar(sinfb, pan);
-	Out.ar(4, pan2);
-}).add;
-);
-
-//
-
-(
-~pulsepat =
-Pdef(\pulsepat,
-	Pbind(
-		\instrument, \pulse,
-		\bits, Pbrown(8, 16, 1, inf).round(1),
-		\dur, Pshuf(~pulsedurarray, inf),
-		\level, Pshuf([1, 0.5].stutter(5) * 0.01, inf),
-		\pan, Pshuf([-0.5, 0, 0.5].stutter(3), inf),
-		\scale, ~scale
-));
-);
-
-/*
-~pulsepat.play(t, quant: 1);
-~pulsepat.isPlaying;
-~pulsepat.pause;
-*/
-
-//
-
-(
-~pulsektrl = MIDIdef.cc(\pulsektrl, {
-	if(~pulsepat.isPlaying.not) {
-		~pulsepat.play(t, quant: 1);
-		"pulse play".postln;
-	} {
-		~pulsepat.pause;
-		"pulse stop".postln;
-	};
-}, 71, srcID: ~nanoktrl2);
 );
