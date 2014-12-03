@@ -23,7 +23,7 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
-~ratios = [1/1, 15/14, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 14/9, 7/4];
+~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 14/9, 7/4];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~bassscale = Scale.new(#[0, 1, 2, 3], ~ratios.size, ~tuning);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -292,7 +292,7 @@ Pdef(\prc2apat,
 		~prc2apar.pause;
 		"prc2a stop".postln;
 	};
-}, 34, srcID: ~nanoktrl2);
+}, 65, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -343,7 +343,7 @@ Pdef(\prc3cpat,
 		~prc3cpat.pause;
 		"prc3c stop".postln;
 	};
-}, 67, srcID: ~nanoktrl2);
+}, 49, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -404,18 +404,6 @@ Pdef(\prc4par2,
 // Midi Control
 
 (
-~prc4pat1ktrl = MIDIdef.cc(\prc4pat1ktrl, {
-	if(~prc4pat1.isPlaying.not) {
-		~prc4pat1.play(t, quant: 1);
-		"prc4-1 play".postln;
-	} {
-		~prc4pat1.pause;
-		"prc4-1 stop".postln;
-	};
-}, 36, srcID: ~nanoktrl2);
-);
-
-(
 ~prc4parktrl = MIDIdef.cc(\prc4parktrl, {
 	if(~prc4par2.isPlaying.not) {
 		~prc4par2.play(t, quant: 1);
@@ -424,7 +412,7 @@ Pdef(\prc4par2,
 		~prc4par2.pause;
 		"prc4-2 stop".postln;
 	};
-}, 52, srcID: ~nanoktrl2);
+}, 33, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -511,7 +499,7 @@ Pdef(\plunkpat3,
 		~plunkpat1.pause;
 		"plunk1 stop".postln;
 	};
-}, 37, srcID: ~nanoktrl2);
+}, 34, srcID: ~nanoktrl2);
 );
 
 (
@@ -523,7 +511,7 @@ Pdef(\plunkpat3,
 		~plunkpat2.pause;
 		"plunk2 stop".postln;
 	};
-}, 53, srcID: ~nanoktrl2);
+}, 50, srcID: ~nanoktrl2);
 );
 
 (
@@ -535,7 +523,7 @@ Pdef(\plunkpat3,
 		~plunkpat3.pause;
 		"plunk3 stop".postln;
 	};
-}, 69, srcID: ~nanoktrl2);
+}, 66, srcID: ~nanoktrl2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -552,7 +540,7 @@ SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.2, shapermin =
 		var shape			=	SineShaper.ar(tri, kbn);
 		shape;
 	});
-	var hpf				=	HPF.ar(mix, (freq * 4).clip(50, SampleRate.ir / 3), 0.5);
+	var hpf				=	HPF.ar(mix, (freq * 4).clip(50, SampleRate.ir / 3), 0.1);
 	Out.ar(0, (hpf));
 }).add;
 );
@@ -565,23 +553,13 @@ Pdef(\pgnpat1,
 		\degree, Pswitch([[-3, -1], [-3, 0], [-1, 1], [-3, 2], [0, 3], [0, 7]], Pbrown(0, 6, 1), inf),
 		\dur, Pshuf([8, 12, 16, 24, 32, 48], inf),
 		\legato, 0.5,
-		//\legato, 1,
 		\octave, 6,
 		\scale, ~scale,
 		\shapermin, 0.0005,
 		\shapermax, 0.01,
 ));
-);
-
-/*
-~pgnpat1.play(t, quant: 1);
-~pgnpat1.isPlaying;
-~pgnpat1.pause;
-*/
-
-(
 ~pgnpat2 = Pdef(\pgnpat2, Pbindf(~pgnpat1, \degree, Pseq([0, 7], inf)));
-~pgnpar = Pdef(\pgnpar, Ppar([~pgnpat1, ~pgnpat2, ~pgnpat2]));
+~pgnpar = Pdef(\pgnpar, Ppar([~pgnpat1, ~pgnpat2]));
 );
 
 /*
@@ -623,7 +601,7 @@ SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.005 |
 	var bn				=	LFNoise2.ar(0.1!2, 0.1);
 	var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
 	//var shape			=	SineShaper.ar(sawmix + bn, 0.002 * kbnshaper);
-	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 20;
+	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 5;
 	var lpf				=	BLowPass4.ar(sawmix + shape, freq, mul: filtmulmods[0, 1]);
 	var rhpf			=	BHiPass4.ar(sawmix + shape, 6000, 0.05, filtmulmods[2, 3]);
 	//var filtmix			=	lpf + rhpf;
