@@ -391,7 +391,7 @@ Pdef(\pulsepat1,
 // PINGLE
 
 (
-SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2, freq = 10000, level = 0.3, pan = 0 |
+SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2, freq = 10000, level = 0.1, pan = 0 |
 	var env				=	Env.perc(releaseTime: 1, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar([freq, freq - 10] * 4, a, 3, add: 1);
@@ -454,7 +454,7 @@ Pdef(\pinglepar,
 */
 
 (
-~mainlevel = 0.1;
+~mainlevel = 0.08;
 ~echolevel = ~mainlevel / 4;
 ~pinglepat =
 Pdef(\pinglepat,
