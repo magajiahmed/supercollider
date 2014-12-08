@@ -11,9 +11,9 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-~nanoktrl2 = 1310720;
+//~nanoktrl2 = 1310720;
 //~nanoktrl2 = 1835008;
-//~nanoktrl2 = 1572864;
+~nanoktrl2 = 1572864;
 );
 
 (
@@ -400,7 +400,7 @@ SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2,
 	//var rez				=	Resonz.ar(sinwrap, 6000, 0.1);
 	var delay			=	DelayC.ar(sin, 0.2, delaytime.clip(0.0001, 0.2));
 	//var pan2			=	Pan2.ar(rez + delay, pan);
-	Out.ar(4, sin + delay).softclip;
+	Out.ar(4, sin).softclip;
 }).add;
 );
 
@@ -454,14 +454,14 @@ Pdef(\pinglepar,
 */
 
 (
-~mainlevel = 0.08;
-~echolevel = ~mainlevel / 4;
+~mainlevel = 0.01;
+~echolevel = ~mainlevel / 2;
 ~pinglepat =
 Pdef(\pinglepat,
 	Pbind(
 		\instrument, \pingle,
 		\a, 0.01,
-		\curve, -16,
+		\curve, -64,
 		\delaytime, Pshuf((1..11) / 2000, inf),
 		\dur, Pshuf([
 			Pseq([1/12], 3),
@@ -470,12 +470,12 @@ Pdef(\pinglepat,
 		], inf),
 		\level, ~mainlevel,
 		\pan, Pwhite(-1.0, 1.0, inf),
-		\note, Pshuf([0, 2, -2, [-2, 0], [0, 2]], inf),
-		\octave, 8,
+		\note, 7,
+		\octave, 7,
 		\scale, ~scale
 ));
 ~pinglepatt  = Pdef(\pinglepatt, Pbindf(~pinglepat, \dur, 0.25, \level, ~echolevel));
-~pingleparf = Pdef(\pingleparf, Ppar(~pinglepat!3, inf));
+~pingleparf = Pdef(\pingleparf, Ppar([~pinglepat, ~pinglepatt], inf));
 );
 
 /*
