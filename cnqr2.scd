@@ -4,7 +4,8 @@ MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-~nanoktrl2 = 1310720;
+//~nanoktrl2 = 1310720;
+~nanoktrl2 = MIDIClient.sources.detect{ arg a; a.name.contains("nanoKONTROL2")};
 );
 
 s.meter;
@@ -70,15 +71,21 @@ Pdef(\basspat,
 // Midi Control
 
 (
-~bassktrl = MIDIdef.cc(\bassktrl, {
+~bassplayktrl = MIDIdef.cc(\bassplayktrl, {
 	if(~basspat.isPlaying.not) {
 		~basspat.play(t, quant: 0.5);
 		"bass play".postln;
-	} {
+	};
+}, 32, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+);
+
+(
+~bassstopktrl = MIDIdef.cc(\bassstopktrl, {
+	if(~basspat.isPlaying) {
 		~basspat.stop;
 		"bass stop".postln;
 	};
-}, 32, srcID: ~nanoktrl2);
+}, 32, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////
@@ -149,27 +156,41 @@ Pdef(\pbpdef,
 // Midi Control
 
 (
-~rbktrl = MIDIdef.cc(\rbktrl, {
+~rbplayktrl = MIDIdef.cc(\rbplayktrl, {
 	if(~rbpdef.isPlaying.not) {
 		~rbpdef.play(t, quant: 3);
 		"recbuf play".postln;
-	} {
-		~rbpdef.stop;
-		"recbuf stop".postln;
 	};
-}, 48, srcID: ~nanoktrl2);
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 );
 
 (
-~pbktrl = MIDIdef.cc(\pbktrl, {
+~rbstopktrl = MIDIdef.cc(\rbstopktrl, {
+	if(~rbpdef.isPlaying) {
+		~rbpdef.stop;
+		"recbuf stop".postln;
+	};
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+//
+
+(
+~pbplayktrl = MIDIdef.cc(\pbplayktrl, {
 	if(~pbpar.isPlaying.not) {
 		~pbpar.play(t, quant: 0.5);
 		"playbuf play".postln;
-	} {
+	};
+}, 64, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+);
+
+(
+~pbstopktrl = MIDIdef.cc(\pbstopktrl, {
+	if(~pbpar.isPlaying) {
 		~pbpar.stop;
 		"playbuf stop".postln;
 	};
-}, 64, srcID: ~nanoktrl2);
+}, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////
@@ -281,7 +302,7 @@ Pdef(\prcpulse,
 		~prcpar0.pause;
 		"prc0 stop".postln;
 	};
-}, 33, srcID: ~nanoktrl2);
+}, 33, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -293,7 +314,7 @@ Pdef(\prcpulse,
 		~prcpar1.pause;
 		"prc1 stop".postln;
 	};
-}, 49, srcID: ~nanoktrl2);
+}, 49, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -305,7 +326,7 @@ Pdef(\prcpulse,
 		~prcpulse.pause;
 		"prcpulse stop".postln;
 	};
-}, 65, srcID: ~nanoktrl2);
+}, 65, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -569,7 +590,7 @@ Pdef(\snrpat11,
 		~snrpar0.pause;
 		"snrpar0 stop".postln;
 	};
-}, 34, srcID: ~nanoktrl2);
+}, 34, srcID: ~nanoktrl2.uid);
 );
 
 /*
@@ -595,7 +616,7 @@ Pdef(\snrpat11,
 		~snrpar2.pause;
 		"snrpar2 stop".postln;
 	};
-}, 50, srcID: ~nanoktrl2);
+}, 50, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -607,7 +628,7 @@ Pdef(\snrpat11,
 		~snrpar3.pause;
 		"snrpar3 stop".postln;
 	};
-}, 66, srcID: ~nanoktrl2);
+}, 66, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -686,7 +707,7 @@ Pdef(\hatpulse,
 		~hatpar.pause;
 		"hat stop".postln;
 	};
-}, 35, srcID: ~nanoktrl2);
+}, 35, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -698,7 +719,7 @@ Pdef(\hatpulse,
 		~hatpulse.pause;
 		"hatpulse stop".postln;
 	};
-}, 51, srcID: ~nanoktrl2);
+}, 51, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -801,7 +822,7 @@ MIDIdef.cc(\crumble0ktrl, {
 		~crumblepar0.pause;
 		"crumble0 stop".postln;
 	};
-}, 36, srcID: ~nanoktrl2);
+}, 36, srcID: ~nanoktrl2.uid);
 );
 
 /*
@@ -908,7 +929,7 @@ Pdef(\pnopdef1,
 		~pnopar0.pause;
 		"pno0 stop".postln;
 	};
-}, 52, srcID: ~nanoktrl2);
+}, 52, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -920,7 +941,7 @@ Pdef(\pnopdef1,
 		~pnopar1.pause;
 		"pno1 stop".postln;
 	};
-}, 68, srcID: ~nanoktrl2);
+}, 68, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1007,7 +1028,7 @@ Pdef(\pno2pat1,
 		~pno2pat0.pause;
 		"pno2pat0 stop".postln;
 	};
-}, 37, srcID: ~nanoktrl2);
+}, 37, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -1019,7 +1040,7 @@ Pdef(\pno2pat1,
 		~pno2pat1.pause;
 		"pno2pat1 stop".postln;
 	};
-}, 53, srcID: ~nanoktrl2);
+}, 53, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -1031,7 +1052,7 @@ Pdef(\pno2pat1,
 		~pno2pat2.pause;
 		"pno2pat2 stop".postln;
 	};
-}, 69, srcID: ~nanoktrl2);
+}, 69, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1101,7 +1122,7 @@ Pdef(\dronepat0,
 		~dronepat0.pause;
 		"drone0 stop".postln;
 	};
-}, 38, srcID: ~nanoktrl2);
+}, 38, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -1113,7 +1134,7 @@ Pdef(\dronepat0,
 		~dronepat1.pause;
 		"drone1 stop".postln;
 	};
-}, 54, srcID: ~nanoktrl2);
+}, 54, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -1125,7 +1146,7 @@ Pdef(\dronepat0,
 		~dronepat2.pause;
 		"drone2 stop".postln;
 	};
-}, 70, srcID: ~nanoktrl2);
+}, 70, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1169,8 +1190,8 @@ SynthDef(\pad, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.008 |
 Pdef(\padpat0,
 	Pbind(
 		\instrument, \pad,
-		\degree, Pshuf(~chords0 ++ [Rest].stutter(6), inf),
-		\dur, Prand(~padpatdurarr, inf),
+		\degree, Pshuf(~padchords0 ++ [Rest].stutter(6), inf),
+		\dur, Prand(~padpat0durarr, inf),
 		\octave, 5,
 		\scale, ~scale,
 ));
@@ -1219,7 +1240,7 @@ Pdef(\paddrone,
 		~padpat0.pause;
 		"pad0 stop".postln;
 	};
-}, 39, srcID: ~nanoktrl2);
+}, 39, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -1231,7 +1252,7 @@ Pdef(\paddrone,
 		~paddrone.pause;
 		"paddrone stop".postln;
 	};
-}, 55, srcID: ~nanoktrl2);
+}, 55, srcID: ~nanoktrl2.uid);
 );
 
 // (

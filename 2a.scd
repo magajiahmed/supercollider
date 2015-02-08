@@ -13,7 +13,8 @@ c.free;
 c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1310720;
 //~nanoktrl2 = 1835008;
-~nanoktrl2 = 1572864;
+//~nanoktrl2 = 1572864;
+~nanoktrl2 = MIDIClient.sources.detect{ arg a; a.name.contains("nanoKONTROL2")};
 );
 
 s.meter;
@@ -137,7 +138,7 @@ Pdef(\basspat,
 		~basspat.pause;
 		"bass stop".postln;
 	};
-}, 32, srcID: ~nanoktrl2);
+}, 32, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////
@@ -220,7 +221,7 @@ Pdef(\pbpat,
 		~pbpat.pause;
 		"playbuf stop".postln;
 	};
-}, 64, srcID: ~nanoktrl2);
+}, 64, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -317,7 +318,7 @@ Pdef(\prc1cpdef,
 		~prc1apat.pause;
 		"prc1a stop".postln;
 	};
-}, 33, srcID: ~nanoktrl2);
+}, 33, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -329,7 +330,7 @@ Pdef(\prc1cpdef,
 		~prc1bpat.pause;
 		"prc1b stop".postln;
 	};
-}, 49, srcID: ~nanoktrl2);
+}, 49, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -341,7 +342,7 @@ Pdef(\prc1cpdef,
 		~prc1cpat.pause;
 		"prc1c stop".postln;
 	};
-}, 65, srcID: ~nanoktrl2);
+}, 65, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -362,22 +363,23 @@ SynthDef(\prc2a, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level
 );
 
 (
-~prc2apatfrq1 = 100;
-~prc2apatfrq2 = 2000;
+~prc2apatfrq1 = 50;
+~prc2apatfrq2 = 5000;
 ~prc2apat1 =
 Pdef(\prc2apat,
 	Pbind(
 		\instrument, \prc2a,
 		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1], inf),
 		\dfrq, Pwhite(100, 8000, inf),
-		\dur, Pshuf([
-			Pseq([0.125, 0.125, 0.75]),
-			Pseq([1/3], 3),
-			Pseq([0.25], 3),
-			Pseq([0.25], 5),
-			Pseq([0.75], 4),
-			Pseq([0.5, 0.75], 4),
-		], inf),
+		// \dur, Pshuf([
+		// 	Pseq([0.125, 0.125, 0.75]),
+		// 	Pseq([1/3], 3),
+		// 	Pseq([0.25], 3),
+		// 	Pseq([0.25], 5),
+		// 	Pseq([0.75], 4),
+		// 	Pseq([0.5, 0.75], 4),
+		// ], inf),
+		\dur, Prand([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.5, 0.75], 3)]),
 		\freq, Pshuf([
 			Pseq([~prc2apatfrq1], 3), Pseq([~prc2apatfrq1, ~prc2apatfrq2, ~prc2apatfrq1]), Pseq([~prc2apatfrq1, ~prc2apatfrq2, ~prc2apatfrq2])
 		].stutter(11), inf),
@@ -419,7 +421,7 @@ Pdef(\prc2apat,
 		~prc2apar.pause;
 		"prc2a stop".postln;
 	};
-}, 34, srcID: ~nanoktrl2);
+}, 34, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -485,7 +487,7 @@ Pdef(\prc2bpat,
 		~prc2bpar.pause;
 		"prc2b stop".postln;
 	};
-}, 50, srcID: ~nanoktrl2);
+}, 50, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -531,7 +533,7 @@ Pdef(\prc2cpat,
 		~prc2cpat.pause;
 		"prc2c stop".postln;
 	};
-}, 66, srcID: ~nanoktrl2);
+}, 66, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -564,13 +566,13 @@ SynthDef(\prc3a, { | bits = 24, curve = -64, dur = 1, freq = 4000, level = 0.05,
 Pdef(\prc3apat,
 	Pbind(
 		\instrument, \prc3a,
-		\dur, Pseq([
-			1, 1, 0.5,
-			1, 1, 1, 0.5,
-			1, 1, 1, 1, 0.5,
-			1, 1, 1, 1, 1, 0.5,
-			1, 1, 1, 1, 1, 1, 0.5
-		], inf),
+		// \dur, Pseq([
+		// 	1, 1, 0.5,
+		// 	1, 1, 1, 0.5,
+		// 	1, 1, 1, 1, 0.5,
+		// 	1, 1, 1, 1, 1, 0.5,
+		// 	1, 1, 1, 1, 1, 1, 0.5
+		// ], inf),
 		\bits, Pbrown(8, 16, 1, inf).round(1),
 		\pan, Prand([-0.5, 0, 0.5], inf),
 		\rate, Pwhite(0.75, 1, inf) * 44100,
@@ -592,7 +594,7 @@ Pdef(\prc3apat,
 		~prc3apat.pause;
 		"prc3a stop".postln;
 	};
-}, 35, srcID: ~nanoktrl2);
+}, 35, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -644,7 +646,7 @@ Pdef(\prc3bpat,
 		~prc3bpat.pause;
 		"prc3b stop".postln;
 	};
-}, 51, srcID: ~nanoktrl2);
+}, 51, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -695,7 +697,7 @@ Pdef(\prc3cpat,
 		~prc3cpat.pause;
 		"prc3c stop".postln;
 	};
-}, 67, srcID: ~nanoktrl2);
+}, 67, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -791,7 +793,7 @@ Pdef(\prc4pat2,
 		~prc4pat1.pause;
 		"prc4-1 stop".postln;
 	};
-}, 36, srcID: ~nanoktrl2);
+}, 36, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -803,7 +805,7 @@ Pdef(\prc4pat2,
 		~prc4par2.pause;
 		"prc4-2 stop".postln;
 	};
-}, 52, srcID: ~nanoktrl2);
+}, 52, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -854,7 +856,7 @@ Pdef(\prc4cpat,
 		~prc4cpat.pause;
 		"prc4c stop".postln;
 	};
-}, 68, srcID: ~nanoktrl2);
+}, 68, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -941,7 +943,7 @@ Pdef(\plunkpat3,
 		~plunkpat1.pause;
 		"plunk1 stop".postln;
 	};
-}, 37, srcID: ~nanoktrl2);
+}, 37, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -953,7 +955,7 @@ Pdef(\plunkpat3,
 		~plunkpat2.pause;
 		"plunk2 stop".postln;
 	};
-}, 53, srcID: ~nanoktrl2);
+}, 53, srcID: ~nanoktrl2.uid);
 );
 
 (
@@ -965,7 +967,7 @@ Pdef(\plunkpat3,
 		~plunkpat3.pause;
 		"plunk3 stop".postln;
 	};
-}, 69, srcID: ~nanoktrl2);
+}, 69, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1015,7 +1017,7 @@ MIDIdef.cc(\pnoktrl, {
 		~pnopat.pause;
 		"pnopat pause".postln;
 	}
-}, 38, srcID: ~nanoktrl2);
+}, 38, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1094,7 +1096,7 @@ MIDIdef.cc(\pgnktrl, {
 		~pgnpar.pause;
 		"pgnpar pause".postln;
 	}
-}, 54, srcID: ~nanoktrl2);
+}, 54, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1144,7 +1146,7 @@ MIDIdef.cc(\sinthktrl, {
 		~sinpat.pause;
 		"sinpat pause".postln;
 	}
-}, 70, srcID: ~nanoktrl2);
+}, 70, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1229,7 +1231,7 @@ Pdef(\pad1pat,
 		~pad1pat.pause;
 		"pad1 stop".postln;
 	};
-}, 39, srcID: ~nanoktrl2);
+}, 39, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1302,7 +1304,7 @@ Pdef(\pad2pat,
 		~pad2pat.pause;
 		"pad2 stop".postln;
 	};
-}, 55, srcID: ~nanoktrl2);
+}, 55, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1352,5 +1354,5 @@ Pdef(\pulsepat,
 		~pulsepat.pause;
 		"pulse stop".postln;
 	};
-}, 71, srcID: ~nanoktrl2);
+}, 71, srcID: ~nanoktrl2.uid);
 );
