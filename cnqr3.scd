@@ -505,12 +505,14 @@ MIDIdef.cc(\banjostopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc2, { |a = 1, b = 3, curve = -16, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.03, pan = 0|
-    var env             =   Env.perc(releaseTime: dur, level: level, curve: curve);
+SynthDef(\prc2, { |a = 1, b = 3, curve = -4, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.1, pan = 0|
+    var env             =   Env.perc(releaseTime: 1, level: level, curve: curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var lat             =   Latoocarfian2DC.ar(latfreq / 2, latfreq, a, b, add: 1).clip(0, 1);
+    var lat             =   Latoocarfian2DC.ar(latfreq / 2, latfreq, a, b, mul: 0.9, add: 1).clip(0, 1);
+    var sin             =   SinOsc.ar(freq, mul: envgen / 2);
     var sinfb           =   SinOscFB.ar(freq * lat, fb, envgen);
-    var pan2            =   Pan2.ar(sinfb, pan);
+    var rhpf            =   RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
+    var pan2            =   Pan2.ar(sin + rhpf, pan);
     Out.ar(0, pan2);
 }).add;
 );
@@ -522,14 +524,15 @@ Pdef(\prc2pata,
         \instrument, \prc2,
         \a, Pwhite(-3.0, 3.0, inf),
         \b, Pwhite(-3.0, 3.0, inf),
-        \dur, Prand([0.75, 1, 1.5, 2, 6], inf),
-        \fb, 2,
-        \note, [-5, 0].stutter(4),
+        \dur, Pwrand([0.25, 0.75, 6], [17, 3, 1].normalizeSum, inf),
+        \fb, Pwhite(2, 5, inf),
+        \level, Prand([0.2, 1] * 0.03, inf),
+        \note, [-2, 0, 2],
         \octave, 8,
         \root, ~root,
         \scale, ~scale
 ));
-~prc2par = Pdef(\prc2par, Ppar([~prc2pata, ~prc2patb].stutter(3), inf));
+~prc2par = Pdef(\prc2par, Ppar([~prc2pata], inf));
 );
 
 /*
@@ -539,21 +542,21 @@ Pdef(\prc2pata,
 */
 
 (
-~banjoplayktrl =
-MIDIdef.cc(\banjoplayktrl, {
-    if(~banjopar.isPlaying.not) {
-        ~banjopar.play(t, quant: 1);
-        "banjo play".postln;
+~prc2playktrl =
+MIDIdef.cc(\prc2playktrl, {
+    if(~prc2par.isPlaying.not) {
+        ~prc2par.play(t, quant: 1);
+        "prc2 play".postln;
     }
-}, 66, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
-~banjostopktrl =
-MIDIdef.cc(\banjostopktrl, {
-    if(~banjopar.isPlaying) {
-        ~banjopar.stop;
-        "banjo stop".postln;
+~prc2stopktrl =
+MIDIdef.cc(\prc2stopktrl, {
+    if(~prc2par.isPlaying) {
+        ~prc2par.stop;
+        "prc2 stop".postln;
     }
-}, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -917,7 +920,7 @@ Pdef(\stringpat8,
 MIDIdef.cc(\string0playktrl, {
     if(~stringpat0.isPlaying.not) {
         ~stringpat0.play(t, quant: 0.5);
-        "string0 play".postln;
+        "string0 ([-5, 0], octave 5) play".postln;
     }
 }, 52, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -925,7 +928,7 @@ MIDIdef.cc(\string0playktrl, {
 MIDIdef.cc(\string0stopktrl, {
     if(~stringpat0.isPlaying) {
         ~stringpat0.stop;
-        "string0 stop".postln;
+        "string0 ([-5, 0], octave 5) stop".postln;
     }
 }, 52, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -937,7 +940,7 @@ MIDIdef.cc(\string0stopktrl, {
 MIDIdef.cc(\string1playktrl, {
     if(~stringpat1.isPlaying.not) {
         ~stringpat1.play(t, quant: 0.5);
-        "string1 play".postln;
+        "string1 (chords and rests, octave 5) play".postln;
     }
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -945,7 +948,7 @@ MIDIdef.cc(\string1playktrl, {
 MIDIdef.cc(\string1stopktrl, {
     if(~stringpat1.isPlaying) {
         ~stringpat1.stop;
-        "string1 stop".postln;
+        "string1 (chords and rests, octave 5) stop".postln;
     }
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -957,7 +960,7 @@ MIDIdef.cc(\string1stopktrl, {
 MIDIdef.cc(\string2playktrl, {
     if(~stringpat2.isPlaying.not) {
         ~stringpat2.play(t, quant: 0.5);
-        "string2 play".postln;
+        "string2 ([-5, 0], octave 6) play".postln;
     }
 }, 37, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -965,7 +968,7 @@ MIDIdef.cc(\string2playktrl, {
 MIDIdef.cc(\string2stopktrl, {
     if(~stringpat2.isPlaying) {
         ~stringpat2.stop;
-        "string2 stop".postln;
+        "string2 ([-5, 0], octave 6) stop".postln;
     }
 }, 37, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -977,7 +980,7 @@ MIDIdef.cc(\string2stopktrl, {
 MIDIdef.cc(\string3playktrl, {
     if(~stringpat3.isPlaying.not) {
         ~stringpat3.play(t, quant: 0.5);
-        "string3 play".postln;
+        "string3 ([-2, 2], octave 6) play".postln;
     }
 }, 53, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -985,7 +988,7 @@ MIDIdef.cc(\string3playktrl, {
 MIDIdef.cc(\string3stopktrl, {
     if(~stringpat3.isPlaying) {
         ~stringpat3.stop;
-        "string3 stop".postln;
+        "string3 ([-2, 2], octave 6) stop".postln;
     }
 }, 53, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -997,7 +1000,7 @@ MIDIdef.cc(\string3stopktrl, {
 MIDIdef.cc(\string4playktrl, {
     if(~stringpat4.isPlaying.not) {
         ~stringpat4.play(t, quant: 0.5);
-        "string4 play".postln;
+        "string4 ([-5, 0], octave 4) play".postln;
     }
 }, 69, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -1005,7 +1008,7 @@ MIDIdef.cc(\string4playktrl, {
 MIDIdef.cc(\string4stopktrl, {
     if(~stringpat4.isPlaying) {
         ~stringpat4.stop;
-        "string4 stop".postln;
+        "string4 ([-5, 0], octave 4) stop".postln;
     }
 }, 69, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -1017,7 +1020,7 @@ MIDIdef.cc(\string4stopktrl, {
 MIDIdef.cc(\string5playktrl, {
     if(~stringpat5.isPlaying.not) {
         ~stringpat5.play(t, quant: 0.5);
-        "string5 play".postln;
+        "string5 ([-2, 2], octave 4) play".postln;
     }
 }, 38, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -1025,7 +1028,7 @@ MIDIdef.cc(\string5playktrl, {
 MIDIdef.cc(\string5stopktrl, {
     if(~stringpat5.isPlaying) {
         ~stringpat5.stop;
-        "string5 stop".postln;
+        "string5 ([-2, 2], octave 4) stop".postln;
     }
 }, 38, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -1057,7 +1060,7 @@ MIDIdef.cc(\string6stopktrl, {
 MIDIdef.cc(\string7playktrl, {
     if(~stringpat7.isPlaying.not) {
         ~stringpat7.play(t, quant: 0.5);
-        "string7 play".postln;
+        "string7 ([-5, 0], octave 7) play".postln;
     }
 }, 70, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -1065,7 +1068,7 @@ MIDIdef.cc(\string7playktrl, {
 MIDIdef.cc(\string7stopktrl, {
     if(~stringpat7.isPlaying) {
         ~stringpat7.stop;
-        "string7 stop".postln;
+        "string7 ([-5, 0], octave 7) stop".postln;
     }
 }, 70, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -1077,7 +1080,7 @@ MIDIdef.cc(\string7stopktrl, {
 MIDIdef.cc(\string8playktrl, {
     if(~stringpat8.isPlaying.not) {
         ~stringpat8.play(t, quant: 0.5);
-        "string8 play".postln;
+        "string8 ([0, 12, 19], octave 2) play".postln;
     }
 }, 39, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
@@ -1085,7 +1088,7 @@ MIDIdef.cc(\string8playktrl, {
 MIDIdef.cc(\string8stopktrl, {
     if(~stringpat8.isPlaying) {
         ~stringpat8.stop;
-        "string8 stop".postln;
+        "string8 ([0, 12, 19], octave 2) stop".postln;
     }
 }, 39, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
