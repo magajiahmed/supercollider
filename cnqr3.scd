@@ -1,4 +1,8 @@
-currentEnvironment.clear;
+// Environment
+while ({ currentEnvironment === topEnvironment }.not, { Environment.pop });
+~cnqr3Environment = Environment.make({});
+~cnqr3Environment.push;
+
 //midi
 MIDIdef.freeAll;
 MIDIClient.init;
@@ -122,7 +126,6 @@ MIDIdef.cc(\bass2stopktrl, {
 );
 
 ////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
 
 (
 SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.05|
