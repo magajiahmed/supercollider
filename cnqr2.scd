@@ -1,3 +1,6 @@
+// cleanup
+currentEnvironment.clear;
+
 ( //midi
 MIDIdef.freeAll;
 MIDIClient.init;
@@ -292,6 +295,7 @@ Pdef(\prcpulse,
 
 // Midi Control
 
+/*
 (
 ~prc0ktrl = MIDIdef.cc(\prc0ktrl, {
 	if(~prcpar0.isPlaying.not) {
@@ -303,6 +307,26 @@ Pdef(\prcpulse,
 	};
 }, 33, srcID: ~nanoktrl2.uid);
 );
+*/
+
+(
+~prc0playktrl = MIDIdef.cc(\prc0playktrl, {
+	if(~prcpar0.isPlaying.not) {
+		~prcpar0.play(t, quant: 0.5);
+		"prc0 play".postln;
+	};
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+);
+
+(
+~prc0stopktrl = MIDIdef.cc(\prc0stopktrl, {
+	if(~prcpar0.isPlaying) {
+		~prcpar0.stop;
+		"playbuf stop".postln;
+	};
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
 
 (
 ~prc1ktrl = MIDIdef.cc(\prc1ktrl, {
