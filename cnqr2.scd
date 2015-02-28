@@ -2,10 +2,11 @@
 currentEnvironment.clear;
 
 ( //midi
-MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
-~postmidicc = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
+//~postmidicc = MIDIFunc.cc(\ccpostln, { |...args| args.postln; });
+~postmidicc.free;
+~postmidicc = MIDIFunc.cc({ |...args| args.postln; });
 ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
 if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
@@ -73,16 +74,16 @@ Pdef(\basspat,
 // Midi Control
 
 (
-~bassplayktrl = MIDIdef.cc(\bassplayktrl, {
-	if(~basspat.isPlaying.not) {
+~bassplayktrl = MIDIFunc.cc({
+    if(~basspat.isPlaying.not) {
 		~basspat.play(t, quant: 0.5);
 		"bass play".postln;
 	};
-}, 32, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+}, 32, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 );
 
 (
-~bassstopktrl = MIDIdef.cc(\bassstopktrl, {
+~bassstopktrl = MIDIFunc.cc({
 	if(~basspat.isPlaying) {
 		~basspat.stop;
 		"bass stop".postln;
@@ -158,7 +159,7 @@ Pdef(\pbpdef,
 // Midi Control
 
 (
-~rbplayktrl = MIDIdef.cc(\rbplayktrl, {
+~rbplayktrl = MIDIFunc.cc({
 	if(~rbpdef.isPlaying.not) {
 		~rbpdef.play(t, quant: 3);
 		"recbuf play".postln;
@@ -167,7 +168,7 @@ Pdef(\pbpdef,
 );
 
 (
-~rbstopktrl = MIDIdef.cc(\rbstopktrl, {
+~rbstopktrl = MIDIFunc.cc({
 	if(~rbpdef.isPlaying) {
 		~rbpdef.stop;
 		"recbuf stop".postln;
@@ -178,7 +179,7 @@ Pdef(\pbpdef,
 //
 
 (
-~pbplayktrl = MIDIdef.cc(\pbplayktrl, {
+~pbplayktrl = MIDIFunc.cc({
 	if(~pbpar.isPlaying.not) {
 		~pbpar.play(t, quant: 0.5);
 		"playbuf play".postln;
@@ -187,7 +188,7 @@ Pdef(\pbpdef,
 );
 
 (
-~pbstopktrl = MIDIdef.cc(\pbstopktrl, {
+~pbstopktrl = MIDIFunc.cc({
 	if(~pbpar.isPlaying) {
 		~pbpar.stop;
 		"playbuf stop".postln;
@@ -297,7 +298,7 @@ Pdef(\prcpulse,
 
 /*
 (
-~prc0ktrl = MIDIdef.cc(\prc0ktrl, {
+~prc0ktrl = MIDIFunc.cc(\prc0ktrl, {
 	if(~prcpar0.isPlaying.not) {
 		~prcpar0.play(t, quant: 0.5);
 		"prc0 play".postln;
@@ -310,7 +311,7 @@ Pdef(\prcpulse,
 */
 
 (
-~prc0playktrl = MIDIdef.cc(\prc0playktrl, {
+~prc0playktrl = MIDIFunc.cc({
 	if(~prcpar0.isPlaying.not) {
 		~prcpar0.play(t, quant: 0.5);
 		"prc0 play".postln;
@@ -319,7 +320,7 @@ Pdef(\prcpulse,
 );
 
 (
-~prc0stopktrl = MIDIdef.cc(\prc0stopktrl, {
+~prc0stopktrl = MIDIFunc.cc({
 	if(~prcpar0.isPlaying) {
 		~prcpar0.stop;
 		"prc0 stop".postln;
@@ -329,7 +330,7 @@ Pdef(\prcpulse,
 
 
 (
-~prc1ktrl = MIDIdef.cc(\prc1ktrl, {
+~prc1ktrl = MIDIFunc.cc({
 	if(~prcpar1.isPlaying.not) {
 		~prcpar1.play(t, quant: 0.5);
 		"prc1 play".postln;
@@ -341,7 +342,7 @@ Pdef(\prcpulse,
 );
 
 (
-~prcpulsektrl = MIDIdef.cc(\prcpulsektrl, {
+~prcpulsektrl = MIDIFunc.cc({
 	if(~prcpulse.isPlaying.not) {
 		~prcpulse.play(t, quant: 0.5);
 		"prcpulse play".postln;
@@ -605,7 +606,7 @@ Pdef(\snrpat11,
 // Midi Control
 
 (
-~snrpar0ktrl = MIDIdef.cc(\snrpar0ktrl, {
+~snrpar0ktrl = MIDIFunc.cc({
 	if(~snrpar0.isPlaying.not) {
 		~snrpar0.play(t, quant: 1);
 		"snrpar0 play".postln;
@@ -618,7 +619,7 @@ Pdef(\snrpat11,
 
 /*
 (
-~snrpar1ktrl = MIDIdef.cc(\snrpar1ktrl, {
+~snrpar1ktrl = MIDIFunc.cc(\snrpar1ktrl, {
 	if(~snrpar1.isPlaying.not) {
 		~snrpar1.play(t, quant: 1);
 		"snrpar1 play".postln;
@@ -631,7 +632,7 @@ Pdef(\snrpat11,
 */
 
 (
-~snrpar2ktrl = MIDIdef.cc(\snrpar2ktrl, {
+~snrpar2ktrl = MIDIFunc.cc({
 	if(~snrpar2.isPlaying.not) {
 		~snrpar2.play(t, quant: 1);
 		"snrpar2 play".postln;
@@ -643,7 +644,7 @@ Pdef(\snrpat11,
 );
 
 (
-~snrpar3ktrl = MIDIdef.cc(\snrpar3ktrl, {
+~snrpar3ktrl = MIDIFunc.cc(\snrpar3ktrl, {
 	if(~snrpar3.isPlaying.not) {
 		~snrpar3.play(t, quant: 1);
 		"snrpar3 play".postln;
@@ -726,7 +727,7 @@ Pdef(\hatpulse,
 // Midi Control
 
 (
-~hatktrl = MIDIdef.cc(\hatktrl, {
+~hatktrl = MIDIFunc.cc({
 	if(~hatpar.isPlaying.not) {
 		~hatpar.play(t, quant: 0.5);
 		"hat play".postln;
@@ -738,7 +739,7 @@ Pdef(\hatpulse,
 );
 
 (
-~hatpulsektrl = MIDIdef.cc(\hatpulsektrl, {
+~hatpulsektrl = MIDIFunc.cc({
 	if(~hatpulse.isPlaying.not) {
 		~hatpulse.play(t, quant: 0.5);
 		"hatpulse play".postln;
@@ -841,7 +842,7 @@ Pdef(\crumblepdef2,
 
 (
 ~crumble0ktrl =
-MIDIdef.cc(\crumble0ktrl, {
+MIDIFunc.cc({
 	if(~crumblepar0.isPlaying.not) {
 		~crumblepar0.play(t, quant: 1);
 		"crumble0 play".postln;
@@ -855,7 +856,7 @@ MIDIdef.cc(\crumble0ktrl, {
 /*
 (
 ~crumble1ktrl =
-MIDIdef.cc(\crumble1ktrl, {
+MIDIFunc.cc(\crumble1ktrl, {
 	if(~crumblepdef1.isPlaying.not) {
 		~crumblepdef1.play(t, quant: 1);
 		"crumble1 play".postln;
@@ -868,7 +869,7 @@ MIDIdef.cc(\crumble1ktrl, {
 
 (
 ~crumble2ktrl =
-MIDIdef.cc(\crumble2ktrl, {
+MIDIFunc.cc(\crumble2ktrl, {
 	if(~crumblepdef2.isPlaying.not) {
 		~crumblepdef2.play(t, quant: 1);
 		"crumble2 play".postln;
@@ -948,7 +949,7 @@ Pdef(\pnopdef1,
 */
 
 (
-~pnopar0ktrl = MIDIdef.cc(\pnopar0ktrl, {
+~pnopar0ktrl = MIDIFunc.cc({
 	if(~pnopar0.isPlaying.not) {
 		~pnopar0.play(t, quant: 0.25);
 		"pno0 play".postln;
@@ -960,7 +961,7 @@ Pdef(\pnopdef1,
 );
 
 (
-~pnopar11ktrl = MIDIdef.cc(\pnopar1ktrl, {
+~pnopar11ktrl = MIDIFunc.cc({
 	if(~pnopar1.isPlaying.not) {
 		~pnopar1.play(t, quant: 0.25);
 		"pno1 play".postln;
@@ -1047,7 +1048,7 @@ Pdef(\pno2pat1,
 // Midi Control
 
 (
-~pno2ktrl = MIDIdef.cc(\pno2ktrl, {
+~pno2ktrl = MIDIFunc.cc({
 	if(~pno2pat0.isPlaying.not) {
 		~pno2pat0.play(t, quant: 1);
 		"pno2pat0 play".postln;
@@ -1059,7 +1060,7 @@ Pdef(\pno2pat1,
 );
 
 (
-~pno2pat1ktrl = MIDIdef.cc(\pno2pat1ktrl, {
+~pno2pat1ktrl = MIDIFunc.cc({
 	if(~pno2pat1.isPlaying.not) {
 		~pno2pat1.play(t, quant: 1);
 		"pno2pat1 play".postln;
@@ -1071,7 +1072,7 @@ Pdef(\pno2pat1,
 );
 
 (
-~pno2pat2ktrl = MIDIdef.cc(\pno2pat2ktrl, {
+~pno2pat2ktrl = MIDIFunc.cc({
 	if(~pno2pat2.isPlaying.not) {
 		~pno2pat2.play(t, quant: 1);
 		"pno2pat2 play".postln;
@@ -1141,7 +1142,7 @@ Pdef(\dronepat0,
 // Midi Control
 
 (
-~drone0ktrl = MIDIdef.cc(\drone0ktrl, {
+~drone0ktrl = MIDIFunc.cc({
 	if(~dronepat0.isPlaying.not) {
 		~dronepat0.play(t, quant: 0.25);
 		"drone0 play".postln;
@@ -1153,7 +1154,7 @@ Pdef(\dronepat0,
 );
 
 (
-~drone1ktrl = MIDIdef.cc(\drone1ktrl, {
+~drone1ktrl = MIDIFunc.cc({
 	if(~dronepat1.isPlaying.not) {
 		~dronepat1.play(t, quant: 0.25);
 		"drone1 play".postln;
@@ -1165,7 +1166,7 @@ Pdef(\dronepat0,
 );
 
 (
-~drone2ktrl = MIDIdef.cc(\drone2ktrl, {
+~drone2ktrl = MIDIFunc.cc({
 	if(~dronepat2.isPlaying.not) {
 		~dronepat2.play(t, quant: 0.25);
 		"drone2 play".postln;
@@ -1261,7 +1262,7 @@ Pdef(\paddrone,
 // Midi Control
 
 (
-~pad0ktrl = MIDIdef.cc(\pad0ktrl, {
+~pad0ktrl = MIDIFunc.cc({
 	if(~padpat0.isPlaying.not) {
 		~padpat0.play(t, quant: 1);
 		"pad0 play".postln;
@@ -1273,7 +1274,7 @@ Pdef(\paddrone,
 );
 
 (
-~paddronektrl = MIDIdef.cc(\paddronektrl, {
+~paddronektrl = MIDIFunc.cc({
 	if(~paddrone.isPlaying.not) {
 		~paddrone.play(t, quant: 1);
 		"paddrone play".postln;
@@ -1285,7 +1286,7 @@ Pdef(\paddrone,
 );
 
 // (
-// ~pad1ktrl = MIDIdef.cc(\pad1ktrl, {
+// ~pad1ktrl = MIDIFunc.cc(\pad1ktrl, {
 // 	if(~padpat1.isPlaying.not) {
 // 		~padpat1.play(t, quant: 1);
 // 		"pad1 play".postln;
@@ -1297,7 +1298,7 @@ Pdef(\paddrone,
 // );
 //
 // (
-// ~padhiktrl = MIDIdef.cc(\padhiktrl, {
+// ~padhiktrl = MIDIFunc.cc(\padhiktrl, {
 // 	if(~padhi.isPlaying.not) {
 // 		~padhi.play(t, quant: 1);
 // 		"padhi play".postln;
