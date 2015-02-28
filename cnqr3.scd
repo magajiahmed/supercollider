@@ -214,7 +214,7 @@ Pdef(\pulsepat3,
         ~pulsepat1a,
         \curve, 4,
         \dur, 0.25,
-        \fb, Pwhite(0.0, 1.0, inf).round(0.2),
+        \fb, Pshuf(Array.series(10, 0, 0.25), inf),
         \level, Prand([0.3, 1], inf) * 0.003,
         \note, [7, 10, 12],
         \octave, [5, 8]
@@ -240,8 +240,8 @@ Pdef(\pingpat,
             Rest, Rest, Rest, 0, 0,
             Rest, Rest, Rest, Rest, 0, 0,
         ], inf),
-        \level, 0.05,
-        \octave, 9,
+        \level, 0.02,
+        \octave, 8,
         \root, ~root,
         \scale, ~scale
 ));
@@ -1131,7 +1131,7 @@ MIDIdef.cc(\string6playktrl, {
 MIDIdef.cc(\string6stopktrl, {
     if(~stringpat6.isPlaying) {
         ~stringpat6.stop;
-        "string6 stop".postln;
+        "string6 ([-5, 0], octave, 7) stop".postln;
     }
 }, 54, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );

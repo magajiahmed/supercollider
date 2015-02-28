@@ -687,7 +687,8 @@ Pdef(\hatpulse,
 	Pbind(
 		\instrument, \hat,
 		\dur, 0.25,
-		\level, 0.006,
+		\level, 0.02,
+        \octave, 9,
 		\pan, Prand([-1, -0.5, 0.5, 1], inf),
 ));
 );
@@ -870,8 +871,8 @@ SynthDef(\pno, { | curve = -8, dur = 1, freq = 400, gate = 1, level = 0.002, pan
 		sin;
 	});
 	var lfn				=	LFNoise1.kr(0.1, mul: 0.02, add: 1);
-	var cusp			=	CuspL.ar(1000, a: lfn, mul: 0.5, add: 1);
-	var sinhi			=	SinOsc.ar((freq * 13 * cusp).clip(50, SampleRate.ir / 3), mul: envgen);
+	var cusp			=	CuspL.ar(1000, a: lfn, mul: 0.6, add: 1);
+	var sinhi			=	SinOsc.ar((freq * 9 * cusp).clip(50, SampleRate.ir / 3), mul: envgen);
 	var pan2			=	Pan2.ar(sin + sinhi, pan);
 	Out.ar(0, pan2);
 }).add;
@@ -1159,7 +1160,7 @@ Pdef(\dronepat0,
 (
 ~pad =
 SynthDef(\pad, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.008 |
-	var env				=	Env.asr(3, level, 5, curve);
+	var env				=	Env.asr(8, level, 8, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	2;
 	var mix				=	Mix.fill(n, {

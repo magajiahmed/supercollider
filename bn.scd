@@ -10,7 +10,10 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 
 //other stuff
 /*
-s.scope(2);
+s.meter;
+~clock = ClockFace.new;
+~clock.play;
+~clock.stop;
 */
 
 t = TempoClock(135/60);
@@ -40,8 +43,6 @@ SynthDef(\dynamix, {
 }.fork;
 );
 
-~startcompressor;
-
 /*
 ~compressor.isPlaying;
 ~compressor.free;
@@ -65,20 +66,17 @@ SynthDef(\verb, { | kbn2frq = 20 |
 	~reverb = Synth(\verb).register;
 }.fork;
 
-~startreverb;
-
 /*
 ~reverb = Synth(\verb).register;
 ~reverb.isPlaying;
 ~reverb.free;
-
 */
 
 //
 
 (
 ~cusp =
-SynthDef(\cusp, { | a = 1, b = 1.9, curve = -64, dur = 1, freq = 22050, level = 0.1, pan = 0, xi = 0 |
+SynthDef(\cusp, { | a = 1, b = 1.9, curve = -64, dur = 1, freq = 22050, level = 0.05, pan = 0, xi = 0 |
 	var env			=	Env.perc(releaseTime: 1, level: level, curve: curve);
 	var envgen		=	EnvGen.kr(env, doneAction: 2);
 	var cusp		=	CuspN.ar(freq: freq, a: a, b: b, xi: xi, mul: envgen);
@@ -188,8 +186,9 @@ SynthDef(\prc3, { | a = 1, b = 1.9, curve = -64, dur = 1, freq = 22050, klnkfreq
 
 //
 
+(
 ~bass =
-SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, ka2 = 1, klatmul = 0.01 |
+SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, ka2 = 1, klatmul = 0.005 |
 	var env			=	Env.asr(attackTime: 0.01, sustainLevel: level, releaseTime: 0.1, curve: -64);
 	var envgen		=	EnvGen.kr(env, gate, doneAction: 2);
 	var klat0 		=	Latoocarfian2DL.kr(0.1, 0.5, ka1, mul: klatmul, add: 1).clip(0.9, 1.1);
@@ -207,6 +206,7 @@ SynthDef(\bass, { | a = 1, freq = 440, gate = 1, level = 0.05, ka = 0, ka1 = 1, 
 	var rhpf1		=	RHPF.ar([saw, saw], (freq * 256 * kbn0).clip(freq * 4, SampleRate.ir / 6), 0.05, mul: level * 3).clip(-0.1, 0.1);
 	Out.ar(0, sin0 + sin1 + sin2 + rlpf + rhpf1).clip(-0.9, 0.9);
 }).add;
+);
 
 //
 
@@ -328,7 +328,7 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 
 (
 ~pad = SynthDef(\pad, { | a = 1, fbnmul = 1, freq = 400, gate = 1, kbnmul = 0.4, latmul = 0.02, level = 0.05 |
-	var env			= 	Env.asr(10, level, 20);
+	var env			= 	Env.asr(20, level, 20);
 	var envgen 		= 	EnvGen.kr(env, gate, doneAction: 14);
         // use doneAction 14: free enclosing group.
 	var lat 		= 	Latoocarfian2DC.kr(0.01, 5, a: [a, (a - 0.01)], mul: latmul, add: 1).clip(0.5, 16);
@@ -344,7 +344,7 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 );
 
 (
-~createPadGroup0 = { | freqs = #[200,300,200,300] |
+~createPadGroup0 = { | freqs = #[200,300,200,300,200,300] |
 	~padgroup0 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup0, \pad, [\a, 1, \bus, 2, \freq, i, \kbnmul, 0.05, \latmul, 0, \level, 0.02]);
@@ -360,7 +360,7 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 */
 
 (
-~createPadGroup1 = { | freqs = #[400,600,400,600] |
+~createPadGroup1 = { | freqs = #[400,600,400,600,400,600] |
 	~padgroup1 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup1, \pad, [\a, (4.0.rand - 2), \freq, i]);
@@ -372,10 +372,11 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 ~createPadGroup1.value;
 ~padgroup1.isPlaying;
 ~padgroup1.release(3);
+~padgroup1 = nil;
 */
 
 (
-~createPadGroup2 = { | freqs = #[400,600,400,600] |
+~createPadGroup2 = { | freqs = #[400,600,400,600,400,600] |
 	~padgroup2 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup2, \pad, [\a, (4.0.rand - 2), \freq, i]);
@@ -387,10 +388,11 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 ~createPadGroup2.value;
 ~padgroup2.isPlaying;
 ~padgroup2.release(3);
+~padgroup2 = nil;
 */
 
 (
-~createPadGroup3 = { | freqs = #[400,600,400,600] |
+~createPadGroup3 = { | freqs = #[400,600,400,600,400,600] |
 	~padgroup3 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup3, \pad, [\a, (4.0.rand - 2), \freq, i]);
@@ -402,10 +404,11 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 ~createPadGroup3.value;
 ~padgroup3.isPlaying;
 ~padgroup3.release(3);
+~padgroup3 = nil;
 */
 
 (
-~createPadGroup4 = { | freqs = #[400,600,400,600] |
+~createPadGroup4 = { | freqs = #[400,600,400,600,400,600] |
 	~padgroup4 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup4, \pad, [\a, (4.0.rand - 2), \freq, i]);
@@ -417,10 +420,11 @@ SynthDef(\sinpad, { | freq = 300, gate = 1, level = 0.003 |
 ~createPadGroup4.value;
 ~padgroup4.isPlaying;
 ~padgroup4.release(3);
+~padgroup4 = nil;
 */
 
 (
-~createPadGroup5 = { | freqs = #[400,600] |
+~createPadGroup5 = { | freqs = #[400,600,400,600] |
 	~padgroup5 = Group(s).register;
 	freqs.do({|i|
 		Synth.tail(~padgroup5, \pad, [\a, (4.0.rand - 2), \freq, i]);
@@ -470,11 +474,15 @@ Pdef(\cuspat,
 			3,
 			4,
 			6,
+			8,
+			12,
+			16,
+			24
 		].mirror2, inf),
 		\a, Pwhite(0.2, 1, inf),
 		\b, Pwhite(1.5, 1.9, inf),
 		\freq, Pwhite(2800, 3200, inf),
-		\level, 0.15,
+		\level, 0.05,
 		\pan, Prand([-0.5, 0, 0.5], inf),
 ));
 );
@@ -573,7 +581,7 @@ Pdef(\snrpat2,
 //
 
 (
-~kikpatdurarray = Array.fill(11, { arg i; (0.25 * (i + 1)) }).mirror2;
+~kikpatdurarray = Array.fill(11, { arg i; (0.75 * (i + 1)) }).mirror2;
 ~kikpat =
 Pdef(\kikpat,
 	Pbind(
@@ -581,7 +589,7 @@ Pdef(\kikpat,
 		\curve, -32,
 		\dur, Pshuf(~kikpatdurarray.mirror2, inf),
 		\freq, Pseq([1/1, 1/1, 15/14, 1/1, 1/1, 1/1, 15/14, 1/1, 1/1, 1/1, 1/1, 15/14] * 50, inf),
-		\level, 0.25,
+		\level, 0.2,
 ));
 );
 
@@ -790,8 +798,6 @@ Pdef(\hatpar3, Ppar([~hatpat3, ~hatpat3], inf));
 
 //
 
-//
-
 (
 ~basspat =
 Pdef(\basspat,
@@ -804,7 +810,7 @@ Pdef(\basspat,
 		\ka1, Pwhite(0.0, 1.0, inf),
 		\ka2, Pwhite(0.0, 1.0, inf),
 		\legato, 0.5,
-		\level, 0.03,
+		\level, 0.02,
 ));
 );
 
@@ -874,7 +880,7 @@ Pdef(\pnopat3a,
 			1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 1/1, 3/2, 7/8, 1/1, 3/2
 		] * 800, inf),
 		\latmul, 0.05,
-		\level, 0.004,
+		\level, 0.006,
 		\pan, -1,
 ));
 );
@@ -913,25 +919,46 @@ Pdef(\pnopar3, Ppar([~pnopat3a, ~pnopat3b], inf));
 ~pnopar3.stop;
 */
 
-//
+(
+~pnopat4a =
+Pdef(\pnopat4,
+	Pbind(
+		\instrument, \pno,
+		\dur, Pshuf([0.75, 8, 12, 16, 24], inf),
+		\freq, Pxrand([1/1, 15/14, 9/8, 7/6] * 400, inf),
+		\level, 0.01,
+		\pan, -1,
+));
+);
 
 /*
-~spat =
-Pdef(\spat,
-	Pbind(
-		\instrument, \sinpulse,
-		\a, Pwhite(-3, 3, inf),
-		\dur, Pshuf([0.75, Pseq([
-			Pshuf([0.25, 0.25, 1.5, 1.75], 3), 1,
-			Pshuf([0.25, 0.25, 1.5, 1.75], 3), 2,
-			Pshuf([0.25, 0.25, 1.25, 1.5], 3), 3,
-			Pshuf([0.25, 0.25, 1.25, 1.5], 3), 4,
-		], 1)], inf),
-		\freq, 400,
-		\level, 0.03,
-		\pan, 0
-));
+~pnopat4a.play(t, quant: 1);
+~pnopat4a.stop;
 */
+
+(
+~pnopat4b =
+Pdef(\pnopat4b,
+	Pbindf(
+		~pnopat4a,
+		\pan, 1
+))
+);
+
+/*
+~pnopat4b.play(t, quant: 1);
+~pnopat4b.stop;
+*/
+
+~pnopar4 = Pdef(\pnopar4, Ppar([~pnopat4a, ~pnopat4b], inf));
+
+/*
+~pnopar4.play(t, quant: 1);
+~pnopar4.isPlaying;
+~pnopar4.stop;
+*/
+
+//
 
 (
 ~spat =
@@ -1243,55 +1270,17 @@ s.stopRecording;
 }, 68, srcID: ~nanoktrl2);
 );
 
-/*
-~pulsektrl = MIDIdef.cc(\pulsektrl, {
-	if(~spat.isPlaying.not) {
-		~spat.play(t, quant: 1);
-		"pulse play".postln;
-	} {
-		~spat.stop;
-		"pulse stop".postln;
-	};
-}, 36, srcID: ~nanoktrl2);
-
-~pulseparktrl = MIDIdef.cc(\pulseparktrl, {
-	if(~spat2.isPlaying.not) {
-		~spat2.play(t, quant: 1);
-		"pulse2 play".postln;
-	} {
-		~spat2.stop;
-		"pulse2 stop".postln;
-	};
-}, 52, srcID: ~nanoktrl2);
-*/
-
-/*
 (
-~spatktrl = MIDIdef.cc(\pulsektrl, {
-	if(~spat1.isPlaying.not) {
-		~spat1 = Synth(\sinpulse, [\a, (6.0.rand - 3), \freq, 200]).register;
-		"spat1 play".postln;
+~pno4ktrl = MIDIdef.cc(\pno4ktrl, {
+	if(~pnopar4.isPlaying.not) {
+		~pnopar4.play(t, quant: 1);
+		"pno4 play".postln;
 	} {
-		~spat1.release;
-		~spat1 = nil;
-		"spat1 stop".postln;
+		~pnopar4.stop;
+		"pno4 stop".postln;
 	};
-}, 36, srcID: ~nanoktrl2);
+}, 41, srcID: ~nanoktrl2);
 );
-
-(
-~pulseparktrl = MIDIdef.cc(\pulseparktrl, {
-	if(~spat2.isPlaying.not) {
-		~spat2 = Synth(\sinpulse, [\a, (6.0.rand - 3), \freq, 300]).register;
-		"spat2 play".postln;
-	} {
-		~spat2.release;
-		~spat2 = nil;
-		"spat2 stop".postln;
-	};
-}, 52, srcID: ~nanoktrl2);
-);
-*/
 
 (
 ~dronektrl = MIDIdef.cc(\sparktrl, {
