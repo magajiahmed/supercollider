@@ -2,21 +2,67 @@ t = TempoClock(108/60);
 
 (
 ~chrom = Scale.chromatic;
+~delay = 0.01;
 ~root = 3;
 ~scale = Scale.new([0, 1, 2, 3, 5, 7, 10]);
 );
 
 ////////////////////////////////////////////////////////////////
+// MIDI
+
+MIDIdef.freeAll;
+MIDIClient.init;
+MIDIIn.connectAll;
+c.free;
+c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
+~nanoktrl2 = ~midisource = MIDIClient.sources.detect{ arg a; a.name.contains("nanoKONTROL2")};
+
+
+////////////////////////////////////////////////////////////////
+// DELAY (to compensate for limiter delay)
+
+(
+SynthDef(\delay, {
+	var in				= 	In.ar(2, 2);
+	var delay			=	DelayC.ar(in, ~delay * 2, ~delay * 2);
+	Out.ar(0, delay);
+}).add;
+);
+
+~delay = Synth(\delay).register;
+
+/*
+~delay.free;
+*/
+
+////////////////////////////////////////////////////////////////
+// LIMITER
+
+(
+SynthDef(\limiter, {
+	var in				=	In.ar(4, 2);
+	var limiter 		=	Limiter.ar(in, 0.999, ~delay);
+	Out.ar(0, limiter);
+}).add;
+);
+
+~limiter = Synth(\limiter).register;
+
+/*
+~limiter.free;
+*/
+
+////////////////////////////////////////////////////////////////
 // SYNTH
 
 (
-SynthDef(\stansyn, { | curve = -4, dur = 1, fbamp = 1, freq = 262, level = 0.1 |
+SynthDef(\stansyn, { | curve = -4, dur = 1, fbamp = 1, freq = 262, level = 0.08 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var crackle			=	Crackle.kr.range(0.5, 2);
 	var sinfb			=	SinOscFB.ar([freq, freq + 0.01], crackle * fbamp, envgen);
 	var sin				=	SinOsc.ar(freq!2, mul: envgen);
-	Out.ar(0, (sinfb + sin).softclip);
+	Out.ar(2, sinfb + sin);
 }).add;
 );
 
@@ -33,7 +79,7 @@ SynthDef(\stansyn, { | curve = -4, dur = 1, fbamp = 1, freq = 262, level = 0.1 |
 	})
 });
 
-~durs = [0.25, 2, 3, 4, 6, 8, 12, 16, 24];
+~durs = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24];
 //~durs = [0.25, 0.5, 0.75, 1, 1.5];
 ~standurs = Prout({
 	var x;
@@ -47,7 +93,7 @@ SynthDef(\stansyn, { | curve = -4, dur = 1, fbamp = 1, freq = 262, level = 0.1 |
 Pdef(\stanpat1,
 	Pbind(
 		\instrument, \stansyn,
-		\curve, -8,
+		\curve, -4,
 		\degree, Pswitch1(~chrom.degrees, ~stanpitches),
 		\dur, Pswitch1(~durs, ~standurs),
 		\fbamp, 0.3,
@@ -71,6 +117,24 @@ Pdef(\stanpat1,
 ~stanpar.pause;
 ~stanpar.stop;
 */
+
+(
+~stanplayktrl =
+MIDIdef.cc(\stanplayktrl, {
+	if(~stanpar.isPlaying.not) {
+		~stanpar.play(t, quant: 1);
+		"stan play".postln;
+	}
+}, 32, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~stanstopktrl =
+MIDIdef.cc(\stanstopktrl, {
+	if(~stanpar.isPlaying) {
+		~stanpar.pause;
+		"stan stop".postln;
+	}
+}, 32, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
 
 ////////////////////////////////////////////////////////////////
 // BASS
@@ -114,18 +178,36 @@ Pdef(\basspat,
 ~basspat.stop;
 */
 
+(
+~bassplayktrl =
+MIDIdef.cc(\bassplayktrl, {
+	if(~basspat.isPlaying.not) {
+		~basspat.play(t, quant: 1);
+		"bass play".postln;
+	}
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~bassstopktrl =
+MIDIdef.cc(\bassstopktrl, {
+	if(~basspat.isPlaying) {
+		~basspat.pause;
+		"bass stop".postln;
+	}
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
 ////////////////////////////////////////////////////////////////
 // PRC
 
 (
-SynthDef(\prc, { | a = 1, b = 1.9, curve = -64, dur = 1, foldfactor = 0.1, freq = 20000, level = 0.2, pan = 0 |
+SynthDef(\prc, { | a = 1, b = 1.9, curve = -64, dur = 1, foldfactor = 0.1, freq = 20000, level = 0.1, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a: a, b: b);
 	var cuspfold		=	cusp.fold2(foldfactor) * envgen * foldfactor.reciprocal * 2;
 	var rhpf			=	RHPF.ar(cuspfold, (freq * 4).clip(50, SampleRate.ir / 3), 0.2);
 	var pan2			=	Pan2.ar(cuspfold + rhpf, pan);
-	Out.ar(0, pan2);
+	Out.ar(4, pan2);
 }).add;
 );
 
@@ -184,11 +266,49 @@ Pdef(\prcpat1,
 ~prcpat2.pause;
 */
 
+(
+~prc1playktrl =
+MIDIdef.cc(\prc1playktrl, {
+	if(~prcpat1.isPlaying.not) {
+		~prcpat1.play(t, quant: 0.5);
+		"prc1 play".postln;
+	}
+}, 34, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~prc1stopktrl =
+MIDIdef.cc(\prc1stopktrl, {
+	if(~prcpat1.isPlaying) {
+		~prcpat1.pause;
+		"prc1 stop".postln;
+	}
+}, 34, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
+//
+
+(
+~prc2playktrl =
+MIDIdef.cc(\prc2playktrl, {
+	if(~prcpat2.isPlaying.not) {
+		~prcpat2.play(t, quant: 0.5);
+		"prc2 play".postln;
+	}
+}, 50, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~prc2stopktrl =
+MIDIdef.cc(\prc2stopktrl, {
+	if(~prcpat2.isPlaying) {
+		~prcpat2.pause;
+		"prc2 stop".postln;
+	}
+}, 50, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);
+
 ////////////////////////////////////////////////////////////////
 // DRONE
 
 (
-SynthDef(\drone, { |fbmin = 2.0, freq = 440, gate = 1, level = 0.2|
+SynthDef(\drone, { |fbmin = 2.0, freq = 440, gate = 1, level = 0.15|
 	var env				=	Env.asr(0.1, level, 2).kr(gate: gate, doneAction: 2);
 	var mix				=	Mix.fill(4, {
 		var fbmod			=	LFBrownNoise2.kr(3).range(fbmin, fbmin + 1);
@@ -197,7 +317,7 @@ SynthDef(\drone, { |fbmin = 2.0, freq = 440, gate = 1, level = 0.2|
 		moogvcf;
 	});
 	var ampmod			=	LFBrownNoise0.kr(30!2).range(0.5, 1.0).round(0.8);
-	Out.ar(0, (mix * ampmod).fold2(0.05) * env * 5);
+	Out.ar(2, (mix * ampmod).fold2(0.05) * env * 5);
 }).add;
 );
 
@@ -228,3 +348,21 @@ Pdef(\dronepat,
 ~dronepar.isPlaying;
 ~dronepar.pause;
 */
+
+(
+~droneplayktrl =
+MIDIdef.cc(\droneplayktrl, {
+	if(~dronepar.isPlaying.not) {
+		~dronepar.play(t, quant: 1);
+		"drone play".postln;
+	}
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: { arg x; x > 0 });
+
+~dronestopktrl =
+MIDIdef.cc(\dronestopktrl, {
+	if(~dronepar.isPlaying) {
+		~dronepar.pause;
+		"drone stop".postln;
+	}
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: 0)
+);

@@ -12,7 +12,7 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 );
 
 // var
-s.scope(2);
+s.meter;
 t = TempoClock(120/60);
 
 /*
@@ -29,10 +29,11 @@ s.stopRecording;
 SynthDef(\stansin, { | curve = -8, dur = 1, freq = 400, k = 1.4, level = 0.1 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var stan			=	Standard2DC.ar(mul: 0.03, add: 1);
+	//var stan			=	Standard2DC.ar(mul: 0.03, add: 1);
+	var stan 			= 	1;
 	var sinmix			=	Mix.fill(2, { arg i ; SinOsc.ar(([freq + (i), freq + 0.05 + (i)] * stan * (i + 1)).clip(50, SampleRate.ir / 8), mul: envgen / (i + 1)) });
-	var stan2			=	Standard2DC.ar(k: k, mul: envgen / 12).clip(-0.25, 0.25);
-	var rhpf			=	RHPF.ar(stan2, 8000, 0.1);
+	//var stan2			=	Standard2DC.ar(k: k, mul: envgen / 12).clip(-0.25, 0.25);
+	//var rhpf			=	RHPF.ar(stan2, 8000, 0.1);
 	Out.ar(0, sinmix);
 }).add
 );
@@ -81,7 +82,7 @@ Pdef(\pattern1,
 	Pbind(
 		\degree, Pswitch1(~degrees, ~degree),
 		\dur, Pswitch1(~durations, ~dur),
-		\instrument, \stansin,
+		//\instrument, \stansin,
 		\legato, 0.1,
 		\level, Pwhite(0.75, 1, inf) * 0.1,
 		\root, ~root1,
@@ -141,7 +142,7 @@ Pdef(\pattern2,
 	Pbind(
 		\dur, Pswitch1(~durations2, ~dur2),
 		\degree, Pswitch1(~degrees2, ~degree2),
-		\instrument, \stansin,
+		//\instrument, \stansin,
 		\root, ~root2,
 		\scale, ~scale
 ))
@@ -168,7 +169,7 @@ Pdef(\pattern2a,
 	Pbind(
 		\dur, 0.25,
 		\degree, Pswitch1(~degrees2a, ~degree2a),
-		\instrument, \stansin,
+		//\instrument, \stansin,
 		\legato, 1,
 		\root, ~root2,
 		\scale, ~scale
@@ -206,7 +207,7 @@ Pdef(\pattern3,
 	Pbind(
 		\dur, Pswitch1(~durations3, ~dur3),
 		\degree, Pswitch1(~degrees3, ~degree3),
-		\instrument, \stansin,
+		//\instrument, \stansin,
 		\k, Pshuf(Array.fill(3, { arg i; 1 + ((i + 1) / 10) }), inf),
 		\root, ~root3,
 		\scale, ~scale
