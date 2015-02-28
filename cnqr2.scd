@@ -322,7 +322,7 @@ Pdef(\prcpulse,
 ~prc0stopktrl = MIDIdef.cc(\prc0stopktrl, {
 	if(~prcpar0.isPlaying) {
 		~prcpar0.stop;
-		"playbuf stop".postln;
+		"prc0 stop".postln;
 	};
 }, 33, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
