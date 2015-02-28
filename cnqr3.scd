@@ -2,12 +2,10 @@
 MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
-c.free;
-c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-//~nanoktrl2 = 1310720;
+~postmidicc = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
 ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("SuperCollider") } };
+if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 
 (
 ~root = 7;
