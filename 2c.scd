@@ -14,13 +14,13 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1310720;
 //~nanoktrl2 = 1835008;
 //~nanoktrl2 = 1572864;
-~nanoktrl2 = ~midisource = MIDIClient.sources.detect{ arg a; a.name.contains("nanoKONTROL2")};
+~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 );
 
 (
 s.meter;
-t = TempoClock(108/60);
-b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
+~tempo = TempoClock(108/60);
+~buffer = Buffer.alloc(s, s.sampleRate * (~tempo.tempo * 6), 1);
 );
 
 (
@@ -108,7 +108,7 @@ Pdef(\basspat1,
 );
 
 /*
-~basspat1.play(t, quant: 1);
+~basspat1.play(~tempo, quant: 1);
 ~basspat1.isPlaying;
 ~basspat1.pause;
 */
@@ -118,7 +118,7 @@ Pdef(\basspat1,
 (
 ~bassktrl = MIDIdef.cc(\bassktrl, {
 	if(~basspat1.isPlaying.not) {
-		~basspat1.play(t, quant: 1);
+		~basspat1.play(~tempo, quant: 1);
 		"bass play".postln;
 	} {
 		~basspat1.pause;
@@ -134,8 +134,8 @@ Pdef(\basspat1,
 SynthDef(\recbuf, { | dur = 2, gate = 1, inBus = 2, isRecording = 1, trigger = 1 |
 	var env				=	Env.asr(0.003, 1, 0.1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var in				=	In.ar(inBus, b.numChannels);
-	var recbuf 			=	RecordBuf.ar(in, b.bufnum, recLevel: envgen, run: isRecording, loop: 0, trigger: trigger, doneAction: 2);
+	var in				=	In.ar(inBus, ~buffer.numChannels);
+	var recbuf 			=	RecordBuf.ar(in, ~buffer.bufnum, recLevel: envgen, run: isRecording, loop: 0, trigger: trigger, doneAction: 2);
 }).add;
 );
 
@@ -144,7 +144,7 @@ SynthDef(\bufrd, { | amp = 1, curve = -4, dur = 1, filt_freq = 3000, filt_rq = 1
 	var kbn1			=	LFBrownNoise1.kr(4).range(0.75, 1);
 	var env				=	Env.asr(0.005, amp, 0.005, curve);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
-	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
+	var bufrd			=	BufRd.ar(~buffer.numChannels, ~buffer.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
 	var rhpf			=	RHPF.ar(bufrd, filt_freq, filt_rq, envgen * kbn1 * 2);
 	var delay			=	DelayC.ar(rhpf, 0.2, (freq.reciprocal).clip(50, SampleRate.ir / 3));
 	var pan2			=	Pan2.ar(rhpf + delay, pan);
@@ -162,7 +162,7 @@ Pdef(\rbpdef,
 );
 
 /*
-~rbpdef.play(t, quant: 3);
+~rbpdef.play(~tempo, quant: 3);
 ~rbpdef.isPlaying;
 ~rbpdef.pause;
 b.plot;
@@ -187,7 +187,7 @@ Pdef(\pbpat1,
 );
 
 /*
-~pbpar.play(t, quant: 1.5);
+~pbpar.play(~tempo, quant: 1.5);
 ~pbpar.isPlaying;
 ~pbpar.pause;
 */
@@ -197,7 +197,7 @@ Pdef(\pbpat1,
 (
 ~rbktrl = MIDIdef.cc(\rbktrl, {
 	if(~rbpdef.isPlaying.not) {
-		~rbpdef.play(t, quant: 3);
+		~rbpdef.play(~tempo, quant: 3);
 		"recbuf play".postln;
 	} {
 		~rbpdef.pause;
@@ -209,7 +209,7 @@ Pdef(\pbpat1,
 (
 ~pbktrl = MIDIdef.cc(\pbktrl, {
 	if(~pbpar.isPlaying.not) {
-		~pbpar.play(t, quant: 1);
+		~pbpar.play(~tempo, quant: 1);
 		"playbuf play".postln;
 	} {
 		~pbpar.pause;
@@ -256,37 +256,37 @@ Pdef(\pulsepat1,
 );
 
 /*
-~pulsepat1.play(t, quant: 1);
+~pulsepat1.play(~tempo, quant: 1);
 ~pulsepat1.isPlaying;
 ~pulsepat1.pause;
 */
 
 /*
-~pulsepat2.play(t, quant: 1);
+~pulsepat2.play(~tempo, quant: 1);
 ~pulsepat2.isPlaying;
 ~pulsepat2.pause;
 */
 
 /*
-~pulsepat3.play(t, quant: 1);
+~pulsepat3.play(~tempo, quant: 1);
 ~pulsepat3.isPlaying;
 ~pulsepat3.pause;
 */
 
 /*
-~pulsepat4.play(t, quant: 1);
+~pulsepat4.play(~tempo, quant: 1);
 ~pulsepat4.isPlaying;
 ~pulsepat4.pause;
 */
 
 /*
-~pulsepat5.play(t, quant: 1);
+~pulsepat5.play(~tempo, quant: 1);
 ~pulsepat5.isPlaying;
 ~pulsepat5.pause;
 */
 
 /*
-~pulsepat6.play(t, quant: 1);
+~pulsepat6.play(~tempo, quant: 1);
 ~pulsepat6.isPlaying;
 ~pulsepat6.pause;
 */
@@ -296,7 +296,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl1 = MIDIdef.cc(\pulsektrl1, {
 	if(~pulsepat1.isPlaying.not) {
-		~pulsepat1.play(t, quant: 1);
+		~pulsepat1.play(~tempo, quant: 1);
 		"pulse1 play".postln;
 	} {
 		~pulsepat1.pause;
@@ -308,7 +308,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl2 = MIDIdef.cc(\pulsektrl2, {
 	if(~pulsepat2.isPlaying.not) {
-		~pulsepat2.play(t, quant: 1);
+		~pulsepat2.play(~tempo, quant: 1);
 		"pulse2 play".postln;
 	} {
 		~pulsepat2.pause;
@@ -320,7 +320,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl3 = MIDIdef.cc(\pulsektrl3, {
 	if(~pulsepat3.isPlaying.not) {
-		~pulsepat3.play(t, quant: 1);
+		~pulsepat3.play(~tempo, quant: 1);
 		"pulse3 play".postln;
 	} {
 		~pulsepat3.pause;
@@ -332,7 +332,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl4 = MIDIdef.cc(\pulsektrl4, {
 	if(~pulsepat4.isPlaying.not) {
-		~pulsepat4.play(t, quant: 1);
+		~pulsepat4.play(~tempo, quant: 1);
 		"pulse4 play".postln;
 	} {
 		~pulsepat4.pause;
@@ -344,7 +344,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl5 = MIDIdef.cc(\pulsektrl5, {
 	if(~pulsepat5.isPlaying.not) {
-		~pulsepat5.play(t, quant: 1);
+		~pulsepat5.play(~tempo, quant: 1);
 		"pulse5 play".postln;
 	} {
 		~pulsepat5.pause;
@@ -356,7 +356,7 @@ Pdef(\pulsepat1,
 (
 ~pulsektrl6 = MIDIdef.cc(\pulsektrl6, {
 	if(~pulsepat6.isPlaying.not) {
-		~pulsepat6.play(t, quant: 1);
+		~pulsepat6.play(~tempo, quant: 1);
 		"pulse6 play".postln;
 	} {
 		~pulsepat6.pause;
@@ -391,11 +391,11 @@ Pdef(\padpat,
 		\octave, 8,
 		\scale, ~scale
 ));
-~padpar = Pdef(\padpar, Ppar(~padpat!5, inf));
+~padpar = Pdef(\padpar, Ppar([~padpat].stutter(5), inf));
 );
 
 /*
-~padpar.play(t, quant: 1);
+~padpar.play(~tempo, quant: 1);
 ~padpar.isPlaying;
 ~padpar.pause;
 */
@@ -403,23 +403,23 @@ Pdef(\padpat,
 ~paddrone = Pdef(\paddrone, Pmono(\pad, \dur, 23, \note, [0, 7, 12], \octave, 4, \scale, ~scale));
 
 /*
-~paddrone.play(t, quant: 1);
+~paddrone.play(~tempo, quant: 1);
 ~paddrone.isPlaying;
 ~paddrone.pause;
 */
 
 ~padpatlo = Pdef(\padpatlo, Pbindf(~padpat, \octave, 6));
-~padparlo = Pdef(\padparlo, Ppar(~padpatlo!2));
+~padparlo = Pdef(\padparlo, Ppar([~padpatlo].stutter(2)));
 
 /*
-~padparlo.play(t, quant: 1);
+~padparlo.play(~tempo, quant: 1);
 ~padparlo.stop;
 */
 
 (
 ~padparktrl = MIDIdef.cc(\padparktrl, {
 	if(~padpar.isPlaying.not) {
-		~padpar.play(t, quant: 1);
+		~padpar.play(~tempo, quant: 1);
 		"padpar play".postln;
 	} {
 		~padpar.pause;
@@ -433,7 +433,7 @@ Pdef(\padpat,
 (
 ~paddronektrl = MIDIdef.cc(\paddronektrl, {
 	if(~paddrone.isPlaying.not) {
-		~paddrone.play(t, quant: 1);
+		~paddrone.play(~tempo, quant: 1);
 		"paddrone play".postln;
 	} {
 		~paddrone.pause;
@@ -447,7 +447,7 @@ Pdef(\padpat,
 (
 ~padparloktrl = MIDIdef.cc(\padparloktrl, {
 	if(~padparlo.isPlaying.not) {
-		~padparlo.play(t, quant: 1);
+		~padparlo.play(~tempo, quant: 1);
 		"padparlo play".postln;
 	} {
 		~padparlo.pause;
@@ -517,7 +517,7 @@ Pdef(\pinglepar,
 */
 
 /*
-~pinglepar.play(t, quant: 1);
+~pinglepar.play(~tempo, quant: 1);
 ~pinglepar.isPlaying;
 ~pinglepar.pause;
 */
@@ -548,7 +548,7 @@ Pdef(\pinglepat,
 );
 
 /*
-~pingleparf.play(t, quant: 1);
+~pingleparf.play(~tempo, quant: 1);
 ~pingleparf.isPlaying;
 ~pingleparf.pause;
 */
@@ -556,7 +556,7 @@ Pdef(\pinglepat,
 (
 ~pinglektrl = MIDIdef.cc(\pinglektrl, {
 	if(~pingleparf.isPlaying.not) {
-		~pingleparf.play(t, quant: 1);
+		~pingleparf.play(~tempo, quant: 1);
 		"pingle play".postln;
 	} {
 		~pingleparf.pause;
@@ -570,7 +570,7 @@ Pdef(\pinglepat,
 
 (
 SynthDef(\clap, { | curve = -16, freq = 400, level = 0.2, pan = 0, xlinestart = 1, xlineend = 0.2 |
-	var env				=	Env.perc(0.005, 1, level, curve);
+	var env				=	Env.perc(0.005, 0.5, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var clip			=	ClipNoise.ar(envgen);
 	var xline			=	XLine.kr(xlinestart, xlineend, 0.2);
@@ -604,7 +604,7 @@ Pdef(\clappat1,
 );
 
 /*
-~clappar.play(t, quant: 0.5);
+~clappar.play(~tempo, quant: 0.5);
 ~clappar.isPlaying;
 ~clappar.pause;
 */
@@ -612,7 +612,7 @@ Pdef(\clappat1,
 (
 ~clapparktrl = MIDIdef.cc(\clapparktrl, {
 	if(~clappar.isPlaying.not) {
-		~clappar.play(t, quant: 0.5);
+		~clappar.play(~tempo, quant: 0.5);
 		"clap play".postln;
 	} {
 		~clappar.pause;
@@ -658,7 +658,7 @@ Pdef(\heavypat1,
 );
 
 /*
-~heavypat1.play(t, quant: 1);
+~heavypat1.play(~tempo, quant: 1);
 ~heavypat1.isPlaying;
 ~heavypat1.pause;
 */
@@ -668,7 +668,7 @@ Pdef(\heavypat1,
 (
 ~heavypat1ktrl = MIDIdef.cc(\heavypat1ktrl, {
 	if(~heavypat1.isPlaying.not) {
-		~heavypat1.play(t, quant: 1);
+		~heavypat1.play(~tempo, quant: 1);
 		"heavy prc play".postln;
 	} {
 		~heavypat1.pause;
@@ -730,7 +730,7 @@ Pdef(\prcpat2,
 );
 
 /*
-~prcpar.play(t, quant: 0.5);
+~prcpar.play(~tempo, quant: 0.5);
 ~prcpar.isPlaying;
 ~prcpar.pause;
 */
@@ -738,7 +738,7 @@ Pdef(\prcpat2,
 (
 ~prcparktrl = MIDIdef.cc(\prcparktrl, {
 	if(~prcpar.isPlaying.not) {
-		~prcpar.play(t, quant: 1);
+		~prcpar.play(~tempo, quant: 1);
 		"prc play".postln;
 	} {
 		~prcpar.pause;

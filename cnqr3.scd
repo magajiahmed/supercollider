@@ -62,7 +62,7 @@ Pdef(\basspat1,
 );
 
 /*
-~basspat1.play(~tempo, quant: 0.5);
+~basspat1.play(~tempo, quant: 1);
 ~basspat1.isPlaying;
 ~basspat1.stop;
 */
@@ -70,7 +70,7 @@ Pdef(\basspat1,
 ~basspat2 = Pdef(\basspat2, Pbindf(~basspat1, \curve, -8, \note, Prand([0, 7, 12], inf)));
 
 /*
-~basspat2.play(~tempo, quant: 0.5);
+~basspat2.play(~tempo, quant: 1);
 ~basspat2.isPlaying;
 ~basspat2.stop;
 */
@@ -78,7 +78,7 @@ Pdef(\basspat1,
 ~basspar = Pdef(\basspar, Ppar([~basspat1, ~basspat2], inf));
 
 /*
-~basspar.play(~tempo, quant: 0.5);
+~basspar.play(~tempo, quant: 1);
 ~basspar.isPlaying;
 ~basspar.stop;
 */
@@ -86,7 +86,7 @@ Pdef(\basspat1,
 (
 MIDIdef.cc(\bass1playktrl, {
     if(~basspat1.isPlaying.not) {
-        ~basspat1.play(~tempo, quant: 0.5);
+        ~basspat1.play(~tempo, quant: 1);
         "bass1 play".postln;
     }
 }, 49, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -102,7 +102,7 @@ MIDIdef.cc(\bass1stopktrl, {
 (
 MIDIdef.cc(\bass2playktrl, {
     if(~basspat2.isPlaying.not) {
-        ~basspat2.play(~tempo, quant: 0.5);
+        ~basspat2.play(~tempo, quant: 1);
         "bass2 play".postln;
     }
 }, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -184,7 +184,7 @@ Pdef(\pulsepat1a,
 );
 
 /*
-~pulsepar1.play(~tempo, quant: 0.5);
+~pulsepar1.play(~tempo, quant: 1);
 ~pulsepar1.isPlaying;
 ~pulsepar1.stop;
 */
@@ -218,7 +218,7 @@ Pdef(\pulsepat3,
 );
 
 /*
-~pulsepar3.play(~tempo, quant: 0.5);
+~pulsepar3.play(~tempo, quant: 1);
 ~pulsepar3.isPlaying;
 ~pulsepar3.stop;
 */
@@ -391,7 +391,7 @@ Pdef(\prcpat1a,
 );
 
 /*
-~prcpar1.play(~tempo, quant: 0.5);
+~prcpar1.play(~tempo, quant: 1);
 ~prcpar1.isPlaying;
 ~prcpar1.stop;
 */
@@ -416,7 +416,7 @@ Pdef(\prcpat2a,
 );
 
 /*
-~prcpar2.play(~tempo, quant: 0.5);
+~prcpar2.play(~tempo, quant: 1);
 ~prcpar2.isPlaying;
 ~prcpar2.stop;
 */
@@ -451,7 +451,7 @@ Pdef(\kikpat,
 );
 
 /*
-~kikpat.play(~tempo, quant: 0.5);
+~kikpat.play(~tempo, quant: 1);
 ~kikpat.isPlaying;
 ~kikpat.stop;
 */
@@ -461,7 +461,7 @@ Pdef(\kikpat,
 ~prcpar = Pdef(\prcpar, Ppar([~prcpar1, ~kikpat]));
 
 /*
-~prcpar.play(~tempo, quant: 0.5);
+~prcpar.play(~tempo, quant: 1);
 ~prcpar.isPlaying;
 ~prcpar.stop;
 */
@@ -537,13 +537,13 @@ Pdef(\banjopat,
 );
 
 /*
-~banjopat.play(~tempo, quant: 0.5);
+~banjopat.play(~tempo, quant: 1);
 ~banjopat.isPlaying;
 ~banjopat.stop;
 */
 
 /*
-~banjopar.play(~tempo, quant: 0.5);
+~banjopar.play(~tempo, quant: 1);
 ~banjopar.isPlaying;
 ~banjopar.stop;
 */
@@ -692,14 +692,14 @@ Pdef(\stringpat0,
 ));
 );
 
-~stringpat0setdelaytime.play(~tempo, quant: 0.5);
+~stringpat0setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat0setdelaytime.isPlaying;
 ~stringpat0setdelaytime.stop;
 */
 
 /*
-~stringpat0.play(~tempo, quant: 0.5);
+~stringpat0.play(~tempo, quant: 1);
 ~stringpat0.isPlaying;
 ~stringpat0.stop;
 */
@@ -737,14 +737,14 @@ Pdef(\stringpat1,
 ));
 );
 
-~stringpat1setdelaytime.play(~tempo, quant: 0.5);
+~stringpat1setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat1setdelaytime.isPlaying;
 ~stringpat1setdelaytime.stop;
 */
 
 /*
-~stringpat1.play(~tempo, quant: 0.5);
+~stringpat1.play(~tempo, quant: 1);
 ~stringpat1.isPlaying;
 ~stringpat1.stop;
 */
@@ -769,14 +769,14 @@ Pdef(\stringpat2,
 ));
 );
 
-~stringpat2setdelaytime.play(~tempo, quant: 0.5);
+~stringpat2setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat2setdelaytime.isPlaying;
 ~stringpat2setdelaytime.stop;
 */
 
 /*
-~stringpat2.play(~tempo, quant: 0.5);
+~stringpat2.play(~tempo, quant: 1);
 ~stringpat2.isPlaying;
 ~stringpat2.stop;
 */
@@ -801,14 +801,14 @@ Pdef(\stringpat3,
 ));
 );
 
-~stringpat3setdelaytime.play(~tempo, quant: 0.5);
+~stringpat3setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat3setdelaytime.isPlaying;
 ~stringpat3setdelaytime.stop;
 */
 
 /*
-~stringpat3.play(~tempo, quant: 0.5);
+~stringpat3.play(~tempo, quant: 1);
 ~stringpat3.isPlaying;
 ~stringpat3.stop;
 */
@@ -833,14 +833,14 @@ Pdef(\stringpat4,
 ));
 );
 
-~stringpat4setdelaytime.play(~tempo, quant: 0.5);
+~stringpat4setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat4setdelaytime.isPlaying;
 ~stringpat4setdelaytime.stop;
 */
 
 /*
-~stringpat4.play(~tempo, quant: 0.5);
+~stringpat4.play(~tempo, quant: 1);
 ~stringpat4.isPlaying;
 ~stringpat4.stop;
 */
@@ -864,14 +864,14 @@ Pdef(\stringpat5,
 ));
 );
 
-~stringpat5setdelaytime.play(~tempo, quant: 0.5);
+~stringpat5setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat5setdelaytime.isPlaying;
 ~stringpat5setdelaytime.stop;
 */
 
 /*
-~stringpat5.play(~tempo, quant: 0.5);
+~stringpat5.play(~tempo, quant: 1);
 ~stringpat5.isPlaying;
 ~stringpat5.stop;
 */
@@ -895,14 +895,14 @@ Pdef(\stringpat6,
 ));
 );
 
-~stringpat6setdelaytime.play(~tempo, quant: 0.5);
+~stringpat6setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat6setdelaytime.isPlaying;
 ~stringpat6setdelaytime.stop;
 */
 
 /*
-~stringpat6.play(~tempo, quant: 0.5);
+~stringpat6.play(~tempo, quant: 1);
 ~stringpat6.isPlaying;
 ~stringpat6.stop;
 */
@@ -926,14 +926,14 @@ Pdef(\stringpat7,
 ));
 );
 
-~stringpat7setdelaytime.play(~tempo, quant: 0.5);
+~stringpat7setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat7setdelaytime.isPlaying;
 ~stringpat7setdelaytime.stop;
 */
 
 /*
-~stringpat7.play(~tempo, quant: 0.5);
+~stringpat7.play(~tempo, quant: 1);
 ~stringpat7.isPlaying;
 ~stringpat7.stop;
 */
@@ -958,14 +958,14 @@ Pdef(\stringpat8,
 ));
 );
 
-~stringpat8setdelaytime.play(~tempo, quant: 0.5);
+~stringpat8setdelaytime.play(~tempo, quant: 1);
 /*
 ~stringpat8setdelaytime.isPlaying;
 ~stringpat8setdelaytime.stop;
 */
 
 /*
-~stringpat8.play(~tempo, quant: 0.5);
+~stringpat8.play(~tempo, quant: 1);
 ~stringpat8.isPlaying;
 ~stringpat8.stop;
 */
@@ -975,7 +975,7 @@ Pdef(\stringpat8,
 (
 MIDIdef.cc(\string0playktrl, {
     if(~stringpat0.isPlaying.not) {
-        ~stringpat0.play(~tempo, quant: 0.5);
+        ~stringpat0.play(~tempo, quant: 1);
         "string0 ([-5, 0], octave 5) play".postln;
     }
 }, 52, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -993,7 +993,7 @@ MIDIdef.cc(\string0stopktrl, {
 (
 MIDIdef.cc(\string1playktrl, {
     if(~stringpat1.isPlaying.not) {
-        ~stringpat1.play(~tempo, quant: 0.5);
+        ~stringpat1.play(~tempo, quant: 1);
         "string1 (chords and rests, octave 5) play".postln;
         ~chords.postln;
     }
@@ -1012,7 +1012,7 @@ MIDIdef.cc(\string1stopktrl, {
 (
 MIDIdef.cc(\string2playktrl, {
     if(~stringpat2.isPlaying.not) {
-        ~stringpat2.play(~tempo, quant: 0.5);
+        ~stringpat2.play(~tempo, quant: 1);
         "string2 ([-5, 0], octave 6) play".postln;
     }
 }, 37, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1030,7 +1030,7 @@ MIDIdef.cc(\string2stopktrl, {
 (
 MIDIdef.cc(\string3playktrl, {
     if(~stringpat3.isPlaying.not) {
-        ~stringpat3.play(~tempo, quant: 0.5);
+        ~stringpat3.play(~tempo, quant: 1);
         "string3 ([-2, 2], octave 6) play".postln;
     }
 }, 53, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1048,7 +1048,7 @@ MIDIdef.cc(\string3stopktrl, {
 (
 MIDIdef.cc(\string4playktrl, {
     if(~stringpat4.isPlaying.not) {
-        ~stringpat4.play(~tempo, quant: 0.5);
+        ~stringpat4.play(~tempo, quant: 1);
         "string4 ([-5, 0], octave 4) play".postln;
     }
 }, 69, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1066,7 +1066,7 @@ MIDIdef.cc(\string4stopktrl, {
 (
 MIDIdef.cc(\string5playktrl, {
     if(~stringpat5.isPlaying.not) {
-        ~stringpat5.play(~tempo, quant: 0.5);
+        ~stringpat5.play(~tempo, quant: 1);
         "string5 ([-2, 2], octave 4) play".postln;
     }
 }, 38, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1084,7 +1084,7 @@ MIDIdef.cc(\string5stopktrl, {
 (
 MIDIdef.cc(\string6playktrl, {
     if(~stringpat6.isPlaying.not) {
-        ~stringpat6.play(~tempo, quant: 0.5);
+        ~stringpat6.play(~tempo, quant: 1);
         "string6 ([-5, 0], octave, 7) play".postln;
     }
 }, 54, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1102,7 +1102,7 @@ MIDIdef.cc(\string6stopktrl, {
 (
 MIDIdef.cc(\string7playktrl, {
     if(~stringpat7.isPlaying.not) {
-        ~stringpat7.play(~tempo, quant: 0.5);
+        ~stringpat7.play(~tempo, quant: 1);
         "string7 ([-5, 0], octave 7) play".postln;
     }
 }, 70, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
@@ -1120,7 +1120,7 @@ MIDIdef.cc(\string7stopktrl, {
 (
 MIDIdef.cc(\string8playktrl, {
     if(~stringpat8.isPlaying.not) {
-        ~stringpat8.play(~tempo, quant: 0.5);
+        ~stringpat8.play(~tempo, quant: 1);
         "string8 ([0, 12, 19], octave 2) play".postln;
     }
 }, 39, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
