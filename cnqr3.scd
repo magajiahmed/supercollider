@@ -625,7 +625,7 @@ MIDIdef.cc(\pnostopktrl, {
 SynthDef(\string, { |delaytime = 0.03, dur = 1, freq = 440, gate = 1, level = 0.025, xlinestart = 1|
 	var env				=	Env.asr(5, level, 1, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-    var xlinemod        =   LFBrownNoise0.kr(13!2, mul: 0.02, add: 1);
+    var xlinemod        =   LFBrownNoise0.kr(13!2, mul: 0.03, add: 1);
 	var xline			=	XLine.kr(xlinestart, 1, dur / 2) * xlinemod;
 	var fbmod			=	SinOsc.ar(freq * xline, mul: 0.99, add: 1);
 	var n				=	2;

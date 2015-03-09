@@ -54,7 +54,7 @@ Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
 		\curve, -8,
-		\degree, Pshuf([-1, 0, 1, 2, 3, 5], inf),
+		\degree, Pshuf([-1, 0, 1, 2, 3], inf),
         \dur, Pshuf(~durations, inf),
 		\level, 0.1,
 		\octave, 3,
@@ -233,21 +233,24 @@ Pdef(\prcpar0).stop;
 
 (
 Pdef(\prcpat1l,
-	Pbindf(
-		Pdef(\prcpat0l),
-		\curve, -64,
-		\dur, Pshuf([
-			1, 1, 1.5,
-			1, 1, 1, 1.5,
-			1, 1, 1, 1, 1.5
-		] / 2, inf),
-		\freq, 7500,
-		\pan, -1,
-)));
+    Pbindf(
+        Pdef(\prcpat0l),
+        \curve, -4,
+        // \dur, Pshuf([
+        //     1, 1, 1.75,
+        //     1, 1, 1, 1.75,
+        //     1, 1, 1, 1, 1.75
+        // ] * 3, inf),
+        \dur, Pshuf((1..7) * 5.25, inf),
+        \freq, 7500,
+        \note, Pshuf([Rest, 0], inf),
+        \pan, -0.5,
+))
+);
 
 (
 Pdef(\prcpat1r,
-    Pbindf(Pdef(\prcpat1l), \pan, 1));
+    Pbindf(Pdef(\prcpat1l), \pan, 0.5));
 );
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1l), Pdef(\prcpat1r)], inf));
@@ -256,26 +259,6 @@ Pdef(\prcpar1, Ppar([Pdef(\prcpat1l), Pdef(\prcpat1r)], inf));
 Pdef(\prcpar1).play(~tempo, quant: 1);
 Pdef(\prcpar1).isPlaying;
 Pdef(\prcpar1).stop;
-*/
-
-(
-Pdef(\prcpulse,
-	Pbind(
-		\instrument, \prc,
-		\dur, Pseq([
-			1, 1, 1.5,
-			1, 1, 1, 1.5,
-			1, 1, 1, 1, 1.5
-		], inf),
-		\freq, 6000,
-		\level, 0.05,
-));
-);
-
-/*
-Pdef(\prcpulse).play(~tempo, quant: 1);
-Pdef(\prcpulse).isPlaying;
-Pdef(\prcpulse).stop;
 */
 
 // Midi Control
@@ -310,22 +293,6 @@ MIDIdef.cc(\prc1stopktrl, {
         "prc1 stop".postln;
     };
 }, 49, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-
-(
-MIDIdef.cc(\prcpulseplayktrl, {
-    if(Pdef(\prcpulse).isPlaying.not) {
-        Pdef(\prcpulse).play(~tempo, quant: 1);
-        "prcpulse play".postln;
-    };
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\prcpulsestopktrl, {
-    if(Pdef(\prcpulse).isPlaying) {
-        Pdef(\prcpulse).stop;
-        "prcpulse stop".postln;
-    };
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -364,7 +331,8 @@ SynthDef(\ping, { |fb = 0, freq = 440, level = 0.02|
 ~snrfreq1 = 100;
 ~snrfreq2 = 15000;
 ~snrfreq3 = 1000;
-~snrecholvl = 0.005;
+~snrlvl = 0.05;
+~snrecholvl = ~snrlvl / 5;
 Pdef(\snrpat0,
 	Pbind(
 		\instrument, \snr,
@@ -376,8 +344,13 @@ Pdef(\snrpat0,
 			1, 1, 1.5,
 			1, 1, 1, 1.5,
 			1, 1, 1, 1, 1.25, 0.25,], inf),
-		\degree, Pseq([Rest, -1, Rest], inf),
+		\degree, Pseq([
+            Rest, Rest, Rest, 0,
+            Rest, Rest, Rest, Rest, 0,
+            Rest, Rest, Rest, Rest, Rest, 0
+        ], inf),
         \fb, 5,
+        \level, ~snrlvl,
         \octave, 6,
         \scale, ~scale
 ));
@@ -548,7 +521,7 @@ Pdef(\snrpar0).isPlaying;
 Pdef(\snrpar0).stop;
 */
 
-Pdef(\snrpar1, Ppar([Pdef(\snrpat3), Pdef(\snrpat4), Pdef(\snrpat5)].stutter(2)));
+Pdef(\snrpar1, Ppar([Pdef(\snrpat3), Pdef(\snrpat4), Pdef(\snrpat5)]));
 
 /*
 Pdef(\snrpar1).play(~tempo, quant: 1);
@@ -564,7 +537,7 @@ Pdef(\snrpar2).isPlaying;
 Pdef(\snrpar2).stop;
 */
 
-Pdef(\snrpar3, Ppar([Pdef(\snrpat9), Pdef(\snrpat10), Pdef(\snrpat11)].stutter(2)));
+Pdef(\snrpar3, Ppar([Pdef(\snrpat9), Pdef(\snrpat10), Pdef(\snrpat11)]));
 
 /*
 Pdef(\snrpar3).play(~tempo, quant: 1);
@@ -742,21 +715,21 @@ SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	4;
 	var mix				=	Mix.fill(n, {
-		arg i;
-		var clipn			=	LFClipNoise.kr(15).range(0.5, 1);
+		|i|
+		var clipn			=	LFClipNoise.kr(15!2).range(0.5, 1);
 		var cusp			=	CuspL.ar(a: a, b: b, mul: (envgen * clipn) / n);
 		BPF.ar(cusp, (freq * (((3/2)) ** i)).clip(50, SampleRate.ir / 3), bwr, (100 / (i + 1).pow(2)));
 	});
 	var flt				=	RLPF.ar(mix, freq * 12, 0.1);
-	var pan2			=	Pan2.ar(flt, pan);
-	Out.ar(outbus, pan2);
+	//var pan2			=	Pan2.ar(flt, pan);
+	Out.ar(outbus, flt);
 }).add;
 );
 
 // Patterns
 
 (
-Pdef(\crumblepdef0,
+Pdef(\crumble0,
 	Pbind(
 		\instrument, \crumble,
 		\a, Pbrown(0.8, 1, 0.05, inf),
@@ -769,62 +742,62 @@ Pdef(\crumblepdef0,
 		//\level, Prand([0.2, 1] * 0.1, inf),
         \level, 0.1,
 		\octave, 7,
-		\pan, Prand([-0.5, 0, 0.5], inf),
+		//\pan, Prand([-0.5, 0, 0.5], inf),
 		\scale, ~scale,
 ));
 );
 
 /*
-Pdef(\crumblepdef0).play(~tempo, quant: 1);
-Pdef(\crumblepdef0).isPlaying;
-Pdef(\crumblepdef0).stop;
+Pdef(\crumble0).play(~tempo, quant: 1);
+Pdef(\crumble0).isPlaying;
+Pdef(\crumble0).stop;
 */
 
 (
-Pdef(\crumblepdef1,
+Pdef(\crumble1,
 	Pbindf(
-		Pdef(\crumblepdef0),
+		Pdef(\crumble0),
         \degree, Pshuf([Rest, -1], inf),
 ));
 );
 
 /*
-Pdef(\crumblepdef1).play(~tempo, quant: 1);
-Pdef(\crumblepdef1).isPlaying;
-Pdef(\crumblepdef1).stop;
+Pdef(\crumble1).play(~tempo, quant: 1);
+Pdef(\crumble1).isPlaying;
+Pdef(\crumble1).stop;
 */
 
 (
-Pdef(\crumblepdef2,
+Pdef(\crumble2,
 	Pbindf(
-		Pdef(\crumblepdef0),
+		Pdef(\crumble0),
         \degree, Pshuf([Rest, 5])
 ));
 );
 
 /*
-Pdef(\crumblepdef2).play(~tempo, quant: 1);
-Pdef(\crumblepdef2).isPlaying;
-Pdef(\crumblepdef2).stop;
+Pdef(\crumble2).play(~tempo, quant: 1);
+Pdef(\crumble2).isPlaying;
+Pdef(\crumble2).stop;
 */
 
 (
-Pdef(\crumblepdef3,
+Pdef(\crumble3,
 	Pbindf(
-		Pdef(\crumblepdef0),
+		Pdef(\crumble0),
         \degree, Pshuf([Rest, -3], inf)
 ));
 );
 
 /*
-Pdef(\crumblepdef3).play(~tempo, quant: 1);
-Pdef(\crumblepdef3).isPlaying;
-Pdef(\crumblepdef3).stop;
+Pdef(\crumble3).play(~tempo, quant: 1);
+Pdef(\crumble3).isPlaying;
+Pdef(\crumble3).stop;
 */
 
 ////
 
-Pdef(\crumblepar0, Ppar([Pdef(\crumblepdef0), Pdef(\crumblepdef1), Pdef(\crumblepdef2), Pdef(\crumblepdef2)], inf));
+Pdef(\crumblepar0, Ppar([Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3)], inf));
 //Pdef(\crumblepar0, Ppar([Pdef(\crumblepdef0)], inf));
 
 /*
