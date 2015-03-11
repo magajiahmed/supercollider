@@ -47,9 +47,6 @@ SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpf
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-		//\dur, Pshuf([
-		//	0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, Pseq([0.25], 6), 1.5, 2, 3, 4, 6, 8, 12
-		//].stutter(3), inf),
 		\dur, Pshuf(~bassdurs, inf),
 		\fb, Pwhite(2.0, 3.0, inf),
 		\note, Pshuf(((-2..6) ++ [Rest].stutter(3)).stutter(3), inf),
@@ -623,7 +620,7 @@ MIDIdef.cc(\pnostopktrl, {
 
 (
 SynthDef(\string, { |delaytime = 0.03, dur = 1, freq = 440, gate = 1, level = 0.025, xlinestart = 1|
-	var env				=	Env.asr(5, level, 1, 0);
+	var env				=	Env.asr(5, level, 0.1, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
     var xlinemod        =   LFBrownNoise0.kr(13!2, mul: 0.03, add: 1);
 	var xline			=	XLine.kr(xlinestart, 1, dur / 2) * xlinemod;
