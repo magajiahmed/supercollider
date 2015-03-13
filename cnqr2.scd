@@ -95,7 +95,7 @@ MIDIdef.cc(\sinfbdronestopktrl, {
 // SynthDef
 
 (
-SynthDef(\bass, { | curve = 0, dur = 1, freq = 100, level = 0.05, width = 0.5 |
+SynthDef(\bass, { | curve = 0, dur = 1, freq = 100, level = 0.08, width = 0.5 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var klfn0			=	LFNoise1.ar(18000!2, 0.999, 1);
@@ -257,7 +257,7 @@ MIDIdef.cc(\pbstopktrl, {
 // SynthDef
 
 (
-SynthDef(\prc, { | curve = -64, dur = 1, freq = 1000, level = 0.08, pan = 0 |
+SynthDef(\prc, { | curve = -64, dur = 1, freq = 1000, level = 0.1, pan = 0 |
 	var env				= 	Env.perc(attackTime: 0.005, releaseTime: dur / 3, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var bn				=	LFBrownNoise0.ar(freq, mul: envgen);
@@ -278,7 +278,7 @@ Pdef(\prcpat0l,
 	Pbind(
 		\instrument, \prc,
 		\curve, -64,
-		\dur, Pshuf([Pseq([0.25/3], 3), Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].mirror2, inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].mirror2, inf),
 		\freq, 15000,
 		\pan, -0.5,
 ));
@@ -299,12 +299,7 @@ Pdef(\prcpat1l,
     Pbindf(
         Pdef(\prcpat0l),
         \curve, -16,
-        // \dur, Pshuf([
-        //     1, 1, 1.75,
-        //     1, 1, 1, 1.75,
-        //     1, 1, 1, 1, 1.75
-        // ] * 3, inf),
-        \dur, Pshuf([2, 3, 4], inf),
+        \dur, Pshuf([2, 3, 4] + 0.25, inf),
         \freq, 7500,
         \note, Pshuf([Rest, 0], inf),
         \pan, -0.5,
@@ -360,7 +355,7 @@ MIDIdef.cc(\prc1stopktrl, {
 // SynthDef
 
 (
-SynthDef(\snr, { | a = 1, freq = 1000, curve = -64, level = 0.05, outbus = 0, pan = 0 |
+SynthDef(\snr, { | a = 1, freq = 1000, curve = -64, level = 0.08, outbus = 0, pan = 0 |
 	var env				=	Env.perc(0.003, 0.5, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(1000, a, mul: 1.5, add: 1);
@@ -377,7 +372,7 @@ SynthDef(\snr, { | a = 1, freq = 1000, curve = -64, level = 0.05, outbus = 0, pa
 ~snrfreq1 = 100;
 ~snrfreq2 = 15000;
 ~snrfreq3 = 1000;
-~snrlvl = 0.05;
+~snrlvl = 0.08;
 ~snrecholvl = ~snrlvl / 5;
 Pdef(\snrpat0,
 	Pbind(
@@ -385,12 +380,12 @@ Pdef(\snrpat0,
 		\a, Pwhite(0.99, 1.01, inf),
 		\curve, -24,
 		\freq, ~snrfreq0,
-		\dur, Pseq([
-			1, 1, 1.5,
-			1, 1, 1, 1.5,
-			1, 1, 1, 1, 1.25, 0.25
+		\dur, Pshuf([
+			0.75, 0.75, 1.25,
+			0.75, 0.75, 0.75, 1.25,
+			0.75, 0.75, 0.75, 0.75, 1.25
         ], inf),
-		\note, Pseq([
+		\note, Pshuf([
             Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0,
             Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0,
             Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0
@@ -410,11 +405,6 @@ Pdef(\snrpat0).stop;
 Pdef(\snrpat1,
     Pbindf(
         Pdef(\snrpat0),
-        \dur, Pseq([
-			0.75, 0.75, 1.25,
-			0.75, 0.75, 0.75, 1.25,
-			0.75, 0.75, 0.75, 0.75, 1.25
-		], inf),
 		\level, ~snrecholvl,
 		\pan, -1,
 ));
@@ -427,13 +417,7 @@ Pdef(\snrpat1).stop;
 
 Pdef(\snrpat2,
 	Pbindf(
-        Pdef(\snrpat0),
-		\dur, Pseq([
-			1.25, 1.25, 1.75,
-			1.25, 1.25, 1.25, 1.25, 1.75,
-			1.25, 1.25, 1.25, 1.25, 1.25, 1.75
-		], inf),
-		\level, ~snrecholvl,
+        Pdef(\snrpat1),
 		\pan, 1,
 ));
 
@@ -450,11 +434,10 @@ Pdef(\snrpat3,
         Pdef(\snrpat0),
 		\curve, -8,
 		\freq, ~snrfreq1,
-		\dur, Prand([0.5, 0.75, 1], inf),
 ));
 
-Pdef(\snrpat4, Pbindf(Pdef(\snrpat3), \level, ~snrecholvl));
-Pdef(\snrpat5, Pbindf(Pdef(\snrpat3), \level, ~snrecholvl));
+Pdef(\snrpat4, Pbindf(Pdef(\snrpat3), \level, ~snrecholvl, \pan, -1));
+Pdef(\snrpat5, Pbindf(Pdef(\snrpat4), \pan, 1));
 
 /*
 Pdef(\snrpat3).play(~tempo, quant: 1);
@@ -476,9 +459,9 @@ Pdef(\snrpat5).stop;
 
 ////////////////
 
-Pdef(\snrpat6, Pbindf(Pdef(\snrpat0), \dur, Prand([0.5, 0.75, 1], inf), \freq, ~snrfreq2, \degree, 5));
-Pdef(\snrpat7, Pbindf(Pdef(\snrpat6), \level, ~snrecholvl));
-Pdef(\snrpat8, Pbindf(Pdef(\snrpat6), \level, ~snrecholvl));
+Pdef(\snrpat6, Pbindf(Pdef(\snrpat0), \freq, ~snrfreq2));
+Pdef(\snrpat7, Pbindf(Pdef(\snrpat6), \level, ~snrecholvl, \pan, -1));
+Pdef(\snrpat8, Pbindf(Pdef(\snrpat7), \pan, 1));
 
 /*
 Pdef(\snrpat6).play(~tempo, quant: 1);
@@ -502,13 +485,12 @@ Pdef(\snrpat8).stop;
 Pdef(\snrpat9,
     Pbindf(
         Pdef(\snrpat0),
-        \curve, -16,
-        \dur, Prand([0.5, 0.75, 1], inf),
+        \curve, Pseq([-8, -24], inf),
         \freq, Pseq([~snrfreq1, ~snrfreq3], inf),
 ));
 
-Pdef(\snrpat10, Pbindf(Pdef(\snrpat9), \level, ~snrecholvl));
-Pdef(\snrpat11, Pbindf(Pdef(\snrpat9), \level, ~snrecholvl));
+Pdef(\snrpat10, Pbindf(Pdef(\snrpat9), \level, ~snrecholvl, \pan, -1));
+Pdef(\snrpat11, Pbindf(Pdef(\snrpat10), \pan, 1));
 );
 
 ////////////////
@@ -619,11 +601,13 @@ SynthDef(\hat, { | freq = 1000, level = 0.1, outbus = 0, pan = 0 |
 // Pattern
 
 (
+~hatlvl = 0.05;
+~hatecholvl = ~hatlvl / 5;
 Pdef(\hatpat0l,
 	Pbind(
 		\instrument, \hat,
-        \dur, Pshuf([0.25, Pseq([1/6], 3), 0.5, 1, 1.25, 2, 3, 4, 6, 8, 12], inf),
-		\level, Prand([0.2, 1] * 0.08, inf),
+        \dur, Pshuf([0.25, Pseq([1/6], 3), 0.5, Pseq([1/5], 5), 1, 1.25, 2, 3, 4, 6, 8, 12], inf),
+		\level, Prand([0.2, 1] * ~hatlvl, inf),
         \degree, [0, 7],
         \octave, 7,
 		\pan, -0.5,
@@ -631,7 +615,9 @@ Pdef(\hatpat0l,
 ));
 
 Pdef(\hatpat0r, Pbindf(Pdef(\hatpat0l), \pan, 0.5));
-Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatpat0r)], inf));
+Pdef(\hatecho0l, Pbindf(Pdef(\hatpat0l), \level, ~hatecholvl));
+Pdef(\hatecho0r, Pbindf(Pdef(\hatecho0l), \pan, 0.5));
+Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatpat0r), Pdef(\hatecho0l), Pdef(\hatecho0r)], inf));
 );
 
 /*
@@ -719,12 +705,8 @@ MIDIdef.cc(\hatpulsestopktrl, {
 // CRUMBLE /////////////////////////////////////////////////////
 
 (
-SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 100, gate = 1, level = 1, outbus = 0, pan = 0 |
-    /*
-	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    */
-    var env             =   Env.asr(0.1, level, 2, curve);
+SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 100, gate = 0.1, level = 1, outbus = 0, pan = 0 |
+    var env             =   Env.asr(1, level, 2, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	4;
 	var mix				=	Mix.fill(n, {
@@ -750,7 +732,7 @@ Pdef(\crumble0,
 		\curve, 0,
         \degree, Pshuf([Rest, 0], inf),
         \dur, Pshuf([23, 29, 31], inf),
-        \level, 0.08,
+        \level, 0.1,
 		\octave, 7,
 		\scale, ~scale,
 ));
@@ -813,7 +795,7 @@ MIDIdef.cc(\crumblestopktrl, {
 // PNO /////////////////////////////////////////////////////////
 
 (
-SynthDef(\pno, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.002, pan = 0 |
+SynthDef(\pno, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.003, pan = 0 |
 	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var sin				=	Mix.fill(4, {
@@ -836,7 +818,6 @@ Pdef(\pnopdef0,
 		\instrument, \pno,
         \degree, Pshuf([[-3, -1, 0, 5], [-1, 0, 5, 7]], inf),
         \dur, Pshuf([0.25, 1, 1.25, 2, 3, 4, 6, 8, 12], inf),
-		\level, 0.002,
 		\octave, 7,
 		\pan, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
 		\scale, ~scale,
@@ -907,7 +888,7 @@ MIDIdef.cc(\pnopar1stopktrl, {
 // PNO2 ////////////////////////////////////////////////////////
 
 (
-SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, freq = 400, level = 0.003, pan = 0 |
+SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, freq = 400, level = 0.005, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var sin				=	SinOsc.ar(freq, mul: envgen);
@@ -930,9 +911,10 @@ Pdef(\pno2pat0,
 		\instrument, \pno2,
         \a, Pwhite(1.0, 1.99, inf).round(0.1),
         \b, Pwhite(1.8, 2.0, inf).round(0.1),
-        \curve, -4,
+        \curve, -16,
 		\degree, 0,
-		\dur, Pshuf([9, 10, 11].nthPrime, inf),
+		\dur, Pshuf([13, 14, 15].nthPrime, inf),
+        \level, 0.008,
 		\octave, 7,
 		\scale, ~scale,
 ));
@@ -950,7 +932,7 @@ Pdef(\pno2pat0).stop;
 Pdef(\pno2pat1,
 	Pbind(
 		\instrument, \pno2,
-        \curve, -4,
+        \curve, -8,
 		\degree, Pseq(~pno2pat1degrees, inf),
 		\dur, Pseq(~pno2pat1durs1, inf),
         \fb, 0.5,
@@ -966,11 +948,8 @@ Pdef(\pno2pat1).isPlaying;
 Pdef(\pno2pat1).stop;
 */
 
-(
-//~pno2pat2durs = [0.5, 0.75, 1, 1.5, 2, 3, 4, 6.25].scramble.mirror1;
-//Pdef(\pno2pat2, Pbindf(Pdef(\pno2pat1), \degree, [5, 7, 10], \dur, Pseq(~pno2pat2durs, inf), \octave, 5));
 Pdef(\pno2pat2, Pbindf(Pdef(\pno2pat1), \degree, [5, 7, 10], \dur, Pshuf((5..7).nthPrime + 0.25, inf), \octave, 5));
-);
+
 
 /*
 Pdef(\pno2pat2).play(~tempo, quant: 1);
@@ -1032,7 +1011,7 @@ MIDIdef.cc(\pno2pat2stopktrl, {
 // DRONE ///////////////////////////////////////////////////////
 
 (
-SynthDef(\drone, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.008 |
+SynthDef(\drone, { | curve = 0, dur = 1, freq = 400, gate = 1, level = 0.01 |
 	var env				=	Env.asr(0.1, level, 0.1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var kbn				=	LFBrownNoise0.kr(15!4, mul: 0.8, add: 1).round(0.2);
@@ -1149,7 +1128,7 @@ MIDIdef.cc(\dronepat2stopktrl, {
 // Synth
 
 (
-SynthDef(\pad, { | curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.008 |
+SynthDef(\pad, { | curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.01 |
 	var env				=	Env.asr(envtime, level, envtime, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	2;

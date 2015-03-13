@@ -21,7 +21,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.02, rhpffrq = 2000|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.015, rhpffrq = 2000|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0);
 	var sinfb			=	SinOscFB.ar([freq, freq * 1.005], fb, mul: env);
@@ -114,10 +114,10 @@ MIDIdef.cc(\bass2stopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.05|
+SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.03|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var lfn				=	LFNoise0.kr(50!2, 0.001, 1);
+	var lfn				=	LFNoise0.kr(50!2, 0.002, 1);
     var fbmod           =   LFBrownNoise0.ar(31!2, mul: 0.5, add: 1);
 	var sinfb			=	SinOscFB.ar(freq!2 * lfn, fb * fbmod).fold2(0.03) * envgen * 40;
 	var rhpf			=	RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
@@ -129,15 +129,15 @@ SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.05|
 Pdef(\hatpat1,
 	Pbind(
 		\instrument, \hat,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 6], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 6].stutter(3), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
-		\level, 0.08,
+		\level, 0.05,
 		\note, 0,
 		\octave, 8,
 		\root, ~root,
 		\scale, ~scale
 ));
-Pdef(\hatpat2, Pbindf(Pdef(\hatpat1), \dur, Prand([0.25, 0.5, 0.75], inf), \level, 0.02));
+Pdef(\hatpat2, Pbindf(Pdef(\hatpat1), \dur, Prand([0.25, 0.5, 0.75], inf), \level, 0.015));
 Pdef(\hatpar, Ppar([Pdef(\hatpat1), Pdef(\hatpat2)], inf));
 );
 
@@ -160,7 +160,7 @@ Pdef(\hatpar).stop;
 //
 
 (
-~pulselvl = 0.02;
+~pulselvl = 0.01;
 ~pulseecholvl = ~pulselvl / 4;
 Pdef(\pulsepat1a,
 	Pbind(
@@ -215,7 +215,7 @@ Pdef(\pulsepat4,
         \curve, 4,
         \dur, 0.25,
         \fb, Pshuf(Array.series(10, 0, 0.25), inf),
-        \level, Prand([0.3, 1], inf) * 0.003,
+        \level, Prand([0.3, 1], inf) * 0.002,
         \note, [7, 10, 12],
         \octave, [5, 8]
 ));
@@ -239,7 +239,7 @@ Pdef(\pingpat,
             Rest, Rest, Rest, 0, 0,
             Rest, Rest, Rest, Rest, 0, 0,
         ], inf),
-        \level, 0.02,
+        \level, 0.015,
         \octave, 8,
         \root, ~root,
         \scale, ~scale
@@ -382,7 +382,7 @@ Pdef(\prcpat1a,
 		\curve, -8,
         \dur, Pshuf([0.25, 0.5, Pseq([0.375], 2), 1, 1.5, 2, 3, 4, 6], inf),
 		\foldfactor, Pwhite(1, 10, inf),
-		\level, Pshuf([0.2, 1, 1] * 0.2, inf),
+		\level, Pshuf([0.2, 1, 1] * 0.1, inf),
 		\note, Pshuf([Rest, 0, 0, 0], inf),
 		\octave, 7,
 		\root, ~root,
@@ -409,7 +409,7 @@ Pdef(\prcpat2a,
             0.5, 0.5, 0.75, 1.25,
             0.5, 0.5, 0.5, 0.75, 1.25
         ], inf),
-        \level, 0.2,
+        \level, 0.1,
         \note, 7,
         \octave, 8
 ));
@@ -443,7 +443,7 @@ Pdef(\kikpat,
         \dur, Pshuf([Pseq([0.25], 2), 0.5, 0.75, 1, 1.5, 2, Pseq([0.75], 3), 3, 4, 6].stutter(5), inf),
 		\ffreq, 1000,
 		\frq, 0.1,
-		\level, Prand([0.2, 1], inf) * 0.3,
+		\level, Prand([0.2, 1], inf) * 0.1,
 		\note, [0, 7],
 		\octave, 5,
 		\root, ~root,
@@ -503,13 +503,13 @@ MIDIdef.cc(\prcpar2stopktrl, {
 
 (
 SynthDef(\banjo, {
-	|amp = 0.1, curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
-	var env				=	Env.perc(0.005, dur, amp, curve);
+	|curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, level = 0.1, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
+	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var noiz			=	LFNoise0.kr(30!2).range(0.999, 1);
-	var sin				=	SinOscFB.ar([freq, freq * 1.0005], fb).round(amp / 2).fold2((amp * noiz) / foldfactor) * (foldfactor * noiz) * envgen;
-	var rlpf			=	RLPF.ar(sin, rlpf_freq.clip(50, SampleRate.ir / 3), rlpf_rq).fold2(amp / foldfactor) * foldfactor;
-	var rhpf 			=	RHPF.ar(sin, rhpf_freq.clip(50, SampleRate.ir / 3), rhpf_rq).fold2(amp / foldfactor) * foldfactor;
+	var sin				=	SinOscFB.ar([freq, freq * 1.0005], fb).round(level / 2).fold2((level * noiz) / foldfactor) * (foldfactor * noiz) * envgen;
+	var rlpf			=	RLPF.ar(sin, rlpf_freq.clip(50, SampleRate.ir / 3), rlpf_rq).fold2(level / foldfactor) * foldfactor;
+	var rhpf 			=	RHPF.ar(sin, rhpf_freq.clip(50, SampleRate.ir / 3), rhpf_rq).fold2(level / foldfactor) * foldfactor;
 	Out.ar(0, rlpf + rhpf);
 }).add;
 );
@@ -518,10 +518,10 @@ SynthDef(\banjo, {
 Pdef(\banjopat,
 	Pbind(
 		\instrument, \banjo,
-		\amp, 0.08,
 		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 6], inf),
 		\fb, Pwhite(0.0, 1.0, inf),
 		\foldfactor, Pwhite(1, 20, inf),
+        \level, 0.05,
 		\note, Pshuf([-2, 0, 1, 2, 3, 7], inf),
 		\octave, Pwhite(4, 6, inf),
 		//\octave, 4,
@@ -584,9 +584,9 @@ Pdef(\pnopat,
         \instrument, \pno,
         \a, Pwhite(-3.0, 3.0, inf),
         \b, Pwhite(-3.0, 3.0, inf),
-        \dur, Pshuf([13, 17, 19], inf),
+        \dur, Pshuf([13, 17, 19] + 0.25, inf),
         \fb, 2,
-        \level, 0.008,
+        \level, 0.005,
         \note, [-5, -2, 0, 2],
         \octave, [5, 8],
         \root, ~root,
@@ -619,8 +619,8 @@ MIDIdef.cc(\pnostopktrl, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\string, { |delaytime = 0.03, dur = 1, freq = 440, gate = 1, level = 0.025, xlinestart = 1|
-	var env				=	Env.asr(5, level, 0.1, 0);
+SynthDef(\string, { |delaytime = 0.03, dur = 1, freq = 440, gate = 1, level = 0.01, xlinestart = 1|
+	var env				=	Env.asr(0.3, level, 8, -4);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
     var xlinemod        =   LFBrownNoise0.kr(13!2, mul: 0.03, add: 1);
 	var xline			=	XLine.kr(xlinestart, 1, dur / 2) * xlinemod;
@@ -635,9 +635,8 @@ SynthDef(\string, { |delaytime = 0.03, dur = 1, freq = 440, gate = 1, level = 0.
 	var delay			=	DelayC.ar(mix, 0.2, delaytime.clip(0.00008, 0.1));
 	var lopass			=	RLPF.ar(mix + delay, freq * 1.5);
     var hpfampmod       =   LFBrownNoise0.kr(15!2).range(0.3, 1).round(0.7);
-	var rhpf			=	RHPF.ar(mix + delay, (freq * 11).clip(50, SampleRate.ir / 3), 0.05) * hpfampmod;
-	var leakdc			=	LeakDC.ar(lopass + rhpf);
-	Out.ar(0, leakdc);
+	var rhpf			=	RHPF.ar(mix + delay, (freq * 12).clip(50, SampleRate.ir / 3), 0.05) * hpfampmod;
+	Out.ar(0, lopass + rhpf);
 }).add;
 );
 
@@ -931,7 +930,7 @@ Pdef(\stringpat8setdelaytime,
 Pdef(\stringpat8,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat8delayktrlbus.asMap,
-        \note, [0, 12, 19].stutter(2),
+        \note, [0, 12, 19],
         \octave, 2,
 		\xlinestart, 1.01
 ));
@@ -948,6 +947,37 @@ Pdef(\stringpat8).play(~tempo, quant: 1);
 Pdef(\stringpat8).isPlaying;
 Pdef(\stringpat8).stop;
 */
+
+(
+~stringpat9delayktrlbus = Bus.control(s);
+
+Pdef(\stringpat9setdelaytime,
+	Pbindf(
+		Pdef(\stringpat0setdelaytime),
+		\outbus, ~stringpat9delayktrlbus,
+));
+
+Pdef(\stringpat9,
+	Pbindf(Pdef(\stringpat2),
+		\delaytime, ~stringpat9delayktrlbus.asMap,
+        \note, [0, 12, 19],
+        \octave, 2,
+		\xlinestart, 0.99
+));
+);
+
+Pdef(\stringpat9setdelaytime).play(~tempo, quant: 1);
+/*
+Pdef(\stringpat9setdelaytime).isPlaying;
+Pdef(\stringpat9setdelaytime).stop;
+*/
+
+/*
+Pdef(\stringpat9).play(~tempo, quant: 1);
+Pdef(\stringpat9).isPlaying;
+Pdef(\stringpat9).stop;
+*/
+
 
 //
 
@@ -1110,4 +1140,22 @@ MIDIdef.cc(\string8stopktrl, {
         "string8 ([0, 12, 19], octave 2) stop".postln;
     }
 }, 39, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+
+
+(
+MIDIdef.cc(\string9playktrl, {
+    if(Pdef(\stringpat9).isPlaying.not) {
+        Pdef(\stringpat9).play(~tempo, quant: 1);
+        "string9 ([0, 12, 19], octave 2) play".postln;
+    }
+}, 55, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\string9stopktrl, {
+    if(Pdef(\stringpat9).isPlaying) {
+        Pdef(\stringpat9).stop;
+        "string9 ([0, 12, 19], octave 2) stop".postln;
+    }
+}, 55, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
