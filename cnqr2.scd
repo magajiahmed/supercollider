@@ -16,6 +16,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 s.meter;
 ~tempo = TempoClock(120/60);
 ~buffer = Buffer.alloc(s, s.sampleRate * (~tempo.tempo * 6), 1);
+~bassfxbus = Bus.audio(s, 2);
 
 (
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 14/9, 7/4];
@@ -29,7 +30,7 @@ s.meter;
 // SINFBDRONE //////////////////////////////////////////
 
 (
-SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.005|
+SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.003|
     var env             =   Env.asr(0.1, level, 1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var freqmod         =   LFBrownNoise0.kr(0.1!2, mul: 0.001, add: 1);
@@ -95,7 +96,7 @@ MIDIdef.cc(\sinfbdronestopktrl, {
 // SynthDef
 
 (
-SynthDef(\bass, { | curve = 0, dur = 1, freq = 100, level = 0.08, width = 0.5 |
+SynthDef(\bass, { | curve = 0, dur = 1, freq = 100, fxBus = 4, level = 0.06, width = 0.5 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var klfn0			=	LFNoise1.ar(18000!2, 0.999, 1);
@@ -106,7 +107,7 @@ SynthDef(\bass, { | curve = 0, dur = 1, freq = 100, level = 0.08, width = 0.5 |
 	var lpf				=	BLowPass4.ar(sawmix, freq * 3);
 	var rhpf			=	RHPF.ar(sawmix, 3000, 0.1, mul: 1);
 	var sin				=	SinOscFB.ar([freq, freq + 0.1], 0.3, mul: envgen);
-	Out.ar([0, 2], lpf + rhpf + sin);
+	Out.ar([0, fxBus], lpf + rhpf + sin);
 	//Out.ar([0, 2], saw0 + saw1);
 }).add;
 );
@@ -119,9 +120,10 @@ Pdef(\basspat,
 	Pbind(
 		\instrument, \bass,
 		\curve, -4,
-        \degree, Pshuf([-3, -1, 0, 1, 2, 3, 4] ++ [Rest].stutter(7), inf),
+        \degree, Pshuf([-3, -1, 0, 1, 2, 3, 4] ++ [Rest].stutter(4), inf),
         \dur, Pshuf(~durations, inf),
-		\level, 0.1,
+		\fxBus, ~bassfxbus,
+		\level, 0.08,
 		\octave, 3,
 		\scale, ~scale,
 		\width, Pwhite(0.1, 0.9, inf),
@@ -179,6 +181,7 @@ SynthDef(\bufrd, { | dur = 1, ffreq = 1000, gate = 1, pan = 0 |
 Pdef(\rbpdef,
 	Pbind(
 		\instrument, \recbuf,
+		\inBus, ~bassfxbus,
 		\dur, 6,
 ));
 );
@@ -277,7 +280,7 @@ SynthDef(\prc, { | curve = -64, dur = 1, freq = 1000, level = 0.1, pan = 0 |
 Pdef(\prcpat0l,
 	Pbind(
 		\instrument, \prc,
-		\curve, -64,
+		\curve, -16,
         \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].mirror2, inf),
 		\freq, 15000,
 		\pan, -0.5,
@@ -295,18 +298,27 @@ Pdef(\prcpar0).stop;
 */
 
 (
-Pdef(\prcpat1l,
+~prc1lvl = 0.1;
+~prc1echolvl = ~prc1lvl / 5;
+Pdef(\prcpat1,
     Pbindf(
         Pdef(\prcpat0l),
-        \curve, -16,
+        \curve, -64,
         \dur, Pshuf([2, 3, 4] + 0.25, inf),
-        \freq, 7500,
+        \freq, 5000,
+		\level, ~prc1lvl,
         \note, Pshuf([Rest, 0], inf),
-        \pan, -0.5,
 ));
 
+Pdef(\prcpat1l,
+	Pbindf(
+		Pdef(\prcpat1),
+		\dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3], inf),
+		\level, ~prc1echolvl,
+		\pan, -0.5
+	));
 Pdef(\prcpat1r, Pbindf(Pdef(\prcpat1l), \pan, 0.5));
-Pdef(\prcpar1, Ppar([Pdef(\prcpat1l), Pdef(\prcpat1r)], inf));
+Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat1l), Pdef(\prcpat1r)], inf));
 );
 
 /*
@@ -601,12 +613,14 @@ SynthDef(\hat, { | freq = 1000, level = 0.1, outbus = 0, pan = 0 |
 // Pattern
 
 (
-~hatlvl = 0.05;
+~hatlvl = 0.03;
 ~hatecholvl = ~hatlvl / 5;
 Pdef(\hatpat0l,
 	Pbind(
 		\instrument, \hat,
-        \dur, Pshuf([0.25, Pseq([1/6], 3), 0.5, Pseq([1/5], 5), 1, 1.25, 2, 3, 4, 6, 8, 12], inf),
+        \dur, Pshuf([
+			0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([1/5], 5), 1, 1.5, 2, 3, 4, 6
+		], inf),
 		\level, Prand([0.2, 1] * ~hatlvl, inf),
         \degree, [0, 7],
         \octave, 7,
@@ -639,7 +653,7 @@ Pdef(\hatpulse,
     Pbind(
         \instrument, \hat,
         \dur, 0.25,
-        \level, 0.03,
+        \level, 0.02,
         \octave, 9,
         \pan, Pshuf([-0.5, 0.5].stutter(31), inf),
 ));
@@ -706,14 +720,14 @@ MIDIdef.cc(\hatpulsestopktrl, {
 
 (
 SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 100, gate = 0.1, level = 1, outbus = 0, pan = 0 |
-    var env             =   Env.asr(1, level, 2, curve);
+    var env             =   Env.asr(0.1, level, 1, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-	var n				=	4;
+	var n				=	5;
 	var mix				=	Mix.fill(n, {
 		|i|
-		var clipn			=	LFClipNoise.kr(15!2).range(0.5, 1);
+		var clipn			=	LFClipNoise.kr(50!2).range(0.5, 1);
 		var cusp			=	CuspL.ar(a: a, b: b, mul: (envgen * clipn) / n);
-		BPF.ar(cusp, (freq * (((3/2)) ** i)).clip(50, SampleRate.ir / 3), bwr, (100 / (i + 1).pow(2)));
+		BPF.ar(cusp, (freq * (((3/2)) ** i)).clip(50, SampleRate.ir / 3), bwr, (100 / (i + 1)));
 	});
     var flt				=	RLPF.ar(mix, freq * 12, 0.1) * LFBrownNoise0.kr(50!2).range(0.5, 1).round(0.5);
 	Out.ar(outbus, flt);
@@ -726,20 +740,20 @@ SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 
 Pdef(\crumble0,
 	Pbind(
 		\instrument, \crumble,
-		\a, Pbrown(0.8, 1, 0.05, inf),
-		\b, Pbrown(1.6, 1.9, 0.05, inf),
-		\bwr, Pbrown(0.0001, 0.01, 0.0001, inf),
+		\a, Pshuf([0.8, 0.85, 0.9], inf),
+		//\b, Pbrown(1.6, 1.9, 0.05, inf),
+		\bwr, 0.01,
 		\curve, 0,
-        \degree, Pshuf([Rest, 0], inf),
+        \degree, Pseq([0, Rest], inf),
         \dur, Pshuf([23, 29, 31], inf),
-        \level, 0.1,
+        \level, 0.3,
 		\octave, 7,
 		\scale, ~scale,
 ));
 
-Pdef(\crumble1, Pbindf(Pdef(\crumble0), \degree, Pshuf([Rest, -1], inf)));
-Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([Rest, 5], inf)));
-Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([Rest, -3], inf)));
+Pdef(\crumble1, Pbindf(Pdef(\crumble0), \degree, Pseq([-1, Rest], inf)));
+Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([-5, Rest], inf)));
+Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([-3, Rest], inf)));
 Pdef(\crumblepar0, Ppar([Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3)], inf));
 );
 
@@ -1155,15 +1169,14 @@ SynthDef(\pad, { | curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level 
 // Pattern
 
 (
-~padchords0 = Array.fill(~scale.size, { |i| [0, i, 7, i + 7] });
-~paddurs0 = Array.fill(5, { |i| (i + 7).nthPrime });
+~paddurs0 = Array.fill(5, { |i| (i + 11).nthPrime });
 Pdef(\padpat0,
 	Pbind(
-		\instrument, \pad,
-        \curve, -4,
-		\degree, Pshuf(~padchords0 ++ [Rest].stutter(6), inf),
+        \instrument, \pad,
+        \curve, 0,
+        \degree, [-1, 0, 5, 7],
 		\dur, Prand(~paddurs0, inf),
-        \envtime, 0.5,
+        \envtime, 0.1,
 		\octave, 5,
 		\scale, ~scale,
 ));
