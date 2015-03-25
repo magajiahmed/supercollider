@@ -572,6 +572,14 @@ Pdef(\pgnpar).isPlaying;
 Pdef(\pgnpar).stop;
 */
 
+Pdef(\pgndrone, Pmono(\penguin, \degree, [-3, -1, 0], \octave, 7, \scale, ~scale));
+
+/*
+Pdef(\pgndrone).play(t, quant: 1);
+Pdef(\pgndrone).isPlaying;
+Pdef(\pgndrone).stop;
+*/
+
 (
 MIDIdef.cc(\pgnplayktrl, {
     if(Pdef(\pgnpar).isPlaying.not) {
@@ -597,36 +605,37 @@ MIDIdef.cc(\pgnstopktrl, {
 SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.005 |
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	//var kbnenv1			=	(LFBrownNoise0.kr(15).range(0.25, 1).round(0.25));
-	//var kbnenv2			=	(LFBrownNoise1.kr(15).range(0, 1)).round(0.5);
 	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
-	var saw1freqmod		=	LFNoise1.kr(0.1.dup, 0.0001, 1);
-	var saw0			=	LFSaw.ar(freq.dup, mul: envgen / 2);
+	var saw1freqmod		=	LFNoise1.kr(0.1!2, 0.001, 1);
+	var saw0			=	LFSaw.ar(freq!2, mul: envgen / 2);
 	var saw1			=	LFSaw.ar(freq * saw1freqmod, mul: envgen / 2);
 	var sawmix			=	saw0 + saw1;
 	var bn				=	LFNoise2.ar(0.1!2, 0.1);
 	var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
-	//var shape			=	SineShaper.ar(sawmix + bn, 0.002 * kbnshaper);
 	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 5;
-	var lpf				=	BLowPass4.ar(sawmix + shape, freq, mul: filtmulmods[0, 1]);
+    var sinfb           =   SinOscFB.ar(freq!2, 0.1, envgen);
+	var lpf				=	BLowPass4.ar(sawmix + shape, freq * 1.125, mul: filtmulmods[0, 1]);
 	var rhpf			=	BHiPass4.ar(sawmix + shape, 6000, 0.05, filtmulmods[2, 3]);
-	//var filtmix			=	lpf + rhpf;
-	Out.ar(0, lpf + rhpf);
+	Out.ar(0, sinfb + lpf + rhpf);
 }).add;
 );
 
 // Pattern
 
 (
-~padchords2 = ~scaledegrees.powerset.reject({ |i| i.size != 5 });
+//~padchords2 = ~scaledegrees.powerset.reject({ |i| i.size != 5 });
+
+~padchords2 = ~scaledegrees.collect({ |i| [0, i, i + 2, 7, 9] });
+~padchords2shuf = ~padchords2.scramble;
 
 Pdef(\pad2pat,
 	Pbind(
 		\instrument, \pad2,
 		\degree, Pseq([
-		 	Prand(~padchords2, 1), Rest,
-		 	Prand(~padchords2, 2), Rest,
-		 	Prand(~padchords2, 3), Rest
+            ~padchords2shuf[0], Rest,
+            ~padchords2shuf[1], ~padchords2shuf[2], Rest,
+            ~padchords2shuf[3], ~padchords2shuf[4], ~padchords2shuf[5], Rest,
+            ~padchords2shuf[6], ~padchords2shuf[7], ~padchords2shuf[8], ~padchords2shuf[9], Rest,
 		 ], inf),
 		\dur, Pshuf([11, 13, 15], inf),
 		\level, 0.01,
@@ -638,7 +647,23 @@ Pdef(\pad2pat,
 /*
 Pdef(\pad2pat).play(t, quant: 1);
 Pdef(\pad2pat).isPlaying;
-Pdef(\pad2pat).pause;
+Pdef(\pad2pat).stop;
+*/
+
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [-3, 0].stutter(3), \octave, 5, \scale, ~scale));
+
+Pdef(\pad2pat3, Pmono(\pad2, \octave, [2, 3, 4], \scale, ~scale));
+
+/*
+Pdef(\pad2pat2).play(t, quant: 1);
+Pdef(\pad2pat2).isPlaying;
+Pdef(\pad2pat2).stop;
+*/
+
+/*
+Pdef(\pad2pat3).play(t, quant: 1);
+Pdef(\pad2pat2).isPlaying;
+Pdef(\pad2pat2).stop;
 */
 
 // Midi Control
@@ -647,14 +672,46 @@ Pdef(\pad2pat).pause;
 MIDIdef.cc(\pad2playktrl, {
 	if(Pdef(\pad2pat).isPlaying.not) {
 		Pdef(\pad2pat).play(t, quant: 1);
-		"pad2 play".postln;
+		"pad2a play".postln;
 	};
-}, 55, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 39, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pad2stopktrl, {
     if(Pdef(\pad2pat).isPlaying) {
         Pdef(\pad2pat).stop;
-        "pad2 stop".postln;
+        "pad2a stop".postln;
+    }
+}, 39, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\pad2bplayktrl, {
+	if(Pdef(\pad2pat2).isPlaying.not) {
+		Pdef(\pad2pat2).play(t, quant: 1);
+		"pad2b play".postln;
+	};
+}, 55, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pad2bstopktrl, {
+    if(Pdef(\pad2pat2).isPlaying) {
+        Pdef(\pad2pat2).stop;
+        "pad2b stop".postln;
     }
 }, 55, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\pad2cplayktrl, {
+	if(Pdef(\pad2pat3).isPlaying.not) {
+		Pdef(\pad2pat3).play(t, quant: 1);
+		"pad2c play".postln;
+	};
+}, 71, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pad2cstopktrl, {
+    if(Pdef(\pad2pat3).isPlaying) {
+        Pdef(\pad2pat3).stop;
+        "pad2c stop".postln;
+    }
+}, 71, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
