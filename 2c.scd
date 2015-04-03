@@ -15,12 +15,13 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1835008;
 //~nanoktrl2 = 1572864;
 ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
+if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 );
 
 (
 s.meter;
-~tempo = TempoClock(108/60);
-~buffer = Buffer.alloc(s, s.sampleRate * (~tempo.tempo * 6), 1);
+t = TempoClock(108/60);
+b = Buffer.alloc(s, s.sampleRate * (~tempo.tempo * 6), 1);
 );
 
 (
@@ -90,7 +91,6 @@ SynthDef(\bass, { | dur = 1, foldfactor = 3, freq = 100, level = 0.05 |
 
 (
 ~bassfoldseries = Array.series(11, 0.1, 0.2);
-~basspat1 =
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
@@ -108,20 +108,20 @@ Pdef(\basspat1,
 );
 
 /*
-~basspat1.play(~tempo, quant: 1);
-~basspat1.isPlaying;
-~basspat1.pause;
+Pdef(\basspat1).play(t, quant: 1);
+Pdef(\basspat1).isPlaying;
+Pdef(\basspat1).stop;
 */
 
 // Midi Control
 
 (
-~bassktrl = MIDIdef.cc(\bassktrl, {
-	if(~basspat1.isPlaying.not) {
-		~basspat1.play(~tempo, quant: 1);
+MIDIdef.cc(\bassktrl, {
+	if(Pdef(\basspat1).isPlaying.not) {
+		Pdef(\basspat1).play(t, quant: 1);
 		"bass play".postln;
 	} {
-		~basspat1.pause;
+		Pdef(\basspat1).stop;
 		"bass stop".postln;
 	};
 }, 32, srcID: ~nanoktrl2.uid);
@@ -153,7 +153,6 @@ SynthDef(\bufrd, { | amp = 1, curve = -4, dur = 1, filt_freq = 3000, filt_rq = 1
 );
 
 (
-~rbpdef =
 Pdef(\rbpdef,
 	Pbind(
 		\instrument, \recbuf,
@@ -162,14 +161,12 @@ Pdef(\rbpdef,
 );
 
 /*
-~rbpdef.play(~tempo, quant: 3);
-~rbpdef.isPlaying;
-~rbpdef.pause;
-b.plot;
+Pdef(\rbpdef).play(t, quant: 3);
+Pdef(\rbpdef).isPlaying;
+Pdef(\rbpdef).stop;
 */
 
 (
-~pbpat1 =
 Pdef(\pbpat1,
 	Pbind(
 		\instrument, \bufrd,
@@ -181,38 +178,38 @@ Pdef(\pbpat1,
 		\freq, Pwhite(100, 10000, inf),
 		\pan, 0,
 ));
-~pbpat2 = Pdef(\pbpat2, Pbindf(~pbpat1, \amp, 0.2, \pan, -1));
-~pbpat3 = Pdef(\pbpat3, Pbindf(~pbpat2, \pan, 1));
-~pbpar = Pdef(\pbpar, Ppar([~pbpat1, ~pbpat2, ~pbpat3], inf));
+Pdef(\pbpat2, Pbindf(Pdef(\pbpat1), \amp, 0.2, \pan, -1));
+Pdef(\pbpat3, Pbindf(Pdef(\pbpat2), \pan, 1));
+Pdef(\pbpar, Ppar([Pdef(\pbpat1), Pdef(\pbpat2), Pdef(\pbpat2)], inf));
 );
 
 /*
-~pbpar.play(~tempo, quant: 1.5);
-~pbpar.isPlaying;
-~pbpar.pause;
+Pdef(\pbpar).play(t, quant: 1.5);
+Pdef(\pbpar).isPlaying;
+Pdef(\pbpar).stop;
 */
 
 // Midi Control
 
 (
-~rbktrl = MIDIdef.cc(\rbktrl, {
-	if(~rbpdef.isPlaying.not) {
-		~rbpdef.play(~tempo, quant: 3);
+MIDIdef.cc(\rbktrl, {
+	if(Pdef(\rbpdef).isPlaying.not) {
+		Pdef(\rbpdef).play(t, quant: 3);
 		"recbuf play".postln;
 	} {
-		~rbpdef.pause;
+		Pdef(\rbpdef).stop;
 		"recbuf stop".postln;
 	};
 }, 48, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pbktrl = MIDIdef.cc(\pbktrl, {
-	if(~pbpar.isPlaying.not) {
-		~pbpar.play(~tempo, quant: 1);
+MIDIdef.cc(\pbktrl, {
+	if(Pdef(\pbpar).isPlaying.not) {
+		Pdef(\pbpar).play(~tempo, quant: 1);
 		"playbuf play".postln;
 	} {
-		~pbpar.pause;
+		Pdef(\pbpar).stop;
 		"playbuf stop".postln;
 	};
 }, 64, srcID: ~nanoktrl2.uid);
@@ -237,7 +234,6 @@ SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.05,
 
 (
 ~pulsedurarray = [Pseq([0.25], 53), Pseq([0.25], 31), Pseq([1/3], 3), Pseq([0.75], 4), Pseq([2/5], 5)];
-~pulsepat1 =
 Pdef(\pulsepat1,
 	Pbind(
 		\instrument, \pulse,
@@ -248,118 +244,118 @@ Pdef(\pulsepat1,
 		\pan, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
 		\scale, ~scale
 ));
-~pulsepat2 = Pdef(\pulsepat2, Pbindf(~pulsepat1, \note, 2));
-~pulsepat3 = Pdef(\pulsepat3, Pbindf(~pulsepat1, \note, 3));
-~pulsepat4 = Pdef(\pulsepat4, Pbindf(~pulsepat1, \note, 1));
-~pulsepat5 = Pdef(\pulsepat5, Pbindf(~pulsepat1, \note, -2));
-~pulsepat6 = Pdef(\pulsepat6, Pbindf(~pulsepat1, \note, 7));
+Pdef(\pulsepat2, Pbindf(Pdef(\pulsepat1), \note, 2));
+Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat1), \note, 3));
+Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \note, 1));
+Pdef(\pulsepat5, Pbindf(Pdef(\pulsepat1), \note, -2));
+Pdef(\pulsepat6, Pbindf(Pdef(\pulsepat1), \note, 7));
 );
 
 /*
-~pulsepat1.play(~tempo, quant: 1);
-~pulsepat1.isPlaying;
-~pulsepat1.pause;
+Pdef(\pulsepat1).play(t, quant: 1);
+Pdef(\pulsepat1).isPlaying;
+Pdef(\pulsepat1).stop;
 */
 
 /*
-~pulsepat2.play(~tempo, quant: 1);
-~pulsepat2.isPlaying;
-~pulsepat2.pause;
+Pdef(\pulsepat2).play(t, quant: 1);
+Pdef(\pulsepat2).isPlaying;
+Pdef(\pulsepat2).stop;
 */
 
 /*
-~pulsepat3.play(~tempo, quant: 1);
-~pulsepat3.isPlaying;
-~pulsepat3.pause;
+Pdef(\pulsepat3).play(t, quant: 1);
+Pdef(\pulsepat3).isPlaying;
+Pdef(\pulsepat3).stop;
 */
 
 /*
-~pulsepat4.play(~tempo, quant: 1);
-~pulsepat4.isPlaying;
-~pulsepat4.pause;
+Pdef(\pulsepat4).play(t, quant: 1);
+Pdef(\pulsepat4).isPlaying;
+Pdef(\pulsepat4).stop;
 */
 
 /*
-~pulsepat5.play(~tempo, quant: 1);
-~pulsepat5.isPlaying;
-~pulsepat5.pause;
+Pdef(\pulsepat5).play(t, quant: 1);
+Pdef(\pulsepat5).isPlaying;
+Pdef(\pulsepat5).stop;
 */
 
 /*
-~pulsepat6.play(~tempo, quant: 1);
-~pulsepat6.isPlaying;
-~pulsepat6.pause;
+Pdef(\pulsepat6).play(t, quant: 1);
+Pdef(\pulsepat6).isPlaying;
+Pdef(\pulsepat6).stop;
 */
 
 //
 
 (
-~pulsektrl1 = MIDIdef.cc(\pulsektrl1, {
-	if(~pulsepat1.isPlaying.not) {
-		~pulsepat1.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl1, {
+	if(Pdef(\pulsepat1).isPlaying.not) {
+		Pdef(\pulsepat1).play(t, quant: 1);
 		"pulse1 play".postln;
 	} {
-		~pulsepat1.pause;
+		Pdef(\pulsepat1).stop;
 		"pulse1 stop".postln;
 	};
 }, 33, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pulsektrl2 = MIDIdef.cc(\pulsektrl2, {
-	if(~pulsepat2.isPlaying.not) {
-		~pulsepat2.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl2, {
+    if(Pdef(\pulsepat2).isPlaying.not) {
+		Pdef(\pulsepat2).play(t, quant: 1);
 		"pulse2 play".postln;
 	} {
-		~pulsepat2.pause;
+		Pdef(\pulsepat2).stop;
 		"pulse2 stop".postln;
 	};
 }, 49, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pulsektrl3 = MIDIdef.cc(\pulsektrl3, {
-	if(~pulsepat3.isPlaying.not) {
-		~pulsepat3.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl3, {
+	if(Pdef(\pulsepat3).isPlaying.not) {
+		Pdef(\pulsepat3).play(t, quant: 1);
 		"pulse3 play".postln;
 	} {
-		~pulsepat3.pause;
+		Pdef(\pulsepat3).stop;
 		"pulse3 stop".postln;
 	};
 }, 65, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pulsektrl4 = MIDIdef.cc(\pulsektrl4, {
-	if(~pulsepat4.isPlaying.not) {
-		~pulsepat4.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl4, {
+	if(Pdef(\pulsepat4).isPlaying.not) {
+		Pdef(\pulsepat4).play(t, quant: 1);
 		"pulse4 play".postln;
 	} {
-		~pulsepat4.pause;
+		Pdef(\pulsepat4).stop;
 		"pulse4 stop".postln;
 	};
 }, 34, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pulsektrl5 = MIDIdef.cc(\pulsektrl5, {
-	if(~pulsepat5.isPlaying.not) {
-		~pulsepat5.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl5, {
+	if(Pdef(\pulsepat5).isPlaying.not) {
+		Pdef(\pulsepat5).play(t, quant: 1);
 		"pulse5 play".postln;
 	} {
-		~pulsepat5.pause;
+		Pdef(\pulsepat5).stop;
 		"pulse5 stop".postln;
 	};
 }, 50, srcID: ~nanoktrl2.uid);
 );
 
 (
-~pulsektrl6 = MIDIdef.cc(\pulsektrl6, {
-	if(~pulsepat6.isPlaying.not) {
-		~pulsepat6.play(~tempo, quant: 1);
+MIDIdef.cc(\pulsektrl6, {
+	if(Pdef(\pulsepat6).isPlaying.not) {
+		Pdef(\pulsepat6).play(t, quant: 1);
 		"pulse6 play".postln;
 	} {
-		~pulsepat6.pause;
+		Pdef(\pulsepat6).pause;
 		"pulse6 stop".postln;
 	};
 }, 66, srcID: ~nanoktrl2.uid);
@@ -382,47 +378,47 @@ SynthDef(\pad, { | bits = 24, curve = -128, dur = 1, freq = 400, gate = 1, level
 );
 
 (
-~padpat =
 Pdef(\padpat,
 	Pbind(
 		\instrument, \pad,
-		\dur, Pshuf(Array.fill(5, { |i| (i + 7).nthPrime }), inf),
+		\dur, Pshuf(Array.fill(5, { |i| (i + 9).nthPrime }), inf),
 		\note, Pshuf([-2, 0, 1, 2, 3, 7], inf),
 		\octave, 8,
 		\scale, ~scale
 ));
-~padpar = Pdef(\padpar, Ppar([~padpat].stutter(5), inf));
+Pdef(\padpar, Ppar([Pdef(\padpat)].stutter(5), inf));
 );
 
 /*
-~padpar.play(~tempo, quant: 1);
-~padpar.isPlaying;
-~padpar.pause;
+Pdef(\padpar).play(t, quant: 1);
+Pdef(\padpar).isPlaying;
+Pdef(\padpar).stop;
 */
 
-~paddrone = Pdef(\paddrone, Pmono(\pad, \dur, 23, \note, [0, 7, 12], \octave, 4, \scale, ~scale));
+Pdef(\paddrone, Pmono(\pad, \dur, 23, \note, [0, 7, 12], \octave, 4, \scale, ~scale));
 
 /*
-~paddrone.play(~tempo, quant: 1);
-~paddrone.isPlaying;
-~paddrone.pause;
+Pdef(\paddrone).play(t, quant: 1);
+Pdef(\paddrone).isPlaying;
+Pdef(\paddrone).stop;
 */
 
-~padpatlo = Pdef(\padpatlo, Pbindf(~padpat, \octave, 6));
-~padparlo = Pdef(\padparlo, Ppar([~padpatlo].stutter(2)));
+Pdef(\padpatlo, Pbindf(Pdef(\padpat), \octave, 6));
+Pdef(\padparlo, Ppar([Pdef(\padpatlo)].stutter(2)));
 
 /*
-~padparlo.play(~tempo, quant: 1);
-~padparlo.stop;
+Pdef(\padparlo).play(~tempo, quant: 1);
+Pdef(\padparlo).isPlaying;
+Pdef(\padparlo).stop;
 */
 
 (
-~padparktrl = MIDIdef.cc(\padparktrl, {
-	if(~padpar.isPlaying.not) {
-		~padpar.play(~tempo, quant: 1);
+MIDIdef.cc(\padparktrl, {
+	if(Pdef(\padpar).isPlaying.not) {
+		Pdef(\padpar).play(t, quant: 1);
 		"padpar play".postln;
 	} {
-		~padpar.pause;
+		Pdef(\padpar).pause;
 		"padpar stop".postln;
 	};
 }, 37, srcID: ~nanoktrl2.uid);
@@ -431,12 +427,12 @@ Pdef(\padpat,
 //
 
 (
-~paddronektrl = MIDIdef.cc(\paddronektrl, {
-	if(~paddrone.isPlaying.not) {
-		~paddrone.play(~tempo, quant: 1);
+MIDIdef.cc(\paddronektrl, {
+	if(Pdef(\paddrone).isPlaying.not) {
+		Pdef(\paddrone).play(t, quant: 1);
 		"paddrone play".postln;
 	} {
-		~paddrone.pause;
+		Pdef(\paddrone).stop;
 		"paddrone stop".postln;
 	};
 }, 53, srcID: ~nanoktrl2.uid);
@@ -445,12 +441,12 @@ Pdef(\padpat,
 //
 
 (
-~padparloktrl = MIDIdef.cc(\padparloktrl, {
-	if(~padparlo.isPlaying.not) {
-		~padparlo.play(~tempo, quant: 1);
+MIDIdef.cc(\padparloktrl, {
+	if(Pdef(\padparlo).isPlaying.not) {
+		Pdef(\padparlo).play(t, quant: 1);
 		"padparlo play".postln;
 	} {
-		~padparlo.pause;
+		Pdef(\padparlo).pause;
 		"padparlo stop".postln;
 	};
 }, 69, srcID: ~nanoktrl2.uid);
@@ -465,67 +461,16 @@ SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2,
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar([freq, freq - 10] * 4, a, 3, add: 1);
 	var sin				=	SinOsc.ar(freq * cusp, mul: envgen);
-	//var sinwrap			=	sin.wrap2(foldfactor.reciprocal).softclip * foldfactor * envgen;
-	//var rez				=	Resonz.ar(sinwrap, 6000, 0.1);
 	var delay			=	DelayC.ar(sin, 0.2, delaytime.clip(0.0001, 0.2));
-	//var pan2			=	Pan2.ar(rez + delay, pan);
 	Out.ar(4, sin).softclip;
 }).add;
 );
 
 // Pattern
 
-/*
-(
-~mainlevel = 0.3;
-~echolevel = ~mainlevel / 10;
-~foldseries = Array.series(13, 5, 5);
-
-~pinglepat1 =
-Pdef(\pinglepat1,
-	Pbind(
-		\instrument, \pingle,
-		\a, 0.01,
-		\curve, -16,
-		\dur, Pshuf([
-			Pseq([0.75], 7),
-			Pseq([1], 7),
-			Pseq([1.25], 7),
-		], inf),
-		\foldfactor, Pshuf(~foldseries, inf),
-		\note, Pwrand([0, Rest], [4, 1].normalizeSum, inf),
-		//\note, 0,
-		\level, ~mainlevel,
-		\octave, 7,
-		\scale, ~scale,
-));
-~pinglepat1a = Pdef(\pinglepat1a, Pbindf(~pinglepat1, \dur, Pshuf([0.25, 0.5].stutter(7), inf), \level, ~echolevel, \pan, -1));
-~pinglepat1b = Pdef(\pinglepat1b, Pbindf(~pinglepat1a, \pan, 1));
-~pinglepat2 = Pdef(\pinglepat2, Pbindf(~pinglepat1, \note, 0, \octave, 8));
-~pinglepat2a = Pdef(\pinglepat2a, Pbindf(~pinglepat2, \dur, Pshuf([0.25, 0.5].stutter(7), inf), \level, ~echolevel, \pan, -1));
-~pinglepat2b = Pdef(\pinglepat2b, Pbindf(~pinglepat2a, \pan, 1));
-(
-~pinglepar =
-Pdef(\pinglepar,
-	Ppar(
-		[~pinglepat1, ~pinglepat1a, ~pinglepat1b]
-		 ++
-		[~pinglepat2, ~pinglepat2a, ~pinglepat2b]
-		, inf));
-);
-);
-*/
-
-/*
-~pinglepar.play(~tempo, quant: 1);
-~pinglepar.isPlaying;
-~pinglepar.pause;
-*/
-
 (
 ~mainlevel = 0.01;
 ~echolevel = ~mainlevel / 6;
-~pinglepat =
 Pdef(\pinglepat,
 	Pbind(
 		\instrument, \pingle,
@@ -543,23 +488,23 @@ Pdef(\pinglepat,
 		\octave, 7,
 		\scale, ~scale
 ));
-~pinglepatt  = Pdef(\pinglepatt, Pbindf(~pinglepat, \dur, 0.25, \level, ~echolevel));
-~pingleparf = Pdef(\pingleparf, Ppar([~pinglepat, ~pinglepatt], inf));
+Pdef(\pinglepatt, Pbindf(Pdef(\pinglepat), \dur, 0.25, \level, ~echolevel));
+Pdef(\pingleparf, Ppar([Pdef(\pinglepat), Pdef(\pinglepat)], inf));
 );
 
 /*
-~pingleparf.play(~tempo, quant: 1);
-~pingleparf.isPlaying;
-~pingleparf.pause;
+Pdef(\pingleparf).play(~tempo, quant: 1);
+Pdef(\pingleparf).isPlaying;
+Pdef(\pingleparf).stop;
 */
 
 (
-~pinglektrl = MIDIdef.cc(\pinglektrl, {
-	if(~pingleparf.isPlaying.not) {
-		~pingleparf.play(~tempo, quant: 1);
+MIDIdef.cc(\pinglektrl, {
+	if(Pdef(\pingleparf).isPlaying.not) {
+		Pdef(\pingleparf).play(t, quant: 1);
 		"pingle play".postln;
 	} {
-		~pingleparf.pause;
+		Pdef(\pingleparf).stop;
 		"pingle stop".postln;
 	};
 }, 35, srcID: ~nanoktrl2.uid);
@@ -569,53 +514,59 @@ Pdef(\pinglepat,
 // CLAP
 
 (
-SynthDef(\clap, { | curve = -16, freq = 400, level = 0.2, pan = 0, xlinestart = 1, xlineend = 0.2 |
-	var env				=	Env.perc(0.005, 0.5, level, curve);
+SynthDef(\clap, { | curve = -16, ffreq = 2000, freq = 400, level = 0.2, mfreq = 1000, mode = 0, pan = 0 |
+	var env				=	Env.perc(0.005, 0.02, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var clip			=	ClipNoise.ar(envgen);
-	var xline			=	XLine.kr(xlinestart, xlineend, 0.2);
-	var stan			=	Standard2DC.ar.clip(0.1, 1);
-	var rez				=	Resonz.ar(clip, (freq * xline).clip(50, SampleRate.ir / 3), stan);
-	var pan2			= 	Pan2.ar(rez, pan);
+    var clip			=	ClipNoise.ar(envgen);
+    var rlpf            =   RLPF.ar(clip, ffreq.clip(50, SampleRate.ir / 3));
+    var xline           =   XLine.kr(0.125, 1, 0.01);
+    var comb            =   CombN.ar(rlpf, 1, freq.reciprocal * xline, 0.01);
+    var moog            =   BMoog.ar(comb, mfreq, 0.3, mode);
+    var pan2			= 	Pan2.ar(moog, pan);
 	Out.ar(4, pan2);
 }).add;
 );
 
 (
 ~clapdurs = [
-			0.75, 0.75, 1,
-			0.75, 0.75, 0.75, 1,
-			0.75, 0.75, 0.75, 0.75, 1
+    0.75, 0.75, 1,
+    0.75, 0.75, 0.75, 1,
+    0.75, 0.75, 0.75, 0.75, 1,
 		];
-~clappat1 =
+~claplvl = 0.03;
+~clapecholvl = ~claplvl;
+~filterfreqs = [1, 2, 3, 4, 6, 8, 12];
 Pdef(\clappat1,
 	Pbind(
 		\instrument, \clap,
-		\curve, -8,
+		\curve, 4,
+        \degree, 0,
 		\dur, Pseq(~clapdurs, inf),
-		\freq, Pshuf([530, 1000, 1200, 1500], inf),
+        \ffreq, Pshuf(~filterfreqs.stutter(7) * 1000, inf),
+        \level, ~claplvl,
+        \mfreq, Pshuf(~filterfreqs.stutter(5) * 1000, inf),
+        \mode, Prand([0, 1], inf),
 		\pan, 0,
-		\xlinestart, Pshuf([7/8, 1, 256/243, 9/8, 7/6], inf),
-		\xlineend, Pwhite(0.05, 0.5, inf)
+        \scale, ~scale
 ));
-~clappat2 = Pdef(\clappat2, Pbindf(~clappat1, \dur, Pshuf(~clapdurs.mirror2, inf), \level, 0.25, \pan, -1));
-~clappat3 = Pdef(\clappat3, Pbindf(~clappat2, \pan, 1));
-~clappar = Pdef(\clappar, Ppar([~clappat1, ~clappat2, ~clappat3], inf));
+Pdef(\clappat2, Pbindf(Pdef(\clappat1), \dur, Pshuf(~clapdurs.mirror2, inf), \level, ~clapecholvl, \pan, -1));
+Pdef(\clappat3, Pbindf(Pdef(\clappat2), \pan, 1));
+Pdef(\clappar, Ppar([Pdef(\clappat1), Pdef(\clappat2), Pdef(\clappat3)], inf));
 );
 
 /*
-~clappar.play(~tempo, quant: 0.5);
-~clappar.isPlaying;
-~clappar.pause;
+Pdef(\clappar).play(~tempo, quant: 0.5);
+Pdef(\clappar).isPlaying;
+Pdef(\clappar).stop;
 */
 
 (
-~clapparktrl = MIDIdef.cc(\clapparktrl, {
-	if(~clappar.isPlaying.not) {
-		~clappar.play(~tempo, quant: 0.5);
+MIDIdef.cc(\clapparktrl, {
+	if(Pdef(\clappar).isPlaying.not) {
+		Pdef(\clappar).play(~tempo, quant: 0.5);
 		"clap play".postln;
 	} {
-		~clappar.pause;
+		Pdef(\clappar).stop;
 		"clap stop".postln;
 	};
 }, 51, srcID: ~nanoktrl2.uid);
@@ -626,7 +577,7 @@ Pdef(\clappat1,
 
 (
 SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.03, pan = 0, sinfb = 0 |
-	var env				=	Env.perc(0.005, releaseTime: 0.5, level: level, curve: curve);
+	var env				=	Env.perc(0.005, releaseTime: 0.2, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var kxline			=	XLine.kr(1, 0.125, dur / 5);
 	var sin				=	SinOscFB.ar(freq * kxline, sinfb, envgen);
@@ -643,35 +594,39 @@ SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level =
 // Pattern
 
 (
-~heavypat1 =
+~heavypatlvl = 0.03;
+~heavypatecholvl = ~heavypatlvl / 3;
 Pdef(\heavypat1,
 	Pbind(
 		\instrument, \heavy,
 		\brightness, Pshuf([1000, 4000, 8000].stutter(7), inf),
-		\curve, Pshuf([0, 2, 4], inf),
-		\dur, Pshuf([Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 0.75, 0.75, 1])], inf),
+		\curve, Pshuf([-16, -4, 0, 2, 4], inf),
+        \dur, Pshuf([Pseq([1/3], 3), Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 0.75, 0.75, 1])], inf),
+        \level, ~heavypatlvl,
 		\note, [-2, 0, 7],
 		\octave, 3,
 		\pan, Prand([-0.5, 0, 0.5], inf),
 		\sinfb, Pshuf((0..6), inf)
 ));
+Pdef(\heavypat2, Pbindf(Pdef(\heavypat1), \dur, Pshuf([0.25, 0.5, 0.75].stutter(17), inf), \level, ~heavypatecholvl));
+Pdef(\heavypar, Ppar([Pdef(\heavypat1), Pdef(\heavypat2)], inf));
 );
 
 /*
-~heavypat1.play(~tempo, quant: 1);
-~heavypat1.isPlaying;
-~heavypat1.pause;
+Pdef(\heavypar).play(t, quant: 1);
+Pdef(\heavypar).isPlaying;
+Pdef(\heavypar).stop;
 */
 
 // Midi Control
 
 (
-~heavypat1ktrl = MIDIdef.cc(\heavypat1ktrl, {
-	if(~heavypat1.isPlaying.not) {
-		~heavypat1.play(~tempo, quant: 1);
+MIDIdef.cc(\heavyktrl, {
+	if(Pdef(\heavypar).isPlaying.not) {
+		Pdef(\heavypar).play(~tempo, quant: 1);
 		"heavy prc play".postln;
 	} {
-		~heavypat1.pause;
+		Pdef(\heavypar).pause;
 		"heavy prc stop".postln;
 	};
 }, 67, srcID: ~nanoktrl2.uid);
@@ -694,13 +649,9 @@ SynthDef(\kik, { |a = 1.1, c = 0.13, curve = 0, freq = 22050, level = 0.2, pan =
 (
 ~prcpatlevel1 = 0.3;
 ~prcpatlevel2 = ~prcpatlevel1 / 10;
-~prcpat1 =
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \kik,
-		//\a, Pwhite(1.09, 1.11, inf),
-		//\a, Pwhite(2.9, 3.1, inf),
-		//\c, Pwhite(0.12, 0.14, inf),
 		\a, Pwhite(1.200, 1.201, inf),
 		\c, Pwhite(0.110, 0.111, inf),
 		\curve, -64,
@@ -712,7 +663,6 @@ Pdef(\prcpat1,
 		\releaseTime, 1
 ));
 
-~prcpat2 =
 Pdef(\prcpat2,
 	Pbind(
 		\instrument, \kik,
@@ -724,24 +674,24 @@ Pdef(\prcpat2,
 		\octave, 6!2,
 		\releaseTime, 1
 ));
-~prcpat1a = Pdef(\prcpat1a, Pbindf(~prcpat1, \dur, Pshuf([0.25, 0.5].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
-~prcpat1b = Pdef(\prcpat1b, Pbindf(~prcpat1a, \pan, 1));
-~prcpar = Pdef(\prcpar, Ppar([~prcpat1, ~prcpat1a, ~prcpat1b, ~prcpat2], inf));
+Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
+Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
+Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat2)], inf));
 );
 
 /*
-~prcpar.play(~tempo, quant: 0.5);
-~prcpar.isPlaying;
-~prcpar.pause;
+Pdef(\prcpar).play(t, quant: 0.5);
+Pdef(\prcpar).isPlaying;
+Pdef(\prcpar).stop;
 */
 
 (
-~prcparktrl = MIDIdef.cc(\prcparktrl, {
-	if(~prcpar.isPlaying.not) {
-		~prcpar.play(~tempo, quant: 1);
+MIDIdef.cc(\prcparktrl, {
+	if(Pdef(\prcpar).isPlaying.not) {
+		Pdef(\prcpar).play(~tempo, quant: 1);
 		"prc play".postln;
 	} {
-		~prcpar.pause;
+		Pdef(\prcpar).stop;
 		"prc stop".postln;
 	};
 }, 36, srcID: ~nanoktrl2.uid);
