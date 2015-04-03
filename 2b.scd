@@ -100,9 +100,8 @@ Pdef(\bass,
 		\degree, Pshuf([-3, -1, 0, 1, 2, 3].stutter(3), inf),
 		\dur, Pshuf(~bassdurations, inf),
         \ffreq, 10000,
-		\legato, 0.1,
 		\octave, 3,
-        \phasemodamp, Pshuf((0..7), inf),
+        \phasemodamp, Pshuf((0..11) / 2, inf),
 		\scale, ~scale,
 ));
 );
@@ -418,20 +417,16 @@ MIDIdef.cc(\prc4stopktrl, {
 // PLUNK
 
 (
-SynthDef(\plunk, { | curve = -16, dur = 1, fbstart = 1, fbend = 0.1, freq = 400, level = 0.03, pan = 0 |
+SynthDef(\plunk, { | a = 1, curve = -16, dur = 1, fb = 0, freq = 400, level = 0.03, shapelimit = 1 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var fbenv			=	Env.new([fbstart, fbend], [dur / 8], 'sine');
-	var fbenvgen		= 	EnvGen.kr(fbenv);
-	var	kbn				=	(LFBrownNoise0.kr(15!2).range(0.5, 1)).round(0.5);
-	var sinfb			=	SinOscFB.ar(freq, fbenvgen, envgen * kbn);
-	var shape			=	SineShaper.ar(sinfb, 0.01);
-    var rlpf			=	RLPF.ar(sinfb + shape, (freq * 3).clip(50, SampleRate.ir / 3), 0.5);
-	var rhpf			=	RHPF.ar(sinfb + shape, 8000, 0.05);
-	var flts			=	rlpf + rhpf;
-    var sin             =   SinOsc.ar(freq!2 * 8, mul: envgen / 32);
-	//var pan2			=	Pan2.ar(sin + flts, pan);
-	Out.ar(0, flts + sin);
+    var kbn             =   1;
+	var sinfb			=	SinOscFB.ar(freq, fb, envgen * kbn);
+    var cusp            =   CuspL.ar(100, a, mul: 1, add: 1);
+    var shape			=	SineShaper.ar(sinfb, shapelimit * cusp, (shapelimit * 50).reciprocal);
+    var rlpf			=	BLowPass4.ar(shape, (freq).clip(50, SampleRate.ir / 3));
+    var rhpf			=	RHPF.ar(shape, (freq * 8).clip(50, SampleRate.ir / 3), 0.3);
+	Out.ar(0, rlpf + rhpf);
 }).add;
 );
 
@@ -439,11 +434,13 @@ SynthDef(\plunk, { | curve = -16, dur = 1, fbstart = 1, fbend = 0.1, freq = 400,
 Pdef(\plunkpat1,
 	Pbind(
 		\instrument, \plunk,
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+        \a, Pshuf((5..10) / 5, inf),
+        \curve, -16,
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24], inf),
 		\degree, Pshuf([-1, 0], inf),
-        \fbstart, Pshuf((0..4) / 2, inf),
-        \fbend, 0,
+        \fb, 0,
 		\scale, ~scale,
+        \shapelimit, Pbrown(0.003, 0.008, 0.001, inf)
 ));
 
 /*
@@ -648,7 +645,7 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \degree, [-3, 0].stutter(3), \octave, 5, \scale, ~scale));
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [-3, 0].stutter(2), \octave, 5, \scale, ~scale));
 
 Pdef(\pad2pat3, Pmono(\pad2, \octave, [2, 3, 4], \scale, ~scale));
 
@@ -660,8 +657,8 @@ Pdef(\pad2pat2).stop;
 
 /*
 Pdef(\pad2pat3).play(t, quant: 1);
-Pdef(\pad2pat2).isPlaying;
-Pdef(\pad2pat2).stop;
+Pdef(\pad2pat3).isPlaying;
+Pdef(\pad2pat3).stop;
 */
 
 // Midi Control
