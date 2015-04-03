@@ -21,7 +21,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 (
 s.meter;
 t = TempoClock(108/60);
-b = Buffer.alloc(s, s.sampleRate * (~tempo.tempo * 6), 1);
+b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
@@ -134,8 +134,8 @@ MIDIdef.cc(\bassktrl, {
 SynthDef(\recbuf, { | dur = 2, gate = 1, inBus = 2, isRecording = 1, trigger = 1 |
 	var env				=	Env.asr(0.003, 1, 0.1);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var in				=	In.ar(inBus, ~buffer.numChannels);
-	var recbuf 			=	RecordBuf.ar(in, ~buffer.bufnum, recLevel: envgen, run: isRecording, loop: 0, trigger: trigger, doneAction: 2);
+	var in				=	In.ar(inBus, b.numChannels);
+	var recbuf 			=	RecordBuf.ar(in, b.bufnum, recLevel: envgen, run: isRecording, loop: 0, trigger: trigger, doneAction: 2);
 }).add;
 );
 
@@ -144,7 +144,7 @@ SynthDef(\bufrd, { | amp = 1, curve = -4, dur = 1, filt_freq = 3000, filt_rq = 1
 	var kbn1			=	LFBrownNoise1.kr(4).range(0.75, 1);
 	var env				=	Env.asr(0.005, amp, 0.005, curve);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
-	var bufrd			=	BufRd.ar(~buffer.numChannels, ~buffer.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
+	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
 	var rhpf			=	RHPF.ar(bufrd, filt_freq, filt_rq, envgen * kbn1 * 2);
 	var delay			=	DelayC.ar(rhpf, 0.2, (freq.reciprocal).clip(50, SampleRate.ir / 3));
 	var pan2			=	Pan2.ar(rhpf + delay, pan);
@@ -206,7 +206,7 @@ MIDIdef.cc(\rbktrl, {
 (
 MIDIdef.cc(\pbktrl, {
 	if(Pdef(\pbpar).isPlaying.not) {
-		Pdef(\pbpar).play(~tempo, quant: 1);
+		Pdef(\pbpar).play(t, quant: 1);
 		"playbuf play".postln;
 	} {
 		Pdef(\pbpar).stop;
@@ -219,7 +219,7 @@ MIDIdef.cc(\pbktrl, {
 // PULSE
 
 (
-SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.05, pan = 0 |
+SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.04, pan = 0 |
 	var env				=	Env.new([0, level, 0], [0.01, dur]);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var xline			=	XLine.ar(0.999, 0.001, dur);
@@ -239,7 +239,6 @@ Pdef(\pulsepat1,
 		\instrument, \pulse,
 		\bits, Pbrown(8, 16, 1, inf).round(1),
 		\dur, Pshuf(~pulsedurarray, inf),
-		//\level, Pshuf([1, 0.5].stutter(5) * 0.01, inf),
 		\note, 0,
 		\pan, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
 		\scale, ~scale
@@ -248,7 +247,7 @@ Pdef(\pulsepat2, Pbindf(Pdef(\pulsepat1), \note, 2));
 Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat1), \note, 3));
 Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \note, 1));
 Pdef(\pulsepat5, Pbindf(Pdef(\pulsepat1), \note, -2));
-Pdef(\pulsepat6, Pbindf(Pdef(\pulsepat1), \note, 7));
+Pdef(\pulsepat6, Pbindf(Pdef(\pulsepat1), \note, -5));
 );
 
 /*
@@ -407,7 +406,7 @@ Pdef(\padpatlo, Pbindf(Pdef(\padpat), \octave, 6));
 Pdef(\padparlo, Ppar([Pdef(\padpatlo)].stutter(2)));
 
 /*
-Pdef(\padparlo).play(~tempo, quant: 1);
+Pdef(\padparlo).play(t, quant: 1);
 Pdef(\padparlo).isPlaying;
 Pdef(\padparlo).stop;
 */
@@ -493,7 +492,7 @@ Pdef(\pingleparf, Ppar([Pdef(\pinglepat), Pdef(\pinglepat)], inf));
 );
 
 /*
-Pdef(\pingleparf).play(~tempo, quant: 1);
+Pdef(\pingleparf).play(t, quant: 1);
 Pdef(\pingleparf).isPlaying;
 Pdef(\pingleparf).stop;
 */
@@ -514,15 +513,11 @@ MIDIdef.cc(\pinglektrl, {
 // CLAP
 
 (
-SynthDef(\clap, { | curve = -16, ffreq = 2000, freq = 400, level = 0.2, mfreq = 1000, mode = 0, pan = 0 |
-	var env				=	Env.perc(0.005, 0.02, level, curve);
+SynthDef(\clap, { | curve = 4, foldfactor = 0.02, freq = 1000, level = 0.2, offset = 0, pan = 0 |
+	var env				=	Env.perc(0.005, 1, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    var clip			=	ClipNoise.ar(envgen);
-    var rlpf            =   RLPF.ar(clip, ffreq.clip(50, SampleRate.ir / 3));
-    var xline           =   XLine.kr(0.125, 1, 0.01);
-    var comb            =   CombN.ar(rlpf, 1, freq.reciprocal * xline, 0.01);
-    var moog            =   BMoog.ar(comb, mfreq, 0.3, mode);
-    var pan2			= 	Pan2.ar(moog, pan);
+    var gbman           =   GbmanL.ar(freq, (freq * 2)).fold2(foldfactor) * 500 * envgen;
+    var pan2			= 	Pan2.ar(gbman, pan);
 	Out.ar(4, pan2);
 }).add;
 );
@@ -532,20 +527,21 @@ SynthDef(\clap, { | curve = -16, ffreq = 2000, freq = 400, level = 0.2, mfreq = 
     0.75, 0.75, 1,
     0.75, 0.75, 0.75, 1,
     0.75, 0.75, 0.75, 0.75, 1,
+    0.75, 0.75, 0.75, 0.75, 0.75, 1,
+    0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 1
 		];
-~claplvl = 0.03;
-~clapecholvl = ~claplvl;
+~claplvl = 0.005;
+~clapecholvl = ~claplvl / 2;
 ~filterfreqs = [1, 2, 3, 4, 6, 8, 12];
 Pdef(\clappat1,
 	Pbind(
 		\instrument, \clap,
-		\curve, 4,
-        \degree, 0,
+        \curve, -24,
+        \note, [0, 7],
+        \foldfactor, Pwhite(0.018, 0.022, inf),
 		\dur, Pseq(~clapdurs, inf),
-        \ffreq, Pshuf(~filterfreqs.stutter(7) * 1000, inf),
         \level, ~claplvl,
-        \mfreq, Pshuf(~filterfreqs.stutter(5) * 1000, inf),
-        \mode, Prand([0, 1], inf),
+        \octave, 4,
 		\pan, 0,
         \scale, ~scale
 ));
@@ -555,7 +551,7 @@ Pdef(\clappar, Ppar([Pdef(\clappat1), Pdef(\clappat2), Pdef(\clappat3)], inf));
 );
 
 /*
-Pdef(\clappar).play(~tempo, quant: 0.5);
+Pdef(\clappar).play(t, quant: 0.5);
 Pdef(\clappar).isPlaying;
 Pdef(\clappar).stop;
 */
@@ -563,7 +559,7 @@ Pdef(\clappar).stop;
 (
 MIDIdef.cc(\clapparktrl, {
 	if(Pdef(\clappar).isPlaying.not) {
-		Pdef(\clappar).play(~tempo, quant: 0.5);
+		Pdef(\clappar).play(t, quant: 0.5);
 		"clap play".postln;
 	} {
 		Pdef(\clappar).stop;
@@ -577,8 +573,9 @@ MIDIdef.cc(\clapparktrl, {
 
 (
 SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.03, pan = 0, sinfb = 0 |
-	var env				=	Env.perc(0.005, releaseTime: 0.2, level: level, curve: curve);
+	var env				=	Env.perc(0.005, releaseTime: 0.15, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
+    var impulse         =   LFNoise0.ar(15000, XLine.kr(level, 0.0001, 0.001));
 	var kxline			=	XLine.kr(1, 0.125, dur / 5);
 	var sin				=	SinOscFB.ar(freq * kxline, sinfb, envgen);
 	var filtfreqmod		=	LFNoise0.kr(50!2).range(1/5, 5);
@@ -586,7 +583,9 @@ SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level =
 	var bn				=	LFBrownNoise1.ar(brightness, mul: envgen);
 	var delay			=	DelayC.ar(sin + bn, 0.5, freq.clip(50, SampleRate.ir / 3).reciprocal, 0.5);
 	var rez				=	RLPF.ar(sin + bn + delay, (brightness * kxline * filtfreqmod).clip(30, SampleRate.ir / 4), filtrqmod);
-	var pan2			=	Pan2.ar(rez, pan);
+    var rlpf            =   RLPF.ar(impulse + rez, freq.clip(50, SampleRate.ir / 3));
+    var rhpf            =   RHPF.ar(impulse + rez, (freq * 4).clip(50, SampleRate.ir / 3), 0.3);
+    var pan2			=	Pan2.ar(rlpf + rhpf, pan);
 	Out.ar(4, pan2);
 }).add;
 );
@@ -623,7 +622,7 @@ Pdef(\heavypar).stop;
 (
 MIDIdef.cc(\heavyktrl, {
 	if(Pdef(\heavypar).isPlaying.not) {
-		Pdef(\heavypar).play(~tempo, quant: 1);
+		Pdef(\heavypar).play(t, quant: 1);
 		"heavy prc play".postln;
 	} {
 		Pdef(\heavypar).pause;
@@ -688,7 +687,7 @@ Pdef(\prcpar).stop;
 (
 MIDIdef.cc(\prcparktrl, {
 	if(Pdef(\prcpar).isPlaying.not) {
-		Pdef(\prcpar).play(~tempo, quant: 1);
+		Pdef(\prcpar).play(t, quant: 1);
 		"prc play".postln;
 	} {
 		Pdef(\prcpar).stop;
