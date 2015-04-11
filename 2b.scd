@@ -67,7 +67,7 @@ SynthDef(\dynamix, { |inBus|
 */
 
 ////////////////////////////////////////////////////////
-// BASS ////////////////////////////////////////////////
+// BASS
 
 // SynthDef
 
@@ -441,7 +441,7 @@ Pdef(\plunkpat1,
         \curve, -16,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24], inf),
 		\degree, Pshuf([-1, 0], inf),
-        \fb, 0,
+        \fb, Pshuf(([0, 1.5, 3]), inf),
         \octave, 6,
 		\scale, ~scale,
         \shapelimit, Pbrown(0.003, 0.008, 0.001, inf)
@@ -527,6 +527,88 @@ MIDIdef.cc(\plunk3stopktrl, {
 		"plunk3 stop".postln;
 	};
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+////////////////////////////////////////////////////////////////
+// PNO
+
+(
+SynthDef(\pno, { |bal = 0, curve = -4, dur = 1, fb = 0.1, freq = 400, im = 1, level = 0.005|
+    var env             =   Env.perc(releaseTime: dur, level: level, curve: curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var fbsin           =   FBSineC.ar(freq * 16!2, [im, im - 0.01], fb, mul: envgen);
+    var delay           =   DelayC.ar(fbsin, 1, freq.reciprocal * XLine.kr(1, 1/2, 0.1));
+    var submix1         =   fbsin + delay;
+    var lop             =   BLowPass4.ar(submix1, freq.clip(50, SampleRate.ir / 3));
+    var rhpf            =   RHPF.ar(submix1, (freq * 8).clip(50, SampleRate.ir / 3), 0.5);
+    var sin             =   SinOsc.ar(freq!2, mul: envgen);
+    var submix2         =   lop + rhpf + sin;
+    var balance         =   Balance2.ar(submix2[0], submix2[1], bal);
+    Out.ar(0, balance);
+}).add;
+);
+
+(
+Pdef(\pno1,
+    Pbind(
+        \instrument, \pno,
+        \bal, 0,
+        \dur, Pshuf([0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5, 0.75], inf),
+        \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
+        \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
+        \note, [0, 0, 7, 7],
+        \octave, 6,
+        \scale, ~scale,
+));
+Pdef(\pno2, Pbindf(Pdef(\pno1), \bal, -1, \note, [0, 1, 7, 10]));
+Pdef(\pno3, Pbindf(Pdef(\pno2), \bal, 1, \note, [0, 3, 7, 12]));
+Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)]));
+);
+
+/*
+Pdef(\pnos1).play(t, quant: 1);
+Pdef(\pnos1).isPlaying;
+Pdef(\pnos1).stop;
+*/
+
+Pdef(\pnos2, Pbindf(Pdef(\pnos), \octave, 5));
+
+/*
+Pdef(\pnos2).play(t, quant: 1);
+Pdef(\pnos2).isPlaying;
+Pdef(\pnos2).stop;
+*/
+
+(
+MIDIdef.cc(\pno1playktrl, {
+    if(Pdef(\pnos1).isPlaying.not) {
+		Pdef(\pnos1).play(t, quant: 1);
+		"pnos1 play".postln;
+	}
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pno1stopktrl, {
+    if(Pdef(\pnos1).isPlaying) {
+		Pdef(\pnos1).stop;
+		"pnos1 stop".postln;
+	}
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\pno2playktrl, {
+    if(Pdef(\pnos2).isPlaying.not) {
+		Pdef(\pnos2).play(t, quant: 1);
+		"pnos2 play".postln;
+	}
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pno2stopktrl, {
+    if(Pdef(\pnos2).isPlaying) {
+		Pdef(\pnos2).stop;
+		"pnos2 stop".postln;
+	}
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////////////

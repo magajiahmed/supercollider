@@ -243,11 +243,11 @@ Pdef(\pulsepat1,
 		\pan, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
 		\scale, ~scale
 ));
-Pdef(\pulsepat2, Pbindf(Pdef(\pulsepat1), \note, 2));
-Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat1), \note, 3));
-Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \note, 1));
-Pdef(\pulsepat5, Pbindf(Pdef(\pulsepat1), \note, -2));
-Pdef(\pulsepat6, Pbindf(Pdef(\pulsepat1), \note, -5));
+Pdef(\pulsepat2, Pbindf(Pdef(\pulsepat1), \note, -2));
+Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat1), \note, -5));
+Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \note, 7));
+Pdef(\pulsepat5, Pbindf(Pdef(\pulsepat1), \note, 10));
+Pdef(\pulsepat6, Pbindf(Pdef(\pulsepat1), \note, 12));
 );
 
 /*
@@ -468,7 +468,7 @@ SynthDef(\pingle, { | a = 0.02, curve = -16, delaytime = 0.0005, foldfactor = 2,
 // Pattern
 
 (
-~mainlevel = 0.01;
+~mainlevel = 0.02;
 ~echolevel = ~mainlevel / 6;
 Pdef(\pinglepat,
 	Pbind(
@@ -575,17 +575,16 @@ MIDIdef.cc(\clapparktrl, {
 SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.03, pan = 0, sinfb = 0 |
 	var env				=	Env.perc(0.005, releaseTime: 0.15, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    var impulse         =   LFNoise0.ar(15000, XLine.kr(level, 0.0001, 0.001));
 	var kxline			=	XLine.kr(1, 0.125, dur / 5);
 	var sin				=	SinOscFB.ar(freq * kxline, sinfb, envgen);
 	var filtfreqmod		=	LFNoise0.kr(50!2).range(1/5, 5);
 	var filtrqmod		=	LFNoise0.kr(50!2).range(0.2, 0.9).round(0.1) + 0.05;
-	var bn				=	LFBrownNoise1.ar(brightness, mul: envgen);
-	var delay			=	DelayC.ar(sin + bn, 0.5, freq.clip(50, SampleRate.ir / 3).reciprocal, 0.5);
-	var rez				=	RLPF.ar(sin + bn + delay, (brightness * kxline * filtfreqmod).clip(30, SampleRate.ir / 4), filtrqmod);
-    var rlpf            =   RLPF.ar(impulse + rez, freq.clip(50, SampleRate.ir / 3));
-    var rhpf            =   RHPF.ar(impulse + rez, (freq * 4).clip(50, SampleRate.ir / 3), 0.3);
-    var pan2			=	Pan2.ar(rlpf + rhpf, pan);
+	//var bn				=	LFBrownNoise1.ar(brightness, mul: envgen);
+	var delay			=	DelayC.ar(sin, 0.5, freq.clip(50, SampleRate.ir / 3).reciprocal, 0.5);
+	var rez				=	RLPF.ar(sin + delay, (brightness * kxline * filtfreqmod).clip(30, SampleRate.ir / 4), filtrqmod);
+    var rlpf            =   RLPF.ar(rez, freq.clip(50, SampleRate.ir / 3));
+    var rhpf            =   RHPF.ar(rez, (freq * 4).clip(50, SampleRate.ir / 3), 0.3);
+    var pan2			=	Pan2.ar(rez, pan);
 	Out.ar(4, pan2);
 }).add;
 );
