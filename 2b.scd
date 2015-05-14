@@ -250,19 +250,28 @@ Pdef(\dinglepat1,
 		\a, 0.01,
 		\curve, -8,
 		\dur, Pshuf([
-			Pseq([0.75], 7),
-			Pseq([1], 7),
+			//Pseq([0.75], 7),
+			//Pseq([1], 7),
 			Pseq([1.25], 7),
+            Pseq([1.5], 7),
+            Pseq([1.75], 7)
 		], inf),
 		\note, Pwrand([0, Rest], [4, 1].normalizeSum, inf),
-		\level, Pwhite(0.5, 1, inf) * 0.4,
+		\level, Pwhite(0.2, 1, inf) * 0.4,
 		\octave, 4,
 		\scale, ~scale,
 ));
 Pdef(\dinglepat1a, Pbindf(Pdef(\dinglepat1), \level, 0.08, \pan, -1));
 Pdef(\dinglepat1b, Pbindf(Pdef(\dinglepat1a), \pan, 1));
-Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \curve, -64, \octave, 6));
-Pdef(\dinglepat2a, Pbindf(Pdef(\dinglepat2), \curve, -8, \dur, 0.25, \level, 0.08, \pan, -1));
+Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \octave, 7));
+Pdef(\dinglepat2a,
+    Pbindf(
+        Pdef(\dinglepat2),
+        \curve, -8,
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(17), inf),
+        \level, 0.08,
+        \pan, -1
+));
 Pdef(\dinglepat2b, Pbindf(Pdef(\dinglepat2a), \pan, 1));
 Pdef(\dinglepar2,
     Ppar([
@@ -421,27 +430,29 @@ SynthDef(\prc, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level =
 (
 ~prcpatfrq1 = 90;
 ~prcpatfrq2 = ~prcpatfrq1 * 32;
+~prcpatlvl = 0.2;
+~prcpatecholvl = ~prcpatlvl / 5;
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
-		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1], inf),
-        \curve, -4,
+		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1, 1.2, 2.2, 3.2], inf),
+        \curve, -6,
         \dfrq, Pshuf((1..19) * 400, inf),
         //\dur, Pshuf([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.5, 0.75], 3), Pseq([1], 5), Pseq([1.5, 2])], inf),
-        \dur, Pshuf([Pseq([0.25], 13), Pseq([0.5], 11), Pseq([0.75], 7), Pseq([1], 5), Pseq([1.25], 3)], inf),
+        \dur, Pshuf([Pseq([0.25], 13), Pseq([0.5], 11), Pseq([0.75], 7), Pseq([1], 5), Pseq([1.25], 3), 3, 5, 7, 11, 13], inf),
 		\freq, Pshuf([
 			Pseq([~prcpatfrq1, ~prcpatfrq2, ~prcpatfrq2]),
 			Pseq([~prcpatfrq2, ~prcpatfrq1, ~prcpatfrq2]),
 			Pseq([~prcpatfrq2, ~prcpatfrq2, ~prcpatfrq1]),
 			Pseq([~prcpatfrq2, ~prcpatfrq2, ~prcpatfrq2])
 		], inf),
-		\level, 0.2,
+		\level, ~prcpatlvl,
 ));
-Pdef(\prc2pat1a, Pbindf(Pdef(\prcpat1), \level, 0.02, \pan, -1));
-Pdef(\prc2pat1b, Pbindf(Pdef(\prc2pat1a), \pan, 1));
-Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prc2pat1a), Pdef(\prc2pat1b)], inf));
+Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \level, ~prcpatecholvl, \pan, -1));
+Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
+Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b)], inf));
 Pdef(\prcpar2, Pbindf(Pdef(\prcpar1), \a, Pwhite(2.8, 3.0, inf), \curve, -64, \freq, ~prcpatfrq2 * 2));
-Pdef(\prcpar3, Pbindf(Pdef(\prcpar2), \freq, ~prcpatfrq2 * 3));
+//Pdef(\prcpar3, Pbindf(Pdef(\prcpar2), \freq, ~prcpatfrq2 * 3));
 );
 
 /*
@@ -494,6 +505,7 @@ MIDIdef.cc(\prc2stopktrl, {
 }, 50, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\prc3ktrl, {
 	if(Pdef(\prcpar3).isPlaying.not) {
@@ -509,6 +521,7 @@ MIDIdef.cc(\prc3stopktrl, {
     }
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // PLUNK
