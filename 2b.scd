@@ -263,7 +263,7 @@ Pdef(\dinglepat1,
 ));
 Pdef(\dinglepat1a, Pbindf(Pdef(\dinglepat1), \level, 0.08, \pan, -1));
 Pdef(\dinglepat1b, Pbindf(Pdef(\dinglepat1a), \pan, 1));
-Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \octave, 6));
+Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \octave, 7));
 Pdef(\dinglepat2a,
     Pbindf(
         Pdef(\dinglepat2),
@@ -379,7 +379,7 @@ Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
         \curve, -20,
-        \dur, Pshuf([0.75, 1].stutter(7), inf),
+        \dur, Pshuf([0.75, 1, 1.5, 2, 3, 4].stutter(7), inf),
         \freq, Pseq([50, 400, 50, 100, 50, 50, 50, 50, 400], inf),
         \level, ~cnprclvl,
 ));
@@ -824,7 +824,7 @@ MIDIdef.cc(\larrynoplay, {
         "Bye Larry".postln;
     }
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: 0);
-)
+);
 
 ////////////////////////////////////////////////////////////////
 // PENGUIN
