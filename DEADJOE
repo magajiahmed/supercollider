@@ -1,0 +1,22 @@
+
+*** These modified files were found in JOE when it aborted on Sat May 16 20:08:10 2015
+*** JOE was aborted by UNIX signal 1
+
+*** File '/home/phil/supercollider/supercollider/.git/COMMIT_EDITMSG'
+Tweaking the percussion parts a bit. Adding a larry. Hi larry.
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Your branch is up-to-date with 'origin/master'.
+#
+# Changes to be committed:
+#	modified:   2b.scd
+#
+
+*** File '(Unnamed)'
+bin/mwmpager
+bin/mwmpager
+.zshrc
+/home/phil/supercollider/supercollider/.git/COMMIT_EDITMSG
+.zshrc
+/home/phil/supercollider/supercollider/.git/COMMIT_EDITMSG

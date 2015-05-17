@@ -244,6 +244,8 @@ SynthDef(\dingle, { | a = 0.02, curve = -16, freq = 10000, level = 0.2, pan = 0 
 // Pattern
 
 (
+~dinglelvl = 0.1;
+~dingleecholvl = ~dinglelvl / 5;
 Pdef(\dinglepat1,
 	Pbind(
 		\instrument, \dingle,
@@ -257,19 +259,18 @@ Pdef(\dinglepat1,
             Pseq([1.75], 7)
 		], inf),
 		\note, Pwrand([0, Rest], [2, 1].normalizeSum, inf),
-		\level, 0.4,
+		\level, ~dinglelvl,
 		\octave, 5,
 		\scale, ~scale,
 ));
-Pdef(\dinglepat1a, Pbindf(Pdef(\dinglepat1), \level, 0.08, \pan, -1));
+Pdef(\dinglepat1a, Pbindf(Pdef(\dinglepat1), \level, ~dingleecholvl, \pan, -1));
 Pdef(\dinglepat1b, Pbindf(Pdef(\dinglepat1a), \pan, 1));
 Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \octave, 7));
 Pdef(\dinglepat2a,
     Pbindf(
         Pdef(\dinglepat2),
         \curve, -8,
-        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(17), inf),
-        \level, 0.08,
+        \level, ~dingleecholvl,
         \pan, -1
 ));
 Pdef(\dinglepat2b, Pbindf(Pdef(\dinglepat2a), \pan, 1));
@@ -373,25 +374,39 @@ SynthDef(\cnprc, { |bal = 0, curve = -16, dur = 1, freq = 500, level = 0.1|
 );
 
 (
-~cnprclvl = 0.1;
+~cnprclvl = 0.2;
 ~cnprcecholvl = ~cnprclvl / 4;
 Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
-        \curve, -20,
+        \curve, -32,
         \dur, Pshuf([0.75, 1, 1.5, 2, 3, 4].stutter(7), inf),
         \freq, Pseq([50, 400, 50, 100, 50, 50, 50, 50, 400], inf),
         \level, ~cnprclvl,
 ));
 Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \bal, -1, \level, ~cnprcecholvl));
 Pdef(\cnprc3, Pbindf(Pdef(\cnprc2), \bal, 1));
-Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2), Pdef(\cnprc2)], inf));
+Pdef(\cnprc4,
+    Pbind(
+        \instrument, \cnprc,
+        \curve, -64,
+        \dur, Pshuf([1, 1.5, 1, 1.5, 1, 1, 1.5], inf),
+        \freq, 1600,
+        \note, Pseq([Pseq([0], 14), Pseq([Rest], 21)], inf)
+));
+Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2), Pdef(\cnprc3), Pdef(\cnprc4)], inf));
 );
 
 /*
 Pdef(\cnprcpar).play(t, quant: 1);
 Pdef(\cnprcpar).isPlaying;
 Pdef(\cnprcpar).stop;
+*/
+
+/*
+Pdef(\cnprc4).play(t, quant: 1);
+Pdef(\cnprc4).isPlaying;
+Pdef(\cnprc4).stop;
 */
 
 (
@@ -415,11 +430,11 @@ MIDIdef.cc(\cnstopktrl, {
 
 (
 SynthDef(\prc, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level = 0.08, pan = 0 |
-	var env				=	Env.perc(releaseTime: 0.15, level: level, curve: curve);
+	var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
 	var lfn				=	LFNoise0.ar(15).range(0, 1);
-	var sin				=	SinOsc.ar(freq * cusp, mul: envgen);
+	var sin				=	SinOsc.ar(freq * cusp, pi / 2, envgen);
 	var sin2			=	sin.round(0.01) / 2;
 	var rez				=	Resonz.ar(sin, freq, 0.05, 4);
 	var pan2			=	Pan2.ar(sin2 + rez, pan);
@@ -436,7 +451,7 @@ Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
 		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1, 1.2, 2.2, 3.2], inf),
-        \curve, -6,
+        \curve, -4,
         \dfrq, Pshuf((1..19) * 400, inf),
         //\dur, Pshuf([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.5, 0.75], 3), Pseq([1], 5), Pseq([1.5, 2])], inf),
         \dur, Pshuf([Pseq([0.25], 13), Pseq([0.5], 11), Pseq([0.75], 7), Pseq([1], 5), Pseq([1.25], 3), 3, 5, 7, 11, 13], inf),
@@ -451,8 +466,8 @@ Pdef(\prcpat1,
 Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \level, ~prcpatecholvl, \pan, -1));
 Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b)], inf));
-Pdef(\prcpar2, Pbindf(Pdef(\prcpar1), \a, Pwhite(2.8, 3.0, inf), \curve, -64, \freq, ~prcpatfrq2 * 2));
-//Pdef(\prcpar3, Pbindf(Pdef(\prcpar2), \freq, ~prcpatfrq2 * 3));
+Pdef(\prcpar2, Pbindf(Pdef(\prcpar1), \a, Pwhite(2.8, 3.0, inf), \curve, -64, \freq, ~prcpatfrq2 * (4 / 3)));
+Pdef(\prcpat3, Pbindf(Pdef(\prcpat1), \a, 3, \curve, -64, \dur, Pseq([1, 1.5, 1, 1.5, 1, 1, 1.5], inf), \freq, ~prcpatfrq2));
 );
 
 /*
@@ -468,9 +483,9 @@ Pdef(\prcpar2).stop;
 */
 
 /*
-Pdef(\prcpar3).play(t, quant: 1);
-Pdef(\prcpar3).isPlaying;
-Pdef(\prcpar3).stop;
+Pdef(\prcpat3).play(t, quant: 1);
+Pdef(\prcpat3).isPlaying;
+Pdef(\prcpat3).stop;
 */
 
 (
@@ -505,23 +520,21 @@ MIDIdef.cc(\prc2stopktrl, {
 }, 50, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
-/*
 (
 MIDIdef.cc(\prc3ktrl, {
-	if(Pdef(\prcpar3).isPlaying.not) {
-		Pdef(\prcpar3).play(t, quant: 1);
+	if(Pdef(\prcpat3).isPlaying.not) {
+		Pdef(\prcpat3).play(t, quant: 1);
 		"prc3 play".postln;
 	};
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\prc3stopktrl, {
-    if(Pdef(\prcpar3).isPlaying) {
-        Pdef(\prcpar3).stop;
+    if(Pdef(\prcpat3).isPlaying) {
+        Pdef(\prcpat3).stop;
         "prc3 stop".postln;
     }
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
-*/
 
 ////////////////////////////////////////////////////////////////
 // PLUNK
@@ -532,7 +545,7 @@ SynthDef(\plunk, { | a = 1, curve = -16, dur = 1, fb = 0, freq = 400, level = 0.
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var kbn             =   1;
 	var sinfb			=	SinOscFB.ar(freq, fb, envgen * kbn);
-    var cusp            =   CuspL.ar(100, [a, a-0.001], mul: 1, add: 1);
+    var cusp            =   CuspL.ar(100, [a, a - 0.001], mul: 1, add: 1);
     var shape			=	SineShaper.ar(sinfb, shapelimit * cusp, (shapelimit * 50).reciprocal);
     var rlpf			=	BLowPass4.ar(shape, (freq).clip(50, SampleRate.ir / 3));
     var rhpf			=	RHPF.ar(shape, (freq * 8).clip(50, SampleRate.ir / 3), 0.3);
@@ -548,7 +561,7 @@ Pdef(\plunkpat1,
         \curve, -16,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24, 32, 48, 64, 96], inf),
 		\note, 0,
-        \fb, Pshuf(([0, 0.5, 1, 1.5, 2, 2.5, 3]), inf),
+        \fb, Pshuf(([0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]), inf),
         \octave, 6,
 		\scale, ~scale,
         \shapelimit, Pbrown(0.003, 0.008, 0.001, inf)
@@ -558,13 +571,11 @@ Pdef(\plunkpat1,
 Pdef(\plunkpat2,
 	Pbindf(
 		Pdef(\plunkpat1),
-        //\note, Pshuf([[-2, 0], [-1, 0], [0, 1], [0, 2], [0, 3]], inf),
 ));
 
 Pdef(\plunkpat3,
 	Pbindf(
 		Pdef(\plunkpat1),
-		//\note, 7
 ));
 );
 
@@ -673,7 +684,7 @@ Pdef(\pad1,
 ));
 Pdef(\pad2, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 10], Rest], inf)));
 Pdef(\pad3, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 12], Rest], inf)));
-Pdef(\pad4, Pbindf(Pdef(\pad1), \note, Pshuf([[12, 14], Rest])));
+Pdef(\pad4, Pbindf(Pdef(\pad1), \note, Pshuf([[12, 14], Rest], inf)));
 Pdef(\pads, Ppar([Pdef(\pad1), Pdef(\pad2), Pdef(\pad3), Pdef(\pad4)]));
 );
 
@@ -742,7 +753,7 @@ MIDIdef.cc(\pno2stopktrl, {
 */
 
 ////////////////////////////////////////////////////////////////
-// PNO
+// LARRY
 
 (
 SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.01, s = 10|
@@ -773,17 +784,19 @@ Pdef(\larry1,
 
 Pdef(\larry2,
 	Pbindf(
-		Pdef(\pno1),
+		Pdef(\larry1),
         \note, Pshuf([[7, 10, 12], Rest], inf),
 ));
 
 Pdef(\larry3,
 	Pbindf(
-		Pdef(\pno1),
+		Pdef(\larry1),
         \note, Pshuf([[7, 12, 13], Rest], inf)
 ));
 
-Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry2), Pdef(\larry3)], inf));
+Pdef(\larry4, Pbindf(Pdef(\larry1), \note, Pshuf([0, Rest], inf), \octave, 4));
+
+Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
 );
 
 /*
@@ -802,6 +815,12 @@ Pdef(\larry2).stop;
 Pdef(\larry3).play(t, quant: 1);
 Pdef(\larry3).isPlaying;
 Pdef(\larry3).stop;
+*/
+
+/*
+Pdef(\larry4).play(t, quant: 1);
+Pdef(\larry4).isPlaying;
+Pdef(\larry4).stop;
 */
 
 /*
@@ -830,10 +849,10 @@ MIDIdef.cc(\larrynoplay, {
 // PENGUIN
 
 (
-SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, shapermin = 0.0005, shapermax = 0.005 |
+SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, ess = 10, shapermin = 0.0005, shapermax = 0.005 |
 	var env				=	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-    var ampmod          =   LFBrownNoise0.kr(30!2).range(0, 1).round(1);
+    var ampmod          =   LFBrownNoise0.kr(13!2).range(0, 1).round(1);
     var n               =   4;
 	var mix				=	Mix.fill(n, {
 		var freqmod			=	LFNoise1.kr(0.3!2, 0.003, 1);
@@ -843,8 +862,8 @@ SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, shapermin =
         var shape			=	SineShaper.ar(tri, limitmod) * shapermax.reciprocal * ampmod;
 		shape / n;
 	});
-	var hpf				=	HPF.ar(mix, (freq * 16).clip(50, SampleRate.ir / 3), 0.1);
-    var sin             =   SinOsc.ar(freq!2, mul: envgen / 32);
+	var hpf				=	HPF.ar(mix, (freq * 16).clip(50, SampleRate.ir / 3), 0.03);
+    var sin             =   Decimator.ar(SinOsc.ar(freq!2), bits: Lorenz2DN.kr(3, 300, ess).range(1.0, 4.0)) * (envgen / 16);
 	Out.ar(0, sin + hpf);
 }).add;
 );
@@ -857,9 +876,10 @@ Pdef(\pgnpat1,
 		\dur, Pshuf([16, 24, 32, 48, 64] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
+        \ess, Pwhite(9.0, 11.0, inf),
 		\scale, ~scale,
-		\shapermin, 0.001,
-		\shapermax, 0.002
+		\shapermin, 0.003,
+		\shapermax, 0.005
         //\shapermax, Pwhite(0.001, 0.003, inf)
 ));
 Pdef(\pgnpat2, Pbindf(Pdef(\pgnpat1), \note, Pseq([0, 7], inf)));
