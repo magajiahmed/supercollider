@@ -390,7 +390,7 @@ Pdef(\cnprc4,
     Pbind(
         \instrument, \cnprc,
         \curve, -64,
-        \dur, Pshuf([1, 1.5, 1, 1.5, 1, 1, 1.5], inf),
+        \dur, Pseq([1, 1.5, 1, 1.5, 1, 1, 1.5], inf),
         \freq, 1600,
         \note, Pseq([Pseq([0], 14), Pseq([Rest], 21)], inf)
 ));
@@ -453,8 +453,11 @@ Pdef(\prcpat1,
 		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1, 1.2, 2.2, 3.2], inf),
         \curve, -4,
         \dfrq, Pshuf((1..19) * 400, inf),
-        //\dur, Pshuf([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.5, 0.75], 3), Pseq([1], 5), Pseq([1.5, 2])], inf),
-        \dur, Pshuf([Pseq([0.25], 13), Pseq([0.5], 11), Pseq([0.75], 7), Pseq([1], 5), Pseq([1.25], 3), 3, 5, 7, 11, 13], inf),
+        \dur, Pshuf([
+            Pseq([1 / 12], 3), Pseq([0.125], 2),
+            Pseq([0.25], 13), Pseq([0.5, 0.75], 11), Pseq([0.75, 1.25], 7), Pseq([1, 1.5], 5), Pseq([1.25, 1.75], 3),
+            3, 5, 7, 11, 13
+        ], inf),
 		\freq, Pshuf([
 			Pseq([~prcpatfrq1, ~prcpatfrq2, ~prcpatfrq2]),
 			Pseq([~prcpatfrq2, ~prcpatfrq1, ~prcpatfrq2]),
@@ -678,7 +681,7 @@ Pdef(\pad1,
         \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
         //\legato, 0.5,
-        \note, Pshuf([[-2, 0, 7], Rest], inf),
+        \note, Pseq([[-2, 0, 7], Rest], inf),
         \octave, 5,
         \scale, ~scale,
 ));
@@ -775,7 +778,7 @@ Pdef(\larry1,
         \dur, Pshuf(Array.fill(5, { |i| (i + 11).nthPrime }) + 0.25, inf),
         \fb, 0,
         \legato, 0.5,
-        \note, Pshuf([[7, 12], Rest], inf),
+        \note, Pseq([[7, 12], Rest], inf),
         \octave, 5,
         \s, Pwhite(8.0, 12.0, inf),
         \scale, ~scale
@@ -846,6 +849,64 @@ MIDIdef.cc(\larrynoplay, {
 );
 
 ////////////////////////////////////////////////////////////////
+// PNO
+
+(
+SynthDef(\pno, { | dur = 1, fb = 0, freq = 440, level = 0.1 |
+    var env             =   Env.perc(0.01, 1, level, -4);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var sin             =   SinOscFB.ar(freq!2, fb, envgen);
+    Out.ar(0, sin);
+}).add;
+);
+
+(
+Pdef(\pno,
+    Pbind(
+        \instrument, \pno,
+        //\dur, Pshuf([Pseq([0.125], 4), Pseq([1/6], 3), Pseq([0.25], 2)].stutter(7), inf),
+        \dur, 0.125,
+        \fb, 1.5,
+        \level, 0.003,
+        \note, Pseq([
+            10, 12, 7, 10, 12,
+            10, 12, 10, 12, 7, 10, 12,
+            10, 12, 7, 10, 12,
+            10, 12, 7, 10, 12,
+            10, 12, 10, 12, 7, 10, 12,
+            10, 12, 7, 10, 12,
+            10, 12, 7, 10, 12,
+            10, 12, 7, 10, 12,
+            10, 12, 10, 12, 7, 10, 12
+        ], inf),
+        \octave, 6,
+        \scale, ~scale
+));
+);
+
+/*
+Pdef(\pno).play(t, quant: 1);
+Pdef(\pno).isPlaying;
+Pdef(\pno).stop;
+*/
+
+(
+MIDIdef.cc(\pnoplay, {
+    if(Pdef(\pno).isPlaying.not) {
+        Pdef(\pno).play(t, quant: 1);
+        "pno play".postln;
+    }
+}, 37, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pnostop, {
+    if(Pdef(\pno).isPlaying) {
+        Pdef(\pno).stop;
+        "pno stop".postln;
+    }
+}, 37, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+////////////////////////////////////////////////////////////////
 // PENGUIN
 
 (
@@ -872,7 +933,7 @@ SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, ess = 10, s
 Pdef(\pgnpat1,
 	Pbind(
 		\instrument, \penguin,
-		\note, Pshuf([[-5, -2], [-5, 0], [-1, 2], [-5, 2], [0, 3], [0, 7]], inf),
+		\note, Pshuf([[-5, -2], [-5, 0], [0, 7]], inf),
 		\dur, Pshuf([16, 24, 32, 48, 64] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
