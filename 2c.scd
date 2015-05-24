@@ -108,7 +108,7 @@ Pdef(\basspat1,
         \note, 0,
 		\octave, 3,
 		\scale, ~scale,
-        \start, Pshuf(1!13 ++ [3/2], inf)
+        \start, Pseq([1].stutter(13) ++ [3/2] ++ [1].stutter(23) ++ [3/2] ++ [1].stutter(31) ++ [3/2], inf)
 ));
 );
 
@@ -357,6 +357,53 @@ MIDIdef.cc(\pulsektrl5, {
 */
 
 ////////////////////////////////////////////////////////////////
+
+(
+SynthDef(\wut, { |dur = 1, freq = 440, gate = 1, level = 0.01|
+    var env             =   Env.asr(0.1, level, 0.1);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var modmod          =   SinOsc.ar(freq, mul: 0.5, add: 1);
+    var mod             =   SinOsc.ar((freq * modmod * 16), mul: 1, add: 1);
+    var sin1            =   SinOsc.ar(freq * mod, mul: envgen);
+    var sin2            =   SinOsc.ar(freq * LFNoise2.kr(0.2!2, 0.003, 1), mul: envgen);
+    var noiz            =   LFBrownNoise0.ar(freq!2, mul: envgen);
+    var rhpf            =   BHiPass4.ar(noiz, (freq * 8).clip(50, SampleRate.ir / 3), 0.3);
+    Out.ar(0, sin1 + sin2 + rhpf);
+}).add;
+);
+
+(
+Pdef(\wut, Pbind(\instrument, \wut, \dur, 31, \octave, 6, \scale, ~scale));
+Pdef(\wat, Pbindf(Pdef(\wut), \dur, 30));
+Pdef(\wot, Pbindf(Pdef(\wut), \dur, 29, \note, Pseq([-5, Rest], inf)));
+Pdef(\wuts, Ppar([Pdef(\wut), Pdef(\wat), Pdef(\wot)], inf));
+);
+
+/*
+Pdef(\wut).play(t, quant: 1);
+Pdef(\wut).isPlaying;
+Pdef(\wut).stop;
+*/
+
+/*
+Pdef(\wat).play(t, quant: 1);
+Pdef(\wat).isPlaying;
+Pdef(\wat).stop;
+*/
+
+/*
+Pdef(\wot).play(t, quant: 1);
+Pdef(\wot).isPlaying;
+Pdef(\wot).stop;
+*/
+
+/*
+Pdef(\wuts).play(t, quant: 1);
+Pdef(\wuts).isPlaying;
+Pdef(\wuts).stop;
+*/
+
+////////////////////////////////////////////////////////////////
 // PAD
 
 (
@@ -524,7 +571,7 @@ SynthDef(\clap, { | curve = 4, foldfactor = 0.02, freq = 1000, level = 0.2, offs
     0.75, 0.75, 0.75, 1,
     0.75, 0.75, 0.75, 0.75, 1,
     0.75, 0.75, 0.75, 0.75, 0.75, 1,
-    0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 1
+    0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 1,
 		];
 ~claplvl = 0.01;
 ~clapecholvl = ~claplvl / 2;
@@ -594,7 +641,8 @@ Pdef(\heavypat1,
 		\brightness, Pshuf([1000, 4000, 8000].stutter(7), inf),
 		\curve, Pshuf([-16, -4, 0, 2, 4], inf),
         \dur, Pshuf([
-            Pseq([1/3], 3), Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 0.75, 0.75, 1]), 2, 3, 4, 6,
+            Pseq([1/3], 3), Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 0.75, 0.75, 1]),
+            2, 3, 4, 6, 8, 12
         ], inf),
         \level, ~heavypatlvl,
         \note, Pseq([Pseq([[-2, 0, 7]], 17), Pseq([Rest], 29)], inf),
@@ -663,17 +711,17 @@ SynthDef(\kik, { |a = 1.1, c = 0.13, curve = 0, freq = 22050, level = 0.2, pan =
 
 (
 ~prcpatlevel1 = 0.5;
-~prcpatlevel2 = ~prcpatlevel1 / 5;
+~prcpatlevel2 = ~prcpatlevel1 / 10;
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \kik,
         \a, Pshuf([1.15, 1.2, 1.25], inf),
         \c, Pshuf([0.05, 0.07, 0.09, 0.11, 0.13, 0.15], inf),
 		\curve, -64,
-        \dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(2), inf),
+        //\dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(3), inf),
 		\level, ~prcpatlevel1,
 		\note, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
-        \octave, [6, 12],
+        \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
 		\scale, ~scale,
 		\releaseTime, 1
 ));
@@ -692,7 +740,9 @@ Pdef(\prcpat2,
 ));
 Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
 Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
-Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat2)], inf));
+Pdef(\prcpat1c, Pbindf(Pdef(\prcpat1a)));
+Pdef(\prcpat1d, Pbindf(Pdef(\prcpat1b)));
+Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat1c), Pdef(\prcpat1d), Pdef(\prcpat2)], inf));
 );
 
 /*
