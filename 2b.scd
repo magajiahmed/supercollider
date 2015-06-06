@@ -27,12 +27,10 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 ~prcfxbus = Bus.audio(s, 2);
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
 ~tuning = Tuning.new(~ratios.ratiomidi);
-~bassscale = Scale.new(#[0, 1, 2, 3], ~ratios.size, ~tuning);
+//~bassscale = Scale.new(#[0, 1, 2, 3], ~ratios.size, ~tuning);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 );
-
-//~pulsedurarray = [Pseq([0.25], 53), Pseq([0.25], 31), Pseq([1/3], 3), Pseq([2/5], 5)];
 
 ////////////////////////////////////////////////////////
 // RECORDING
@@ -469,8 +467,21 @@ Pdef(\prcpat1,
 Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \level, ~prcpatecholvl, \pan, -1));
 Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b)], inf));
-Pdef(\prcpar2, Pbindf(Pdef(\prcpar1), \a, Pwhite(2.8, 3.0, inf), \curve, -64, \freq, ~prcpatfrq2 * (4 / 3)));
-Pdef(\prcpat3, Pbindf(Pdef(\prcpat1), \a, 3, \curve, -64, \dur, Pseq([1, 1.5, 1, 1.5, 1, 1, 1.5], inf), \freq, ~prcpatfrq2));
+Pdef(\prcpar2,
+    Pbindf(
+        Pdef(\prcpar1),
+        \a, 3.5,
+        \curve, -64,
+        \freq, ~prcpatfrq2
+));
+Pdef(\prcpat3,
+    Pbindf(
+        Pdef(\prcpat1),
+        \a, 3,
+        \curve, -64,
+        \dur, Pseq([1, 1.5, 1, 1.5, 1, 1, 1.5], inf),
+        \freq, ~prcpatfrq2
+));
 Pdef(\prcpar3, Ppar([Pdef(\prcpar2), Pdef(\prcpat3)], inf));
 );
 
@@ -644,15 +655,15 @@ SynthDef(\pad, { |bal = 0, curve = -4, dur = 1, fb = 0.1, freq = 400, gate = 1, 
     //var envgen          =   EnvGen.kr(env, doneAction: 2);
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var fbsin           =   FBSineC.ar(freq * 16, [im, im - 0.01], fb, mul: envgen);
+    var fbsin           =   FBSineC.ar(freq * 8, [im, im - 0.001], fb, mul: envgen);
     var delay           =   DelayC.ar(fbsin, 1, freq.reciprocal * XLine.kr(1, 1/2, 0.1));
     var submix1         =   fbsin + delay;
-    var lop             =   BLowPass4.ar(submix1, freq.clip(50, SampleRate.ir / 3));
-    var rhpf            =   RHPF.ar(submix1, (freq * 8).clip(50, SampleRate.ir / 3), 0.5);
+    //var lop             =   BLowPass4.ar(submix1, (freq).clip(50, SampleRate.ir / 3));
+    //var rhpf            =   RHPF.ar(submix1, (freq * 4).clip(50, SampleRate.ir / 3));
     var sin             =   SinOsc.ar(freq!2, mul: envgen);
-    var submix2         =   lop + rhpf + sin;
-    var balance         =   Balance2.ar(submix2[0], submix2[1], bal);
-    Out.ar(0, balance);
+    //var submix2         =   lop + rhpf + sin;
+    //var balance         =   Balance2.ar(submix2[0], submix2[1], bal);
+    Out.ar(0, fbsin + sin);
 }).add;
 );
 
@@ -665,7 +676,7 @@ Pdef(\pad1,
         \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
         \note, Pseq([[-2, 0, 7], Rest], inf),
-        \octave, 5,
+        \octave, 6,
         \scale, ~scale,
 ));
 Pdef(\pad2, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 10], Rest], inf)));
@@ -680,7 +691,7 @@ Pdef(\pads).isPlaying;
 Pdef(\pads).stop;
 */
 
-Pdef(\paddrone, Pmono(\pad, \note, [0, 7]));
+Pdef(\paddrone, Pmono(\pad, \note, [0, 7], \scale, ~scale));
 
 /*
 Pdef(\paddrone).play(t, quant: 1);
@@ -833,73 +844,6 @@ MIDIdef.cc(\larrynoplay, {
 );
 
 ////////////////////////////////////////////////////////////////
-// PNO
-
-(
-SynthDef(\pno, { | curve = -4, dur = 1, fb = 0, freq = 440, level = 0.1 |
-    var env             =   Env.perc(0.01, 1, level, curve);
-    var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sinfb           =   SinOscFB.ar(freq!2, fb, envgen);
-    //var rhpf            =   RHPF.ar(sinfb, (freq * 4).clip(50, SampleRate.ir / 3), 0.2);
-    var hpf             =   BHiPass4.ar(sinfb, (freq * 4).clip(50, SampleRate.ir / 3), 0.1);
-    Out.ar(0, hpf);
-}).add;
-);
-
-(
-~pnolvl = 0.01;
-~pnoecholvl = ~pnolvl / 5;
-Pdef(\pno1,
-    Pbind(
-        \instrument, \pno,
-        \curve, -8,
-        \dur, Pshuf([0.5, 0.75].stutter(13), inf),
-        \fb, Pshuf((0..22) / 7, inf),
-        \level, ~pnolvl,
-        \note, [2, 7],
-        \octave, 7,
-        \scale, ~scale
-));
-Pdef(\pno2, Pbindf(Pdef(\pno1), \level, ~pnoecholvl));
-Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2)], inf));
-);
-
-/*
-Pdef(\pno1).play(t, quant: 1);
-Pdef(\pno1).isPlaying;
-Pdef(\pno1).stop;
-*/
-
-/*
-Pdef(\pno2).play(t, quant: 1);
-Pdef(\pno2).isPlaying;
-Pdef(\pno2).stop;
-*/
-
-/*
-Pdef(\pnos).play(t, quant: 1);
-Pdef(\pnos).isPlaying;
-Pdef(\pnos).stop;
-*/
-
-
-(
-MIDIdef.cc(\pnoplay, {
-    if(Pdef(\pnos).isPlaying.not) {
-        Pdef(\pnos).play(t, quant: 1);
-        "pno play".postln;
-    }
-}, 37, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\pnostop, {
-    if(Pdef(\pnos).isPlaying) {
-        Pdef(\pnos).stop;
-        "pno stop".postln;
-    }
-}, 37, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-
-////////////////////////////////////////////////////////////////
 // PENGUIN
 
 (
@@ -926,7 +870,7 @@ SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, ess = 10, s
 Pdef(\pgnpat1,
 	Pbind(
 		\instrument, \penguin,
-		\note, Pshuf([[-5, -2], [-5, 0], [0, 7]], inf),
+        \note, Pshuf([-5, -2, 0, 7, 10, [-5, -2], [-5, 0], [0, 7], [-5, -2, 0], [-2, 0, 7], [0, 7, 10]], inf),
 		\dur, Pshuf([16, 24, 32, 48, 64] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
@@ -934,7 +878,6 @@ Pdef(\pgnpat1,
 		\scale, ~scale,
 		\shapermin, 0.003,
 		\shapermax, 0.005
-        //\shapermax, Pwhite(0.001, 0.003, inf)
 ));
 Pdef(\pgnpat2, Pbindf(Pdef(\pgnpat1), \note, Pseq([0, 7], inf)));
 Pdef(\pgnpar, Ppar([Pdef(\pgnpat1), Pdef(\pgnpat2)]));
