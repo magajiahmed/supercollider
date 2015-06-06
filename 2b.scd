@@ -401,12 +401,6 @@ Pdef(\cnprcpar).isPlaying;
 Pdef(\cnprcpar).stop;
 */
 
-/*
-Pdef(\cnprc4).play(t, quant: 1);
-Pdef(\cnprc4).isPlaying;
-Pdef(\cnprc4).stop;
-*/
-
 (
 MIDIdef.cc(\cnplayktrl, {
 	if(Pdef(\cnprcpar).isPlaying.not) {
@@ -650,20 +644,15 @@ MIDIdef.cc(\plunk3stopktrl, {
 // PAD
 
 (
-SynthDef(\pad, { |bal = 0, curve = -4, dur = 1, fb = 0.1, freq = 400, gate = 1, im = 1, level = 0.005|
-    //var env             =   Env.perc(releaseTime: dur, level: level, curve: curve);
-    //var envgen          =   EnvGen.kr(env, doneAction: 2);
+SynthDef(\pad, { |curve = -4, dur = 1, fb = 0.1, freq = 400, gate = 1, im = 1, level = 0.005|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var fbsin           =   FBSineC.ar(freq * 8, [im, im - 0.001], fb, mul: envgen);
     var delay           =   DelayC.ar(fbsin, 1, freq.reciprocal * XLine.kr(1, 1/2, 0.1));
     var submix1         =   fbsin + delay;
-    //var lop             =   BLowPass4.ar(submix1, (freq).clip(50, SampleRate.ir / 3));
-    //var rhpf            =   RHPF.ar(submix1, (freq * 4).clip(50, SampleRate.ir / 3));
-    var sin             =   SinOsc.ar(freq!2, mul: envgen);
-    //var submix2         =   lop + rhpf + sin;
-    //var balance         =   Balance2.ar(submix2[0], submix2[1], bal);
-    Out.ar(0, fbsin + sin);
+    var sin1            =   SinOsc.ar(freq!2, mul: envgen);
+    var sin2            =   SinOsc.ar(freq!2 / 2, mul: envgen);
+    Out.ar(0, fbsin + sin1 + sin2);
 }).add;
 );
 
@@ -844,10 +833,77 @@ MIDIdef.cc(\larrynoplay, {
 );
 
 ////////////////////////////////////////////////////////////////
+// PNO
+
+(
+SynthDef(\pno, { |curve = -4, dur = 1, freq = 440, index = 1, level = 0.1|
+    var env             =   Env.perc(0.01, dur + 1, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var pmfreqmod       =   LFBrownNoise0.ar(freq!2, mul: 0.01, add: 1);
+    var pm              =   SinOsc.ar(freq * pmfreqmod, mul: index, add: 1);
+    var modsin          =   SinOsc.ar([freq, freq - 1], pm, envgen);
+    var hpf             =   HPF.ar(modsin, (freq * 8).clip(50, SampleRate.ir / 3));
+    var sin             =   SinOscFB.ar([freq, freq - 1], 0.2, envgen / 8);
+    Out.ar(0, hpf + sin);
+}).add;
+);
+
+(
+~pnodurs = [1, 1, 1.5, 1, 1, 1, 1.5, 1, 1, 1, 1, 1.5];
+Pdef(\pno1,
+    Pbind(
+        \instrument, \pno,
+        \curve, -4,
+        \dur, Pseq(~pnodurs ++ [41], inf),
+        \index, Pshuf((0..100), inf),
+        \note, Pseq([1] ++ [0].stutter(~pnodurs.size - 2), inf),
+        \octave, 7,
+        \scale, ~scale
+));
+Pdef(\pno2,
+    Pbindf(
+        Pdef(\pno1),
+        \dur, Pseq(~pnodurs + 0.25 ++ [43], inf),
+        \note, Pseq([0] ++ [-2].stutter(~pnodurs.size - 2), inf)
+));
+Pdef(\pno3,
+    Pbindf(
+        Pdef(\pno2),
+        \dur, Pseq(~pnodurs - 0.25 ++ [37], inf),
+        \note, Pseq([-4] ++ [-5].stutter(~pnodurs.size - 2), inf)
+));
+Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)], inf));
+);
+
+/*
+Pdef(\pno1).play(t, quant: 1);
+Pdef(\pno1).isPlaying;
+Pdef(\pno1).stop;
+*/
+
+/*
+Pdef(\pno2).play(t, quant: 1);
+Pdef(\pno2).isPlaying;
+Pdef(\pno2).stop;
+*/
+
+/*
+Pdef(\pno3).play(t, quant: 1);
+Pdef(\pno3).isPlaying;
+Pdef(\pno3).stop;
+*/
+
+/*
+Pdef(\pnos).play(t, quant: 1);
+Pdef(\pnos).isPlaying;
+Pdef(\pnos).stop;
+*/
+
+////////////////////////////////////////////////////////////////
 // PENGUIN
 
 (
-SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.1, ess = 10, shapermin = 0.0005, shapermax = 0.005 |
+SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.15, ess = 10, shapermin = 0.0005, shapermax = 0.005 |
 	var env				=	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
     var ampmod          =   LFBrownNoise0.kr(13!2).range(0, 1).round(1);
@@ -889,14 +945,6 @@ Pdef(\pgnpar).isPlaying;
 Pdef(\pgnpar).stop;
 */
 
-Pdef(\pgndrone, Pmono(\penguin, \note, [-5, -2, 0], \octave, 7, \scale, ~scale));
-
-/*
-Pdef(\pgndrone).play(t, quant: 1);
-Pdef(\pgndrone).isPlaying;
-Pdef(\pgndrone).stop;
-*/
-
 (
 MIDIdef.cc(\pgnplayktrl, {
     if(Pdef(\pgnpar).isPlaying.not) {
@@ -919,7 +967,7 @@ MIDIdef.cc(\pgnstopktrl, {
 // Synth
 
 (
-SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.005 |
+SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.008 |
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
