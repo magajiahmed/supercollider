@@ -27,7 +27,6 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 ~prcfxbus = Bus.audio(s, 2);
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
 ~tuning = Tuning.new(~ratios.ratiomidi);
-//~bassscale = Scale.new(#[0, 1, 2, 3], ~ratios.size, ~tuning);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 );
@@ -324,7 +323,7 @@ Pdef(\snappat,
 	Pbind(
 		\instrument, \snap,
 		\note, [2, 7],
-		\dur, Pshuf([0.5, 0.75].stutter(7), inf),
+		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3].stutter(7), inf),
 		\im, Pshuf((1..10), inf),
 		\level, 0.05,
 		\octave, 10,
@@ -836,44 +835,71 @@ MIDIdef.cc(\larrynoplay, {
 // PNO
 
 (
-SynthDef(\pno, { |curve = -4, dur = 1, freq = 440, index = 1, level = 0.1|
+SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, freq = 440, index = 1, level = 0.1, modmod = 0, ratio = 1|
     var env             =   Env.perc(0.01, dur + 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var pmfreqmod       =   LFBrownNoise0.ar(freq!2, mul: 0.01, add: 1);
-    var pm              =   SinOsc.ar(freq * pmfreqmod, mul: index, add: 1);
-    var modsin          =   SinOsc.ar([freq, freq - 1], pm, envgen);
-    var hpf             =   HPF.ar(modsin, (freq * 8).clip(50, SampleRate.ir / 3));
-    var sin             =   SinOscFB.ar([freq, freq - 1], 0.2, envgen / 8);
+    var pmfreqmod       =   LFBrownNoise2.ar((freq), mul: modmod, add: 1);
+    var pm              =   LFTri.ar((freq * ratio) * pmfreqmod, mul: index, add: 1);
+    var modsin          =   SinOsc.ar([freq, freq * 1.003], pm, envgen);
+    var hpf             =   HPF.ar(modsin, (freq * 4).clip(50, SampleRate.ir / 3));
+    var sin             =   SinOscFB.ar(freq, fb, envgen / 4);
     Out.ar(0, hpf + sin);
 }).add;
 );
 
 (
-~pnodurs = [1, 1, 1.5, 1, 1, 1, 1.5, 1, 1, 1, 1, 1.5];
+~pnolvl = 0.02;
+~pnodurs = [1, 1.5, 1, 1, 1.5, 1, 1, 1, 1.5];
+
+//
+
+Pdef(\pnopulse1,
+    Pbind(
+        \instrument, \pno,
+        \curve, -16,
+        \dur, Pseq(~pnodurs - 0.25, inf),
+        \index, 0,
+        \level, ~pnolvl,
+        \note, 0,
+        \octave, 7
+));
+
+//
+
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
         \curve, -4,
-        \dur, Pseq(~pnodurs ++ [41], inf),
+        \dur, Pseq(~pnodurs, inf),
         \index, Pshuf((0..100), inf),
-        \note, Pseq([1] ++ [0].stutter(~pnodurs.size - 2), inf),
+        \level, ~pnolvl,
+        \modmod, 0.03,
+        \note, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 2) + 1), inf),
         \octave, 7,
+        \ratio, 2.sqrt,
         \scale, ~scale
 ));
+
 Pdef(\pno2,
     Pbindf(
         Pdef(\pno1),
-        \dur, Pseq(~pnodurs + 0.25 ++ [43], inf),
-        \note, Pseq([0] ++ [-2].stutter(~pnodurs.size - 2), inf)
+        \note, Pseq([-2].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 3) + 1), inf)
 ));
+
 Pdef(\pno3,
     Pbindf(
         Pdef(\pno2),
-        \dur, Pseq(~pnodurs - 0.25 ++ [37], inf),
-        \note, Pseq([-4] ++ [-5].stutter(~pnodurs.size - 2), inf)
+        \note, Pseq([-5].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 4) + 1), inf)
 ));
-Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)], inf));
+
+Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pnopulse1), Pdef(\pno2), Pdef(\pno3)], inf));
 );
+
+/*
+Pdef(\pnopulse1).play(t, quant: 1);
+Pdef(\pnopulse1).isPlaying;
+Pdef(\pnopulse1).stop;
+*/
 
 /*
 Pdef(\pno1).play(t, quant: 1);
@@ -897,6 +923,28 @@ Pdef(\pno3).stop;
 Pdef(\pnos).play(t, quant: 1);
 Pdef(\pnos).isPlaying;
 Pdef(\pnos).stop;
+*/
+
+(
+Pdef(\pnobass1,
+    Pbind(
+        \instrument, \pno,
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(2), inf),
+        \fb, 0.3,
+        \index, Pshuf((0..4), inf),
+        \level, 0.1,
+        \modmod, 0.02,
+        \note, 0,
+        \octave, 3,
+        \ratio, Pshuf(~ratios / 2, inf),
+        \scale, ~scale
+));
+);
+
+/*
+Pdef(\pnobass1).play(t, quant: 1);
+Pdef(\pnobass1).isPlaying;
+Pdef(\pnobass1).stop;
 */
 
 ////////////////////////////////////////////////////////////////
@@ -1014,7 +1062,7 @@ Pdef(\pad2pat).stop;
 */
 
 Pdef(\pad2pat2, Pmono(\pad2, \note, [-5, 0].stutter(2), \octave, 5, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \octave, [2, 3, 4], \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \note, [0, 12, 24, 31], \octave, 2, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
