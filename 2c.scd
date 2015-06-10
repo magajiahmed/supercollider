@@ -99,7 +99,7 @@ Pdef(\basspat1,
         \dur, Pshuf(([0.25, 0.5, 0.75, 0.75, 1.5, 2.25, 6]).stutter(17), inf),
         \fb, 2.5,
 		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
-        \level, 0.02,
+        \level, 0.03,
         \note, 0,
         \octave, [2, 3],
 		\scale, ~scale
@@ -248,7 +248,7 @@ SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.05,
 //
 
 (
-~pulsedurarray = [Pseq([0.25], 53), Pseq([0.5], 3), Pseq([0.75], 4), Pseq([2/5], 5)];
+~pulsedurarray = [Pseq([0.25], 31), Pseq([0.5], 3), Pseq([0.75], 4), Pseq([1/3], 3), Pseq([2/5], 5), Pseq([2/7], 7)];
 Pdef(\pulsepat1,
 	Pbind(
 		\instrument, \pulse,
@@ -350,22 +350,22 @@ MIDIdef.cc(\pulsektrl5, {
 // WUT
 
 (
-SynthDef(\wut, { |bits = 24, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.015, rate = 44100, start = 1|
-    var env             =   Env.asr(0.01, level, 5, -64);
+SynthDef(\wut, { |bits = 24, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.01, rate = 44100, start = 1|
+    var env             =   Env.asr(0.1, level, 1, 0);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var fenv            =   XLine.kr(start, 1, dur / 8);
     var freqmod         =   LFNoise2.kr(0.1!2, 0.003, 1);
     var sin             =   SinOscFB.ar(freq * freqmod * fenv, fb * LFNoise0.kr(15!2).range(0.5, 2), envgen);
     var decimod         =   LFBrownNoise0.kr(freq!4).range(0.8, 1).round(0.2);
     var deci            =   Decimator.ar(sin, rate * decimod[0, 1], bits * decimod[2, 3]);
-    Out.ar(0, (sin.fold2(level / foldfactor) * foldfactor) + deci);
+    Out.ar(0, ((sin.fold2(level / foldfactor) * foldfactor) + deci));
 }).add;
 );
 
 (
-Pdef(\wut, Pbind(\instrument, \wut, \dur, 37, \octave, 5, \scale, ~scale));
-Pdef(\wat, Pbindf(Pdef(\wut), \dur, 31));
-Pdef(\wot, Pbindf(Pdef(\wut), \dur, 29, \note, Pseq([-2, Rest], inf)));
+Pdef(\wut, Pbind(\instrument, \wut, \bits, 11, \dur, 37, \legato, 1, \octave, 5, \scale, ~scale));
+Pdef(\wat, Pbindf(Pdef(\wut), \dur, 31, \legato, 0.5));
+Pdef(\wot, Pbindf(Pdef(\wut), \dur, 29, \legato, 0.5, \note, Pseq([-2, Rest], inf)));
 Pdef(\wuts, Ppar([Pdef(\wut), Pdef(\wat), Pdef(\wot)], inf));
 );
 
@@ -376,22 +376,37 @@ Pdef(\wuts).stop;
 */
 
 (
-~wutchords = Array.fill(~ratios.size, { |i| [i - 2, i, i + 7] - (~ratios.size / 2).round(1)});
+//~wutchords = Array.fill(~ratios.size, { |i| [i - 2, i, i + 2, i + 7] - (~ratios.size / 2).round(1)});
+//~wutchords = Array.fill(~ratios.size, { ~ratios.powerset.reject({ |i| i.size != 2 }) });
+//~wutchords = ((0..(~ratios.size - 1)) ! 2).allTuples;
 Pdef(\hiwut1,
     Pbind(
         \instrument, \wut,
         \bits, 9,
-        \dur, Pshuf([19, 23, 29], inf),
-        \fb, 0.4,
-        \foldfactor, 50,
-        \note, Pshuf(~wutchords, inf),
-        //\note, [-5, 0],
+        \dur, Pshuf([31, 37, 41, 43, 47] + 0.25, inf),
+        \fb, 1,
+        \foldfactor, 5,
+        \legato, 0.5,
+        \level, 0.008,
+        \note, [-2, 0, 2, 7],
         \octave, 6,
         \scale, ~scale,
 ));
-Pdef(\hiwut2, Pbindf(Pdef(\hiwut1), \note, [-2, 0, 7]));
+Pdef(\hiwut2, Pbindf(Pdef(\hiwut1)));
 Pdef(\hiwuts, Ppar([Pdef(\hiwut1), Pdef(\hiwut2)]));
 );
+
+/*
+Pdef(\hiwut1).play(t, quant: 1);
+Pdef(\hiwut1).isPlaying;
+Pdef(\hiwut1).stop;
+*/
+
+/*
+Pdef(\hiwut2).play(t, quant: 1);
+Pdef(\hiwut2).isPlaying;
+Pdef(\hiwut2).stop;
+*/
 
 /*
 Pdef(\hiwuts).play(t, quant: 1);
@@ -437,7 +452,7 @@ MIDIdef.cc(\hiwutsstop, {
 // PAD
 
 (
-SynthDef(\pad, { | bits = 24, curve = -128, dur = 1, freq = 400, gate = 1, level = 0.03 |
+SynthDef(\pad, { | bits = 24, curve = -128, dur = 1, freq = 400, gate = 1, level = 0.015 |
 	var env				=	Env.asr(9, level, 0.01);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var freqmod			=	LFNoise2.kr(1!2, 0.0005, 1);
@@ -612,7 +627,7 @@ Pdef(\clappat1,
         \foldfactor, Pwhite(0.018, 0.022, inf),
 		\dur, Pshuf(~clapdurs, inf),
         \level, ~claplvl,
-        \octave, 7,
+        \octave, 5,
 		\pan, 0,
         \scale, ~scale
 ));
@@ -663,32 +678,43 @@ SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level =
 
 (
 ~heavypatlvl = 0.03;
+~heavypatecholvl = ~heavypatlvl / 4;
 Pdef(\heavypat1,
 	Pbind(
 		\instrument, \heavy,
 		\brightness, Pshuf([1000, 4000, 8000].stutter(7), inf),
 		\curve, Pshuf([-16, -4, 0, 2, 4], inf),
         \dur, Pshuf([
-            Pseq([1/3], 3), Pseq([0.75, 0.75, 0.5, 0.5]), Pseq([0.5, 1]), Pseq([1, 1.5]), Pseq([1, 0.75, 0.75, 1]),
+            Pseq([1/3], 3), Pseq([2/5], 5), Pseq([2/7], 7),
             2, 3, 4, 6, 8, 12
         ], inf),
         \level, ~heavypatlvl,
-        \note, Pseq([Pseq([[-2, 0, 7]], 17), Pseq([Rest], 29)], inf),
+        \note, Pseq([Pseq([[-2, 0, 7]], 29), Pseq([Rest], 17)], inf),
 		\octave, 5,
 		\pan, Prand([-0.5, 0, 0.5], inf),
-		\sinfb, Pshuf((2..6), inf)
+		\sinfb, Pshuf((4..6), inf)
 ));
 Pdef(\heavypat2,
     Pbind(
         \instrument, \heavy,
-		\brightness, Pshuf([1000, 4000, 8000].stutter(7), inf),
+        \brightness, Pshuf((1..7) * 2000 , inf),
         \curve, -8,
-        \dur, Pshuf([0.25, 0.5, 0.75].stutter(17), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2].stutter(3), inf),
         \level, ~heavypatlvl,
-        \note, Pseq([[-2, 0, 7]], inf),
-		\sinfb, Pshuf((0..6), inf)
+        \note, (0..3),
+        \sinfb, Pshuf((1..3), inf)
 ));
-Pdef(\heavypar, Ppar([Pdef(\heavypat1), Pdef(\heavypat2)], inf));
+Pdef(\heavypat3,
+    Pbindf(
+        Pdef(\heavypat2),
+        \curve, -32,
+        \dur, Pshuf(~pulsedurarray, inf),
+        \level, ~heavypatecholvl,
+        \octave, Pshuf((2..8).stutter(7), inf),
+        \pan, Prand([-1, 1], inf),
+        \sinfb, Pshuf((4..6), inf)
+));
+Pdef(\heavypar, Ppar([Pdef(\heavypat1), Pdef(\heavypat2), Pdef(\heavypat3)], inf));
 );
 
 /*
@@ -701,6 +727,12 @@ Pdef(\heavypat1).stop;
 Pdef(\heavypat2).play(t, quant: 1);
 Pdef(\heavypat2).isPlaying;
 Pdef(\heavypat2).stop;
+*/
+
+/*
+Pdef(\heavypat3).play(t, quant: 1);
+Pdef(\heavypat3).isPlaying;
+Pdef(\heavypat3).stop;
 */
 
 /*
