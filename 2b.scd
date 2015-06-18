@@ -68,22 +68,34 @@ SynthDef(\dynamix, { |inBus|
 
 // SynthDef
 
+/*
 (
-SynthDef(\bass, { |a = 1, curve = -8, dur = 1, fb = 0.75, ffreq = 10000, freq = 100, level = 0.04, phasemodamp = 1|
+SynthDef(\bass, { |a = 1, curve = -8, dur = 1, fb = 0.75, ffreq = 10000, freq = 100, level = 0.04, phasemodamp = 1, start = 1|
  	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
  	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var subbass         =   SinOscFB.ar(freq / 2, fb!2, envgen);
-    var trifrqmod       =   LFBrownNoise2.kr(0.2!2, mul: 0.0001, add: 1);
-	var tri				=	LFTri.ar(freq * trifrqmod, mul: envgen);
-	var lat				=	Latoocarfian2DN.ar(freq, freq * 2, a: [a, a - 0.01], mul: 0.005, add: 1);
+    var tri             =   LFTri.ar(freq!2, mul: envgen);
+	var lat				=	Latoocarfian2DN.ar(a: [a, a - 0.01], mul: 0.05, add: 1);
 	var sin1			=	SinOsc.ar(freq * lat, mul: phasemodamp, add: 1);
 	var sin2			=	SinOsc.ar(freq, sin1, mul: envgen);
-    var line            =   Line.kr(0.5, 0, dur / 4);
-    var deci            =   Decimator.ar(tri + sin2, SampleRate.ir, 5) * line;
-    var ffrqmod         =   LFBrownNoise0.kr(30!2).range(1, 1.2).round(0.2);
-    var rqmod           =   LFBrownNoise0.kr(freq!2).range(0.1, 0.3).round(0.2);
-    var rhpf            =   RHPF.ar(deci, (ffreq).clip(50, SampleRate.ir / 3), rqmod);
+    var line            =   Line.kr(1, 0, dur / 4);
+    var deci            =   Decimator.ar(subbass + sin2, bits: 7) * line;
+    var rqmod           =   LFBrownNoise0.kr(freq!2).range(0.5, 1).round(0.5);
+    var rhpf            =   RHPF.ar(deci, (ffreq).clip(50, SampleRate.ir / 3), 0.3 * rqmod);
     Out.ar([0, ~bassfxbus], subbass + tri + sin2 + rhpf);
+}).add;
+);
+*/
+
+(
+SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level = 0.1|
+    var env             =   Env.perc(0.001, dur, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var xline           =   XLine.kr(1, 0.1, 1);
+    var sinfb           =   SinOscFB.ar([freq, freq + 0.1], fb * xline, envgen);
+    var rlpf            =   BLowPass4.ar(sinfb, (freq * XLine.kr(3, 2, 1)).clip(50, SampleRate.ir / 3), 0.5);
+    var rhpf            =   BHiPass4.ar(sinfb, (ffreq).clip(50, SampleRate.ir / 3), 0.3);
+    Out.ar([0, ~bassfxbus], rlpf + rhpf);
 }).add;
 );
 
@@ -94,14 +106,18 @@ SynthDef(\bass, { |a = 1, curve = -8, dur = 1, fb = 0.75, ffreq = 10000, freq = 
 ~bassdurations = [0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, Pseq([0.75], 3), 3, 4, 6, 8, 12, 16, 24];
 Pdef(\bass,
 	Pbind(
-		\instrument, \bass,
-		\a, Pwhite(0.9, 1.1, inf),
+		//\instrument, \bass,
+        \instrument, \abass,
+		//\a, Pwhite(0.9, 1.1, inf),
         \note, Pseq([Pshuf(~bassnotes.stutter(2), 2), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
-        \ffreq, Pwhite(8000, 10000, inf),
+        \fb, Pshuf((10..17) / 9, inf),
+        //\ffreq, Pwhite(4000, 8000, inf),
+        \ffreq, 4000,
 		\octave, 3,
-        \phasemodamp, Pshuf((0..11) / 2, inf),
+        //\phasemodamp, Pshuf((0..9), inf),
 		\scale, ~scale,
+        //\start, Prand([0.5, 1, 2], inf)
 ));
 );
 
@@ -146,12 +162,12 @@ SynthDef(\recbuf, { | dur = 2, gate = 1, inBus = 2, isRecording = 1, trigger = 1
 );
 
 (
-SynthDef(\bufrd, { | dur = 1, ffreq = 3000, gate = 1, pan = 0 |
-	var kbn1			=	LFBrownNoise1.kr(4).range(0.75, 1);
-	var env				=	Env.asr(0.003, 1, 0.1);
+SynthDef(\bufrd, { | dur = 1, ffreq = 3000, gate = 1, level = 1, pan = 0 |
+	//var kbn1			=	LFBrownNoise1.kr(4).range(0.75, 1);
+	var env				=	Env.asr(0.003, level, 0.1);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
 	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
-	var rhpf			=	RHPF.ar(bufrd, ffreq, 0.3, envgen * kbn1 * 2);
+	var rhpf			=	RHPF.ar(bufrd, ffreq, 0.3, envgen * 2);
 	var pan2			=	Pan2.ar(rhpf, pan);
 	Out.ar(0, pan2);
 }).add;
@@ -178,7 +194,8 @@ Pdef(\pbpat,
 	Pbind(
 		\instrument, \bufrd,
 		\dur, Prand([1, 1.5], inf),
-		\ffreq, 3000,
+		\ffreq, 4000,
+        \level, 1,
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
 );
@@ -249,8 +266,6 @@ Pdef(\dinglepat1,
 		\a, 0.01,
 		\curve, -8,
 		\dur, Pshuf([
-			//Pseq([0.75], 7),
-			//Pseq([1], 7),
 			Pseq([1.25], 7),
             Pseq([1.5], 7),
             Pseq([1.75], 7)
@@ -364,9 +379,10 @@ SynthDef(\cnprc, { |bal = 0, curve = -16, dur = 1, freq = 500, level = 0.1|
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var blip            =   Blip.ar(0, mul: envgen);
     var clipnoiz        =   LFClipNoise.ar(freq!2, envgen);
+    var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir /3));
     var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 3), 0.3);
     var balance         =   Balance2.ar(rhpf[0], rhpf[1], bal);
-    Out.ar(0, rhpf);
+    Out.ar(0, rlpf + rhpf);
 }).add;
 );
 
@@ -659,17 +675,18 @@ SynthDef(\pad, { |curve = -4, dur = 1, fb = 0.1, freq = 400, gate = 1, im = 1, l
 Pdef(\pad1,
     Pbind(
         \instrument, \pad,
-        \bal, 0,
+        \bal, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
         \dur, Pshuf(Array.fill(7, { |i| (i + 7).nthPrime + 0.25 }), inf),
         \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
+        \legato, 0.5,
         \note, Pseq([[-2, 0, 7], Rest], inf),
         \octave, 6,
         \scale, ~scale,
 ));
-Pdef(\pad2, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 10], Rest], inf)));
-Pdef(\pad3, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 12], Rest], inf)));
-Pdef(\pad4, Pbindf(Pdef(\pad1), \note, Pshuf([[7, 13], Rest], inf)));
+Pdef(\pad2, Pbindf(Pdef(\pad1), \note, Pseq([Rest, [7, 10]], inf)));
+Pdef(\pad3, Pbindf(Pdef(\pad1), \note, Pseq([[7, 12], Rest], inf)));
+Pdef(\pad4, Pbindf(Pdef(\pad1), \note, Pseq([Rest, [7, 13]], inf)));
 Pdef(\pads, Ppar([Pdef(\pad1), Pdef(\pad2), Pdef(\pad3), Pdef(\pad4)]));
 );
 
@@ -835,88 +852,76 @@ MIDIdef.cc(\larrynoplay, {
 // PNO
 
 (
-SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, freq = 440, index = 1, level = 0.1, modmod = 0, ratio = 1|
-    var env             =   Env.perc(0.01, dur + 1, level, curve);
+SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, octavelowermul = 0, rq1 = 1, rq2 = 1|
+    var env             =   Env.perc(0.001, dur + 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var pmfreqmod       =   LFBrownNoise2.ar((freq), mul: modmod, add: 1);
-    var pm              =   LFTri.ar((freq * ratio) * pmfreqmod, mul: index, add: 1);
-    var modsin          =   SinOsc.ar([freq, freq * 1.003], pm, envgen);
-    var hpf             =   HPF.ar(modsin, (freq * 4).clip(50, SampleRate.ir / 3));
-    var sin             =   SinOscFB.ar(freq, fb, envgen / 4);
-    Out.ar(0, hpf + sin);
+    var sinfb1          =   SinOscFB.ar(freq!2, fb, envgen / 4);
+    var sinfb2          =   SinOscFB.ar(freq!2, fb2, envgen * fb2mul);
+    var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
+    var rlpf            =   RLPF.ar(sinfb1, lffreq.clip(50, SampleRate.ir / 3), rq1);
+    var rhpf            =   RHPF.ar(sinfb2, hffreq.clip(50, SampleRate.ir / 3), rq2);
+    Out.ar(0, rlpf + rhpf);
 }).add;
 );
 
 (
-~pnolvl = 0.02;
+~pnolvl = 0.03;
 ~pnodurs = [1, 1.5, 1, 1, 1.5, 1, 1, 1, 1.5];
-
-//
 
 Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
-        \curve, -16,
-        \dur, Pseq(~pnodurs - 0.25, inf),
-        \index, 0,
+        \curve, -8,
+        \dur, Pseq(~pnodurs + 0.25, inf),
+		\fb, 0.1,
         \level, ~pnolvl,
         \note, 0,
-        \octave, 7
+        \octave, 6,
+        \rq1, 0.1,
+        \scale, ~scale
 ));
+
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \curve, -16, \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnolvl / 3));
+Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
 
 //
 
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
-        \curve, -4,
+        \curve, -6,
         \dur, Pseq(~pnodurs, inf),
-        \index, Pshuf((0..100), inf),
+        \fb, 0.4,
+        \fb2, 6,
+        \fb2mul, 0.4,
+        \hffreq, 12000,
         \level, ~pnolvl,
-        \modmod, 0.03,
-        \note, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 2) + 1), inf),
+        \note, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 2), inf),
         \octave, 7,
-        \ratio, 2.sqrt,
-        \scale, ~scale
+        \rq1, 0.3,
+        \rq2, 0.3,
+        \scale, ~scale,
 ));
 
 Pdef(\pno2,
     Pbindf(
         Pdef(\pno1),
-        \note, Pseq([-2].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 3) + 1), inf)
+        \note, Pseq([-2].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 3), inf)
 ));
 
 Pdef(\pno3,
     Pbindf(
-        Pdef(\pno2),
-        \note, Pseq([-5].stutter(~pnodurs.size) ++ [Rest].stutter((~pnodurs.size * 4) + 1), inf)
+        Pdef(\pno1),
+        \note, Pseq([7].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 4), inf)
 ));
 
-Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pnopulse1), Pdef(\pno2), Pdef(\pno3)], inf));
+Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)], inf));
 );
 
 /*
-Pdef(\pnopulse1).play(t, quant: 1);
-Pdef(\pnopulse1).isPlaying;
-Pdef(\pnopulse1).stop;
-*/
-
-/*
-Pdef(\pno1).play(t, quant: 1);
-Pdef(\pno1).isPlaying;
-Pdef(\pno1).stop;
-*/
-
-/*
-Pdef(\pno2).play(t, quant: 1);
-Pdef(\pno2).isPlaying;
-Pdef(\pno2).stop;
-*/
-
-/*
-Pdef(\pno3).play(t, quant: 1);
-Pdef(\pno3).isPlaying;
-Pdef(\pno3).stop;
+Pdef(\pnopulses).play(t, quant: 1);
+Pdef(\pnopulses).isPlaying;
+Pdef(\pnopulses).stop;
 */
 
 /*
@@ -929,14 +934,19 @@ Pdef(\pnos).stop;
 Pdef(\pnobass1,
     Pbind(
         \instrument, \pno,
+        \curve, -8,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(2), inf),
-        \fb, 0.3,
-        \index, Pshuf((0..4), inf),
-        \level, 0.1,
-        \modmod, 0.02,
-        \note, 0,
+        \fb, 0.5,
+        \fb2, Pshuf((1..5), inf),
+        \fb2mul, 0.05,
+        \hffreq, Pshuf((4..12) * 1000, inf),
+        \level, 0.3,
+        \lffreq, 5000,
+        \note, 2,
         \octave, 3,
-        \ratio, Pshuf(~ratios / 2, inf),
+        \octavelowermul, 1,
+		\rq1, 1,
+        \rq2, 0.3,
         \scale, ~scale
 ));
 );
@@ -946,6 +956,54 @@ Pdef(\pnobass1).play(t, quant: 1);
 Pdef(\pnobass1).isPlaying;
 Pdef(\pnobass1).stop;
 */
+
+(
+MIDIdef.cc(\pnopulseplay, {
+    if(Pdef(\pnopulses).isPlaying.not) {
+		Pdef(\pnopulses).play(t, quant: 1);
+		"pnopulse play".postln;
+	}
+}, 37, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pnopulsestop, {
+    if(Pdef(\pnopulses).isPlaying) {
+		Pdef(\pnopulses).stop;
+		"pnopulse stop".postln;
+	}
+}, 37, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\pnoplay, {
+    if(Pdef(\pnos).isPlaying.not) {
+		Pdef(\pnos).play(t, quant: 1);
+		"pnos play".postln;
+	}
+}, 53, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pnostop, {
+    if(Pdef(\pnos).isPlaying) {
+		Pdef(\pnos).stop;
+		"pnos stop".postln;
+	}
+}, 53, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\pnobassplay, {
+    if(Pdef(\pnobass1).isPlaying.not) {
+		Pdef(\pnobass1).play(t, quant: 1);
+		"pnobass play".postln;
+	}
+}, 69, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pnobassstop, {
+    if(Pdef(\pnobass1).isPlaying) {
+		Pdef(\pnobass1).stop;
+		"pnobass stop".postln;
+	}
+}, 69, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
 
 ////////////////////////////////////////////////////////////////
 // PENGUIN
