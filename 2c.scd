@@ -20,7 +20,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 
 (
 s.meter;
-t = TempoClock(132/60);
+t = TempoClock(120/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
@@ -74,16 +74,10 @@ SynthDef(\bass, { | curve = -4, dur = 1, fb = 0, foldfactor = 3, freq = 100, lev
     var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
  	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var fenv            =   XLine.kr(start, 1, dur / 4);
-	var sin1			=	SinOscFB.ar(freq * fenv, fb);
-	var sinmix			=	Mix.fill(3, {
-		|i|
-		var freqmod			=	LFNoise2.kr(3!2, 0.01, 1);
-		var sin				=	SinOscFB.ar(freq * (i + 1) * freqmod * fenv, fb);
-		sin / 2.pow(i);
-	});
-	var oscs			=	(sin1 + sinmix);
-	var distoscs		=	oscs.fold2(level / foldfactor) * foldfactor;
-    Out.ar([0, 1, 2, 3], (oscs * envgen) + (distoscs * envgen));
+    var sin             =   SinOscFB.ar((freq - 0.1) * fenv, 0.3, envgen * 6);
+    var sinfb      		=	SinOscFB.ar([freq, freq + 0.1] * fenv, fb);
+    var sineshaper      =   SineShaper.ar(sinfb, foldfactor, envgen) * (foldfactor.abs + 0.01).reciprocal;
+    Out.ar([0, 1, 2, 3], sin + (sinfb * envgen) + sineshaper);
 }).add;
 );
 
@@ -91,17 +85,17 @@ SynthDef(\bass, { | curve = -4, dur = 1, fb = 0, foldfactor = 3, freq = 100, lev
 // Pattern
 
 (
-~bassfoldseries = Array.series(11, 0.1, 0.2);
+~bassfoldseries = Array.series(11, 0.01, 0.001);
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-        \curve, -8,
-        \dur, Pshuf(([0.25, 0.5, 0.75, 0.75, 1.5, 2.25, 6]).stutter(17), inf),
-        \fb, 1.8,
+        \curve, -16,
+        \dur, Pshuf(([0.25, 0.5, 0.75, 0.75, 1.5, 2.25, 6].stutter(3)), inf),
+        \fb, Pshuf((1..13) / 13, inf),
 		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
-        \level, 0.03,
+        \level, 0.02,
         \note, 0,
-        \octave, [2, 3],
+        \octave, 3,
 		\scale, ~scale
 ));
 Pdef(\basspat2,
@@ -261,7 +255,7 @@ Pdef(\pulsepat1,
 		\scale, ~scale
 ));
 Pdef(\pulsepat2, Pbindf(Pdef(\pulsepat1), \pan, Prand([-1, 1], inf)));
-Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat1), \note, Pshuf([-2, 7].stutter(11), inf)));
+Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat2), \note, Pshuf([-2, 7].stutter(11), inf)));
 );
 
 /*
@@ -350,17 +344,17 @@ MIDIdef.cc(\pulsektrl5, {
 // WUT
 
 (
-SynthDef(\wut, { |bits = 24, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.01, rate = 44100, start = 1|
-    var env             =   Env.asr(0.01, level, 0.8, 0);
+SynthDef(\wut, { |attack = 0.01, bits = 24, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.02, rate = 44100, release = 0.1, start = 1|
+    var env             =   Env.asr(attack, level, release, 0);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var fenv            =   XLine.kr(start, 1, dur / 8);
-    var freqmod         =   LFNoise2.kr(0.1!2, 0.003, 1);
-    var sin             =   SinOscFB.ar(freq * freqmod * fenv, fb * LFNoise0.kr(15!2).range(0.5, 2), envgen);
+    var freqmod         =   LFNoise2.kr(0.1!2, 0.001, 1);
+    var sin             =   SinOscFB.ar(freq * freqmod * fenv, fb, envgen) * LFBrownNoise0.kr(15!2).range(0.5, 1).round(0.5);
     var decimod         =   LFBrownNoise0.kr(freq!4).range(0.8, 1).round(0.2);
     var deci            =   Decimator.ar(sin, rate * decimod[0, 1], bits * decimod[2, 3]);
-    var foldmodmod      =   SinOscFB.kr(0.2).range(1, 10);
-    var foldmod         =   LFBrownNoise2.kr(foldmodmod!2).range(1, 10);
-    Out.ar(0, ((sin.fold2(level / (foldfactor * foldmod)) * (foldfactor * foldmod)) + deci)).fold2(level);
+    var foldmodmod      =   LFNoise2.kr(1!2).range(1, 30);
+    var foldmod         =   LFBrownNoise2.kr(foldmodmod).range(0.1, 10) * LFNoise0.kr(5!2).range(0.9, 1.1).round(0.2);
+    Out.ar(0, (sin.fold2(level / (foldfactor * foldmod)) * (foldfactor * foldmod)) + deci).fold2(level);
 }).add;
 );
 
@@ -378,21 +372,22 @@ Pdef(\wuts).stop;
 */
 
 (
-~wutchords = Array.fill(~ratios.size, { |i| [i - 5, i - 2, i] });
+~wutchords = Array.fill(~ratios.size, { |i| [0, 7, i, i + 3, i + 5] - (~ratios.size / 2).round(1) });
 Pdef(\hiwut1,
     Pbind(
         \instrument, \wut,
         \bits, 24,
         \dur, Pshuf([31, 37, 41, 43, 47], inf),
-        \fb, 0.3,
+        \fb, 0.1,
         \foldfactor, 2,
-        \legato, 0.5,
-        \level, 0.015,
+        \legato, 0.3,
+        \level, 0.01,
         \note, Pshuf(~wutchords, inf),
         \octave, 6,
+        \release, 1,
         \scale, ~scale,
 ));
-Pdef(\hiwut2, Pbindf(Pdef(\hiwut1)), \note, [-5, -2, 0, 2]);
+Pdef(\hiwut2, Pbindf(Pdef(\hiwut1), \note, [0, 7]));
 Pdef(\hiwuts, Ppar([Pdef(\hiwut1), Pdef(\hiwut2)]));
 );
 
@@ -626,33 +621,38 @@ MIDIdef.cc(\pinglektrl, {
 // CLAP
 
 (
-SynthDef(\clap, { | curve = 4, foldfactor = 0.02, freq = 1000, level = 0.2, offset = 0, pan = 0 |
-	var env				=	Env.perc(0.005, 1, level, curve);
+SynthDef(\clap, { | curve = 4, dur = 1, delaytime = 0.01, freq = 1000, level = 0.2, offset = 0, pan = 0 |
+	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    var gbman           =   GbmanL.ar(freq, (freq * 2)).fold2(foldfactor) * 500 * envgen;
-    var pan2			= 	Pan2.ar(gbman, pan);
+    var gbman           =   GbmanL.ar(freq / 2, freq, mul: envgen).fold2(level);
+    var delay           =   DelayC.ar(gbman, 0.01, delaytime.clip(0.0001, 0.01));
+    var pan2			= 	Pan2.ar(gbman + delay, pan);
 	Out.ar(4, pan2);
 }).add;
 );
 
 (
+/*
 ~clapdurs = [
     0.75, 1,
     0.75, 1, 1.25,
     0.75, 1, 1.25, 1.5
 		];
-~claplvl = 0.01;
-~clapecholvl = ~claplvl / 5;
-//~filterfreqs = [1, 2, 3, 4, 6, 8, 12];
+*/
+//~clapchords = (0..~ratios.size).powerset.reject({ |i| i.size != 6 });
+~claplvl = 0.02;
+~clapecholvl = ~claplvl / 2;
 Pdef(\clappat1,
 	Pbind(
 		\instrument, \clap,
-        \curve, -32,
-        \note, [0, 7],
-        \foldfactor, Pwhite(0.018, 0.022, inf),
-		\dur, Pshuf(~clapdurs, inf),
+        \curve, Prand([-64, -32, -16], inf),
+        \delaytime, Pwhite(0.0001, 0.1, inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 2, 3, 4, 6, 8, 12, 16, 24], inf),
         \level, ~claplvl,
-        \octave, 5,
+        //\note, Pshuf([-2, 0], [0, 2], [-2, 0, 2], [-2, 0, 2, 7], inf),
+        //\note, Pshuf(~clapchords, inf),
+        \note, [-2, 0, 2, 7],
+        \octave, Pshuf((1..13), inf),
 		\pan, 0,
         \scale, ~scale
 ));
@@ -725,7 +725,7 @@ Pdef(\heavypat2,
         \brightness, Pshuf((1..7) * 2000 , inf),
         //\brightness, 15000,
         \curve, Pshuf([-64, -32, -16, -8], inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75].stutter(3), inf),
+        \dur, Pshuf([0.25, 0.5, Pseq([1/6], 3), 0.75, 1, 1.25, 1.5, 1.75, 2].stutter(3), inf),
         \level, ~heavypatlvl,
         \note, [-5, -2, 0, 2],
         \octave, Pshuf((3..7), inf),
@@ -734,7 +734,6 @@ Pdef(\heavypat2,
 Pdef(\heavypat3,
     Pbindf(
         Pdef(\heavypat2),
-        \dur, Prand([0.5, 0.75], inf),
         \level, ~heavypatecholvl,
         \pan, Prand([-1, 1], inf),
         \sinfb, Pshuf((4..6), inf)
