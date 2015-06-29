@@ -852,20 +852,22 @@ MIDIdef.cc(\larrynoplay, {
 // PNO
 
 (
-SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, octavelowermul = 0, rq1 = 1, rq2 = 1|
+SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, rq1 = 1, rq2 = 1, sinhimul = 0|
     var env             =   Env.perc(0.001, dur + 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinfb1          =   SinOscFB.ar(freq!2, fb, envgen / 4);
     var sinfb2          =   SinOscFB.ar(freq!2, fb2, envgen * fb2mul);
-    var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
+    //var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
+    var sinhi           =   SinOsc.ar(freq * 11, mul: envgen * sinhimul);
     var rlpf            =   RLPF.ar(sinfb1, lffreq.clip(50, SampleRate.ir / 3), rq1);
     var rhpf            =   RHPF.ar(sinfb2, hffreq.clip(50, SampleRate.ir / 3), rq2);
-    Out.ar(0, rlpf + rhpf);
+    Out.ar(0, rlpf + rhpf + sinhi);
 }).add;
 );
 
 (
 ~pnolvl = 0.03;
+~pnopulselvl = ~pnolvl / 4;
 ~pnodurs = [1, 1.5, 1, 1, 1.5, 1, 1, 1, 1.5];
 
 Pdef(\pnopulse1,
@@ -873,15 +875,16 @@ Pdef(\pnopulse1,
         \instrument, \pno,
         \curve, -8,
         \dur, Pseq(~pnodurs + 0.25, inf),
-		\fb, 0.1,
-        \level, ~pnolvl,
+		\fb, 0,
+        \level, ~pnopulselvl,
         \note, 0,
-        \octave, 6,
+        \octave, 7,
         \rq1, 0.1,
-        \scale, ~scale
+        \scale, ~scale,
+        \sinhimul, 0.1
 ));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \curve, -16, \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnolvl / 3));
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \curve, -16, \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnopulselvl / 3));
 Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
 
 //
@@ -889,18 +892,19 @@ Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
-        \curve, -6,
+        \curve, -4,
         \dur, Pseq(~pnodurs, inf),
-        \fb, 0.4,
+        \fb, 0.6,
         \fb2, 6,
         \fb2mul, 0.4,
-        \hffreq, 12000,
+        \hffreq, 8000,
         \level, ~pnolvl,
         \note, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 2), inf),
         \octave, 7,
         \rq1, 0.3,
         \rq2, 0.3,
         \scale, ~scale,
+        \sinhimul, 0.2
 ));
 
 Pdef(\pno2,
@@ -1009,22 +1013,19 @@ MIDIdef.cc(\pnobassstop, {
 // PENGUIN
 
 (
-SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.15, ess = 10, shapermin = 0.0005, shapermax = 0.005 |
+SynthDef(\penguin, { | a = 1, curve = 0, freq = 400, gate = 1, level = 0.01, shapermin = 0.0005, shapermax = 0.005 |
 	var env				=	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-    var ampmod          =   LFBrownNoise0.kr(13!2).range(0, 1).round(1);
-    var n               =   4;
-	var mix				=	Mix.fill(n, {
-		var freqmod			=	LFNoise1.kr(0.3!2, 0.003, 1);
-		var tri				=	LFTri.ar((freq * freqmod).clip(50, s.sampleRate / 3), mul: envgen);
-        var lfrqmod         =   LFBrownNoise1.kr(0.2!2).range(0.05, 0.1);
-        var limitmod		=	LFBrownNoise1.kr(lfrqmod).range(shapermin, shapermax);
-        var shape			=	SineShaper.ar(tri, limitmod) * shapermax.reciprocal * ampmod;
-		shape / n;
-	});
-	var hpf				=	HPF.ar(mix, (freq * 16).clip(50, SampleRate.ir / 3), 0.03);
-    var sin             =   Decimator.ar(SinOsc.ar(freq!2), bits: Lorenz2DN.kr(3, 300, ess).range(1.0, 4.0)) * (envgen / 16);
-	Out.ar(0, sin + hpf);
+    //var n               =   3;
+	//var mix				=	Mix.fill(n, {
+        var tri				=	LFTri.ar(freq * LFNoise2.kr(1, 0.0005, 1), mul: envgen);
+        var limitmod        =   Latoocarfian2DN.kr(0.2, 50, [a, a - 0.001]).range(shapermin, shapermax).fold(0.00001, 1);
+        var shape			=	SineShaper.ar(tri, limitmod).fold2(level);
+    //    (shape / n).fold2(level);
+	//});
+    var rhpf            =	RHPF.ar(shape, (freq * 8).clip(50, SampleRate.ir / 3), 0.03, 8);
+    var sin             =   SinOsc.ar(freq, mul: (envgen) * LFBrownNoise0.kr(15!2).range(0.5, 1).round(0.5));
+	Out.ar(0, rhpf + sin);
 }).add;
 );
 
@@ -1032,16 +1033,16 @@ SynthDef(\penguin, { | curve = 0, freq = 400, gate = 1, level = 0.15, ess = 10, 
 Pdef(\pgnpat1,
 	Pbind(
 		\instrument, \penguin,
-        \note, Pshuf([-5, -2, 0, 7, 10, [-5, -2], [-5, 0], [0, 7], [-5, -2, 0], [-2, 0, 7], [0, 7, 10]], inf),
-		\dur, Pshuf([16, 24, 32, 48, 64] + 0.25, inf),
+        \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
+        \note, Pshuf([-2, 0, 7, [-2, 0], [0, 7], [-2, 0, 7], [-2, 0, 7]], inf),
+		\dur, Pshuf([24, 32, 48, 64, 96] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
-        \ess, Pwhite(9.0, 11.0, inf),
 		\scale, ~scale,
-		\shapermin, 0.003,
-		\shapermax, 0.005
+        \shapermin, 0.001,
+        \shapermax, 0.008,
 ));
-Pdef(\pgnpat2, Pbindf(Pdef(\pgnpat1), \note, Pseq([0, 7], inf)));
+Pdef(\pgnpat2, Pbindf(Pdef(\pgnpat1)));
 Pdef(\pgnpar, Ppar([Pdef(\pgnpat1), Pdef(\pgnpat2)]));
 );
 

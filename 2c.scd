@@ -329,22 +329,17 @@ MIDIdef.cc(\pulsektrl3, {
 // WUT
 
 (
-SynthDef(\wut, { |attack = 0.01, bits = 24, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.015, rate = 44100, release = 0.1, start = 1|
+SynthDef(\wut, { |attack = 0.01, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, level = 0.03, release = 0.1|
     var env             =   Env.asr(attack, level, release, 0);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var fenv            =   XLine.kr(start, 1, dur / 8);
-    var freqmod         =   LFNoise2.kr(0.1!2, 0.0002, 1);
-    var sin             =   SinOscFB.ar(freq * freqmod * fenv, fb, envgen) * LFBrownNoise0.kr(15!2).range(0.5, 1).round(0.5);
-    var decimod         =   LFBrownNoise0.kr(freq!4).range(0.8, 1).round(0.2);
-    var deci            =   Decimator.ar(sin, rate * decimod[0, 1], bits * decimod[2, 3]);
-    var foldmodmod      =   LFNoise2.kr(1!2).range(1, 30);
-    var foldmod         =   LFBrownNoise2.kr(foldmodmod).range(0.1, 10) * LFNoise0.kr(5!2).range(0.9, 1.1).round(0.2);
-    Out.ar(0, (sin.fold2(level / (foldfactor * foldmod)) * (foldfactor * foldmod)) + deci).fold2(level);
+    var sin             =   SinOscFB.ar(freq!2, fb * Standard2DC.kr(1, 10, add: 1).fold(0, 1), envgen);
+    var fold            =   sin.fold2(level * foldfactor) * foldfactor.reciprocal;
+    Out.ar(0, fold);
 }).add;
 );
 
 (
-Pdef(\wut, Pbind(\instrument, \wut, \bits, 12, \dur, 37, \foldfactor, 0.1, \legato, 1, \octave, 5, \scale, ~scale));
+Pdef(\wut, Pbind(\instrument, \wut, \dur, 37, \fb, 0.1, \legato, 1, \octave, 5, \scale, ~scale));
 Pdef(\wat, Pbindf(Pdef(\wut), \dur, 31, \legato, 0.5));
 Pdef(\wot, Pbindf(Pdef(\wut), \dur, 29, \legato, 0.5, \note, Pseq([-2, Rest], inf)));
 Pdef(\wuts, Ppar([Pdef(\wut), Pdef(\wat), Pdef(\wot)], inf));
@@ -357,27 +352,23 @@ Pdef(\wuts).stop;
 */
 
 (
-~wutchords1 = Array.fill(~ratios.size, { |i| [i - 2, i + 2] });
-~wutchords2 = Array.fill(~ratios.size, { |i| [i, i + 7] });
+//~wutchords1 = Array.fill(~ratios.size, { |i| [0, 7, i, i + 7] });
+//~wutchords2 = Array.fill(~ratios.size, { |i| [0, 7, i - 2, i + 2] });
 ~wutdurs = [41, 43, 47, 53, 59] + 0.25;
 Pdef(\hiwut1,
     Pbind(
         \instrument, \wut,
-        \attack, Pshuf([0.01, 10], inf),
-        \bits, 10,
         \dur, Pshuf(~wutdurs, inf),
-        \fb, 1,
-        \foldfactor, 3,
+        \fb, 1.5,
+        \foldfactor, 0.3,
         \legato, 0.5,
-        \note, Pshuf(~wutchords1, inf),
+        \note, Pshuf([[-5, 2, 0, 2], [-2, 0, 2, 7], [0, 2, 7, 10]], inf),
         \octave, 6,
-        \release, Pshuf([0.1, 10], inf),
         \scale, ~scale,
 ));
-Pdef(\hiwut2, Pbindf(Pdef(\hiwut1), \note, Pshuf(~wutchords2, inf)));
-Pdef(\hiwut3, Pbindf(Pdef(\hiwut1), \note, [-2, 2]));
-Pdef(\hiwut4, Pbindf(Pdef(\hiwut1), \note, [0, 7]));
-Pdef(\hiwuts, Ppar([Pdef(\hiwut1), Pdef(\hiwut2), Pdef(\hiwut3), Pdef(\hiwut4)]));
+//Pdef(\hiwut2, Pbindf(Pdef(\hiwut1), \note, Pshuf(~wutchords2, inf)));
+Pdef(\hiwut3, Pbindf(Pdef(\hiwut1), \note, [-2, 0, 2, 7]));
+Pdef(\hiwuts, Ppar([Pdef(\hiwut1), Pdef(\hiwut3)]));
 );
 
 /*
@@ -395,7 +386,6 @@ Pdef(\calmwuts,
         \fb, 1,
         \foldfactor, 2,
         \legato, 0.25,
-        \level, 0.005,
         \note, Pshuf([[-2, 0, 2, 7].stutter(2), Rest], inf),
         \release, 10,
         \scale, ~scale
