@@ -6,6 +6,22 @@
 );
 
 ////////////////////////////////////////////////////////////////
+// MIDI
+
+(
+MIDIdef.freeAll;
+MIDIClient.init;
+MIDIIn.connectAll;
+c.free;
+c = MIDIdef.noteOn(\midipostln, { |...args| args.postln; });
+~lp = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad")};
+// Fallback if MIDI controller not actually attached, but still want to play stuff.
+if(~lp.isNil) { ~lp = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+m = MIDIOut(0);
+m.connect(~lp.uid);
+);
+
+////////////////////////////////////////////////////////////////
 // INIT
 
 s.scope;
@@ -62,6 +78,7 @@ Pdef(\ringz1,
 );
 
 Pdef(\ringz1).play(~tempo, quant: 1);
+m.noteOn(0, 0, 1);
 /*
 Pdef(\ringz1).isPlaying;
 Pdef(\ringz1).stop;
@@ -92,6 +109,22 @@ Pdef(\ringz3).play(~tempo, quant: 1);
 Pdef(\ringz3).isPlaying;
 Pdef(\ringz3).stop;
 */
+
+// RESONATOR: MIDI CONTROL
+
+(
+MIDIdef.noteOn(\ringz1on, {
+    if(Pdef(\ringz1).isPlaying.not) {
+        Pdef(\ringz1).play(~tempo, quant: 1);
+        m.noteOn(0, 0, 1);
+        "ringz1 play".postln;
+    } {
+        Pdef(\ringz1).stop;
+        m.noteOn(0, 0, 0);
+        "ringz1 stop".postln;
+    };
+}, 0, srcID: 1310720);
+);
 
 ////////////////////////////////////////////////////////////////
 // RESONANT HIGH-PASS FILTER
