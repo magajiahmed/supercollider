@@ -1,19 +1,27 @@
-~tempo = TempoClock(90/60);
-
 ////////////////////////////////////////////////////////////////
 // SOURCE SOUNDS. You may need lots of RAM to load them all!
 
 (
-~arrayOfBuffers = "/run/media/phil/LMA Aug Sho/ISEA/*".pathMatch.collect { |file| Buffer.read(s, file) };
+~arrayOfBuffers = "/run/media/phil/LMA Aug Sho/ISEA/*".pathMatch.sort.collect { |file| Buffer.read(s, file) };
 );
 
 ////////////////////////////////////////////////////////////////
+// INIT
+
+s.scope;
+
+// TIME
+
+~tempo = TempoClock(80/60);
+
 // BUS DEPOT
 
 (
 ~ringzbus1 = Bus.audio(s, 2);
 ~ringzbus2 = Bus.audio(s, 2);
+~ringzbus3 = Bus.audio(s, 2);
 ~rhpfbus = Bus.audio(s, 2);
+~rezbus = Bus.audio(s, 2);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -53,16 +61,16 @@ Pdef(\ringz1,
 ));
 );
 
-/*
 Pdef(\ringz1).play(~tempo, quant: 1);
+/*
 Pdef(\ringz1).isPlaying;
 Pdef(\ringz1).stop;
 */
 
 (
 Pdef(\ringz2,
-    Pbind(
-        \instrument, \ringz,
+    Pmono(
+        \ringz,
         \decaytime, 0.5,
         \dur, 30,
         \inbus, ~ringzbus2,
@@ -71,10 +79,18 @@ Pdef(\ringz2,
 ));
 );
 
-/*
 Pdef(\ringz2).play(~tempo, quant: 1);
+/*
 Pdef(\ringz2).isPlaying;
 Pdef(\ringz2).stop;
+*/
+
+Pdef(\ringz3, Pmono(\ringz, \decaytime, 1, \inbus, ~ringzbus3, \note, [-2, 0, 2, 7], \octave, 5));
+
+Pdef(\ringz3).play(~tempo, quant: 1);
+/*
+Pdef(\ringz3).isPlaying;
+Pdef(\ringz3).stop;
 */
 
 ////////////////////////////////////////////////////////////////
@@ -96,17 +112,50 @@ Pdef(\rhpf,
         \rhpf,
         \dur, Pshuf(~ringzdurs, inf),
         \inbus, ~rhpfbus,
-        \level, 0.001,
-        \note, Pshuf([-2, 0, 2, 7], inf),
+        \level, 0.002,
+        \note, Pshuf([0, 2, 7, 10], inf),
         \octave, 9,
-        \rq, 0.2
+        \rq, 0.05
 ));
 );
 
-/*
 Pdef(\rhpf).play(~tempo, quant: 1);
+/*
 Pdef(\rhpf).isPlaying;
 Pdef(\rhpf).stop;
+*/
+
+////////////////////////////////////////////////////////////////
+// KARPLUS-STRONG WAVEGUIDE RESONATOR
+
+(
+SynthDef(\rez, { |decaytime = 0.1, freq = 440, gate = 1, inbus = 0, level = 0.1, outbus = 0, res = 0.9|
+    var env             =   Env.asr(0.01, level);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var in              =   In.ar(inbus, 2);
+    var comb            =   CombC.ar(in, 1, freq.reciprocal, decaytime);
+    var rlpf            =   BLowPass4.ar(comb, freq * 8, 0.3);
+    Out.ar(outbus, rlpf);
+}).add;
+);
+
+(
+Pdef(\rez,
+    Pmono(
+        \rez,
+        \decaytime, 0.1,
+        \dur, Pshuf(~ringzdurs, inf),
+        \inbus, ~rezbus,
+        \level, 0.001,
+        \note, Pshuf(~ringzchords, inf),
+        //\octave, 4
+));
+);
+
+Pdef(\rez).play(~tempo, quant: 1);
+/*
+Pdef(\rez).isPlaying;
+Pdef(\rez).stop;
 */
 
 ////////////////////////////////////////////////////////////////
@@ -130,7 +179,7 @@ Pdef(\sfplay1,
     Pbind(
         \instrument, \sfplay,
         \bufnum, Pshuf((0..(~arrayOfBuffers.size - 1)), inf),
-        \dur, Pshuf([0.25, 0.5, 1, 2, 4, 8, 16], inf),
+        \dur, Pshuf([0.02, 0.2, 2, 20], inf),
         \legato, 1,
         \loop, 1,
         \outbus, Prand([~rhpfbus, ~ringzbus1, ~ringzbus2, [0, ~ringzbus1], [0, ~ringzbus2]], inf),
@@ -184,10 +233,11 @@ Pdef(\sin1,
         \legato, 0.25,
         \level, 0.005,
         \note, Pshuf(~ringzchords, inf),
-        \octave, [5, 6, 7],
+        \octave, [6, 7, 8],
 ));
 Pdef(\sin2, Pbindf(Pdef(\sin1)));
 Pdef(\sin3, Pbindf(Pdef(\sin1)));
+Pdef(\sinbass, Pbindf(Pdef(\sin1), \level, 0.02, \note, Pshuf([-2, 0, 2, 7], inf), \octave, [4, 5, 6]));
 );
 
 /*
@@ -208,6 +258,12 @@ Pdef(\sin3).isPlaying;
 Pdef(\sin3).stop;
 */
 
+/*
+Pdef(\sinbass).play(~tempo, quant: 1);
+Pdef(\sinbass).isPlaying;
+Pdef(\sinbass).stop;
+*/
+
 ////////////////////////////////////////////////////////////////
 // PRC
 
@@ -217,7 +273,7 @@ SynthDef(\sinprc, { |curve = -4, fb = 0.1, freq = 440, im = 1, level = 0.1, pan 
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var fbsin           =   FBSineC.ar(freq, im, fb, mul: envgen);
     var pan2            =   Pan2.ar(fbsin, pan);
-    Out.ar(0, pan2);
+    Out.ar(0, pan2).fold2(level);
 }).add;
 );
 
@@ -225,13 +281,14 @@ SynthDef(\sinprc, { |curve = -4, fb = 0.1, freq = 440, im = 1, level = 0.1, pan 
 Pdef(\sinprc1,
     Pbind(
         \instrument, \sinprc,
-        \curve, Pshuf([-64, -32, -16], inf),
-        \dur, Pshuf([0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 3), 1], inf),
+        \curve, -32,
+        //\dur, Pshuf([0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 3), 1], inf),
+        \dur, Pshuf([Pseq([1/6], 3), Pshuf([Pseq([0.125], 2), 0.5, 0.75, 1, 1.5, 2, 3].stutter(3))], inf),
         \fb, Pshuf((7..20) / 5, inf),
-        \level, Pshuf([0.3, 1] * 0.03, inf),
+        \level, Prand([0.2, 1] * 0.1, inf),
         \note, [-2, 0, 2, 7],
-        \octave, Pshuf((5..12), inf),
-        \pan, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
+        \octave, Pshuf([5, 6, 8, 9], inf),
+        \pan, Pshuf([-1, 0, 1], inf),
 ));
 
 Pdef(\sinprc2, Pbindf(Pdef(\sinprc1)));
@@ -239,11 +296,10 @@ Pdef(\sinprc2, Pbindf(Pdef(\sinprc1)));
 Pdef(\sinprc3,
     Pbind(
         \instrument, \sinprc,
-        \curve, Pshuf([-256, -128, -64, -32, -16, -8, -4], inf),
-        \dur, 0.25,
+        \curve, Pshuf([-128, -64, -32].stutter(3), inf),
+        \dur, Pshuf([Pshuf([0.25, 0.5, 0.75].stutter(11)), Pseq([1/6], 3), Pseq([9, 1, 1, 1] / 12)], inf),
         \fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
-        \level, 0.01,
-        \octave, 12,
+        \octave, 13,
 ));
 );
 
@@ -263,4 +319,62 @@ Pdef(\sinprc2).stop;
 Pdef(\sinprc3).play(~tempo, quant: 1);
 Pdef(\sinprc3).isPlaying;
 Pdef(\sinprc3).stop;
+*/
+
+////////////////////////////////////////////////////////////////
+
+(
+SynthDef(\latprc, { |a = 1, curve = -64, level = 0.1|
+    var env             =   Env.perc(0.01, 1, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var lat             =   LatoocarfianC.ar(a: [a, a - 0.001], mul: envgen);
+    Out.ar(0, lat).fold2(level);
+}).add;
+);
+
+(
+Pdef(\latprc1,
+    Pbind(
+        \instrument, \latprc,
+        \a, Prand((-3..3), inf),
+        \dur, Prand([0.75, 1], inf)
+));
+
+Pdef(\latprc2, Pbindf(Pdef(\latprc1), \level, 0.02));
+Pdef(\latprcs, Ppar([Pdef(\latprc1), Pdef(\latprc2)], inf));
+);
+
+/*
+Pdef(\latprcs).play(~tempo, quant: 1);
+Pdef(\latprcs).isPlaying;
+Pdef(\latprcs).stop;
+*/
+
+////////////////////////////////////////////////////////////////
+//
+
+(
+Pdef(\sfstut,
+    Pbind(
+        \instrument, \sfplay,
+        \attack, 0.003,
+        \bufnum, Prand([0, 6, 8, 16], inf),
+        \curve, 0,
+        \decaytime, 1,
+        \dur, Prand([0.25, 0.5, 0.75], inf),
+        \legato, 0.4,
+        \loop, 1,
+        \note, Pseq([Pseq([0], 300), Pseq([Rest], 100)], inf),
+        \outbus, [0, ~rezbus],
+        \release, 0.3,
+        \startPos, Pwhite(0, 1000000, inf),
+        \vol, 0.1
+));
+Pdef(\sfstuts, Ppar([Pdef(\sfstut)].stutter(4), inf));
+);
+
+/*
+Pdef(\sfstuts).play(~tempo, quant: 1);
+Pdef(\sfstuts).isPlaying;
+Pdef(\sfstuts).stop;
 */
