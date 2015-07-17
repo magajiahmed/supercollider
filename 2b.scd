@@ -1014,15 +1014,11 @@ MIDIdef.cc(\pnobassstop, {
 
 (
 SynthDef(\penguin, { | a = 1, curve = 0, freq = 400, gate = 1, level = 0.01, shapermin = 0.0005, shapermax = 0.005 |
-	var env				=	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
-	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-    //var n               =   3;
-	//var mix				=	Mix.fill(n, {
-        var tri				=	LFTri.ar(freq * LFNoise2.kr(1, 0.0005, 1), mul: envgen);
-        var limitmod        =   Latoocarfian2DN.kr(0.2, 50, [a, a - 0.001]).range(shapermin, shapermax).fold(0.00001, 1);
-        var shape			=	SineShaper.ar(tri, limitmod).fold2(level);
-    //    (shape / n).fold2(level);
-	//});
+    var env             =	Env.asr(0.01, sustainLevel: level, releaseTime: 0.01, curve: curve);
+    var envgen          =	EnvGen.kr(env, gate, doneAction: 2);
+    var tri             =	LFTri.ar(freq * LFNoise2.kr(1, 0.0005, 1), mul: envgen);
+    var limitmod        =   Latoocarfian2DN.kr(0.2, 50, [a, a - 0.001]).range(shapermin, shapermax).fold(0.00001, 1);
+    var shape           =	SineShaper.ar(tri, limitmod).fold2(level);
     var rhpf            =	RHPF.ar(shape, (freq * 8).clip(50, SampleRate.ir / 3), 0.03, 8);
     var sin             =   SinOsc.ar(freq, mul: (envgen) * LFBrownNoise0.kr(15!2).range(0.5, 1).round(0.5));
 	Out.ar(0, rhpf + sin);
@@ -1034,7 +1030,8 @@ Pdef(\pgnpat1,
 	Pbind(
 		\instrument, \penguin,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        \note, Pshuf([-2, 0, 7, [-2, 0], [0, 7], [-2, 0, 7], [-2, 0, 7]], inf),
+        //\note, Pshuf([0, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
+        \note, Pshuf([0, 2, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
 		\dur, Pshuf([24, 32, 48, 64, 96] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
@@ -1042,8 +1039,7 @@ Pdef(\pgnpat1,
         \shapermin, 0.001,
         \shapermax, 0.008,
 ));
-Pdef(\pgnpat2, Pbindf(Pdef(\pgnpat1)));
-Pdef(\pgnpar, Ppar([Pdef(\pgnpat1), Pdef(\pgnpat2)]));
+Pdef(\pgnpar, Ppar([Pdef(\pgnpat1), Pdef(\pgnpat1)]));
 );
 
 /*
@@ -1121,7 +1117,7 @@ Pdef(\pad2pat).stop;
 */
 
 Pdef(\pad2pat2, Pmono(\pad2, \note, [-5, 0].stutter(2), \octave, 5, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \note, [0, 12, 24, 31], \octave, 2, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \note, [0, 12, 19], \octave, 3, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
