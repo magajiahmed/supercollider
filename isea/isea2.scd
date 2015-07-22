@@ -24,6 +24,11 @@ m.connect(~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
+// MAIN CHORD ON WHICH PIECE IS BASED 
+// todo: put this into a septimal just intonation
+
+~chord = [-2, 0, 2, 7];
+
 // TIME
 
 ~tempo = TempoClock(80/60);
