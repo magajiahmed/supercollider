@@ -24,10 +24,6 @@ m.connect(~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
-// INIT
-
-s.scope;
-
 // TIME
 
 ~tempo = TempoClock(80/60);
@@ -38,10 +34,10 @@ s.scope;
 ~ringzbus1 = Bus.audio(s, 2);
 ~ringzbus2 = Bus.audio(s, 2);
 ~ringzbus3 = Bus.audio(s, 2);
-~rhpfbus = Bus.audio(s, 2);
 ~rezbus = Bus.audio(s, 2);
 ~verbus = Bus.audio(s, 2);
-~dfmbus = Bus.audio(s, 2);
+~dfmbus1 = Bus.audio(s, 2);
+~dfmbus2 = Bus.audio(s, 2);
 );
 
 /////////////////////////////////////////////////////////////////
@@ -85,7 +81,7 @@ Pdef(\ringz1,
     Pmono(
         \ringz,
         \dur, Pshuf(~ringzdurs, inf),
-        \decaytime, 0.5,
+        \decaytime, 0.8,
         \inbus, ~ringzbus1,
         \note, Pshuf(~ringzchords, inf)
 ));
@@ -112,57 +108,6 @@ MIDIdef.cc(\ringz1, {
         "ringz1 stop".postln;
     };
 }, 104, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
-);
-
-////////////////////////////////////////////////////////////////
-// RESONANT HIGH-PASS FILTER: SYNTH
-
-(
-SynthDef(\rhpf, { |freq = 440, gate = 1, inbus = 0, level = 0.1, outbus = 0, rq = 1|
-    var env             =   Env.asr(0.1, level);
-    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var in              =   In.ar(inbus, 2);
-    var rhpf            =   RHPF.ar(in, (freq.clip(50, SampleRate.ir / 3))!2, rq);
-    Out.ar(0, rhpf);
-}).add;
-);
-
-// RHPF: PATTERN
-
-(
-Pdef(\rhpf,
-    Pmono(
-        \rhpf,
-        \dur, Pshuf(~ringzdurs, inf),
-        \inbus, ~rhpfbus,
-        \level, 0.005,
-        \note, Pshuf([0, 2, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
-        \octave, 9,
-        \rq, 0.5
-));
-);
-
-Pdef(\rhpf).play(~tempo, quant: 1);
-m.control(0, 105, ~yellow);
-/*
-Pdef(\rhpf).isPlaying;
-Pdef(\rhpf).stop;
-*/
-
-// RHPF: MIDI CONTROL
-
-(
-MIDIdef.cc(\rhpf, {
-    if(Pdef(\rhpf).isPlaying.not) {
-        Pdef(\rhpf).play(~tempo, quant: 1);
-        m.control(0, 105, ~yellow);
-        "rhpf play".postln;
-    } {
-        Pdef(\rhpf).stop;
-        m.control(0, 105, 0);
-        "rhpf stop".postln;
-    }
-}, 105, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
 );
 
 ////////////////////////////////////////////////////////////////
@@ -195,7 +140,7 @@ Pdef(\rez,
 );
 
 Pdef(\rez).play(~tempo, quant: 1);
-m.control(0, 106, ~orange);
+m.control(0, 105, ~yellow);
 /*
 Pdef(\rez).isPlaying;
 Pdef(\rez).stop;
@@ -207,26 +152,26 @@ Pdef(\rez).stop;
 MIDIdef.cc(\rez, {
     if(Pdef(\rez).isPlaying.not) {
         Pdef(\rez).play(~tempo, quant: 1);
-        m.control(0, 106, ~orange);
+        m.control(0, 105, ~yellow);
         "rez play".postln;
     } {
         Pdef(\rez).stop;
-        m.control(0, 106, 0);
+        m.control(0, 105, 0);
         "rez stop".postln;
     }
-}, 106, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
+}, 105, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
 );
 
 ////////////////////////////////////////////////////////////////
 // VERB: SYNTH
 
 (
-SynthDef(\verb, { |gate = 1, inbus = 0, level = 0.2, outbus = 0|
+SynthDef(\verb, { |gate = 1, inbus = 0, level = 0.1, outbus = 0|
     var env             =   Env.asr(0.01, level, 5);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
     var dampmod         =   LFBrownNoise2.kr(5!2).range(0.0, 1.0).round(0.5);
-    var ampmod          =   LFClipNoise.kr(15!2).range(0.1, 1);
+    var ampmod          =   LFClipNoise.kr(15!2).range(0.3, 1);
     var verb            =   GVerb.ar(in, 7, 10, dampmod, drylevel: 0, mul: envgen * ampmod);
     Out.ar(outbus, verb);
 }).add;
@@ -235,7 +180,7 @@ SynthDef(\verb, { |gate = 1, inbus = 0, level = 0.2, outbus = 0|
 Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
 
 Pdef(\verb).play(~tempo, quant: 1);
-m.control(0, 107, ~yellow);
+m.control(0, 106, ~orange);
 /*
 Pdef(\verb).isPlaying;
 Pdef(\verb).stop;
@@ -245,25 +190,25 @@ Pdef(\verb).stop;
 MIDIdef.cc(\verb, {
     if(Pdef(\verb).isPlaying.not) {
         Pdef(\verb).play(~tempo, quant: 1);
-        m.control(0, 107, ~yellow);
+        m.control(0, 106, ~orange);
         "verb play".postln;
     } {
         Pdef(\verb).stop;
-        m.control(0, 107, 0);
+        m.control(0, 106, 0);
         "verb stop".postln;
     }
-}, 107, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
+}, 106, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
 );
 
 ////////////////////////////////////////////////////////////////
 // DFM1
 
 (
-SynthDef(\dfm1, { |freq = 1000, gate = 1, inbus = 0, level = 0.1, outbus = 0, type = 0|
+SynthDef(\dfm, { |freq = 1000, gate = 1, inbus = 0, level = 0.1, outbus = 0, res = 0, type = 0|
     var env             =   Env.asr(0.1, level, 3);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
-    var dfm             =   DFM1.ar(in, freq.clip(100, 10000), 0.997, 1, type.clip(0, 1).round(1), 0, envgen);
+    var dfm             =   DFM1.ar(in, freq.clip(100, 10000), res, 1, type.clip(0, 1).round(1), 0, envgen);
     Out.ar(outbus, dfm).fold2(level);
 }).add;
 );
@@ -271,35 +216,38 @@ SynthDef(\dfm1, { |freq = 1000, gate = 1, inbus = 0, level = 0.1, outbus = 0, ty
 (
 Pdef(\dfm1,
     PmonoArtic(
-        \dfm1,
+        \dfm,
         \dur, Pshuf(~ringzdurs, inf),
-        \inbus, ~dfmbus,
-        \legato, 0.9,
+        \inbus, ~dfmbus1,
+        \legato, 0.999,
         \note, Pshuf(~ringzchords, inf),
-        \octave, [4, 5],
-        \type, Prand([0, 1], inf)
+        \octave, 3,
+        \res, 0.995,
+        //\type, Prand([0, 1], inf)
 ));
+Pdef(\dfm2, Pbindf(Pdef(\dfm1), \inbus, ~dfmbus2, \octave, 6, \res, 0.998));
+Pdef(\dfms, Ppar([Pdef(\dfm1), Pdef(\dfm2)], inf));
 );
 
-Pdef(\dfm1).play(~tempo, quant: 1);
-m.control(0, 108, ~orange);
+Pdef(\dfms).play(~tempo, quant: 1);
+m.control(0, 107, ~yellow);
 /*
-Pdef(\dfm1).isPlaying;
-Pdef(\dfm1).stop;
+Pdef(\dfms).isPlaying;
+Pdef(\dfms).stop;
 */
 
 (
-MIDIdef.cc(\dfm1, {
-    if(Pdef(\dfm1).isPlaying.not) {
-        Pdef(\dfm1).play(~tempo, quant: 1);
-        m.control(0, 108, ~orange);
+MIDIdef.cc(\dfms, {
+    if(Pdef(\dfms).isPlaying.not) {
+        Pdef(\dfms).play(~tempo, quant: 1);
+        m.control(0, 107, ~yellow);
         "dfm1 play".postln;
     } {
-        Pdef(\dfm1).stop;
-        m.control(0, 108, 0);
+        Pdef(\dfms).stop;
+        m.control(0, 107, 0);
         "dfm1 stop".postln;
     }
-}, 108, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
+}, 107, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
 );
 
 ////////////////////////////////////////////////////////////////
@@ -326,9 +274,9 @@ Pdef(\sfplay1,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 16, 24, 32, 64, 96], inf),
         \legato, 1,
         \loop, 1,
-        \outbus, Prand([~rhpfbus, ~ringzbus1, [0, ~ringzbus1], [0, ~rhpfbus, ~ringzbus1]], inf),
+        \outbus, Prand([~ringzbus1, [0, ~ringzbus1], [0, ~ringzbus1]], inf),
         \startPos, Pwhite(0, 1000000, inf),
-        \vol, 0.1,
+        \vol, 0.2,
 ));
 Pdef(\sfplay2, Pbindf(Pdef(\sfplay1)));
 Pdef(\sfplay3, Pbindf(Pdef(\sfplay1)));
@@ -421,12 +369,12 @@ MIDIdef.noteOn(\sfplay4, {
 // DRONE: SYNTH
 
 (
-SynthDef(\sin, { |fb = 0.1, freq = 440, gate = 1, im = 1, level = 0.02, outbus = 0|
+SynthDef(\sin, { |fb = 0.1, freq = 440, gate = 1, im = 1, level = 0.01, outbus = 0|
     var env             =   Env.asr(0.1, level);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin1            =   FBSineC.ar(freq, [im, im - 0.01], fb, mul: envgen);
     var leakdc          =   LeakDC.ar(sin1);
-    var rhpf            =   BHiPass4.ar(leakdc, (freq).clip(50, SampleRate.ir / 3), 0.03);
+    var rhpf            =   BHiPass4.ar(leakdc, (freq).clip(50, SampleRate.ir / 3), 0.01);
     var sin2            =   SinOscFB.ar(freq / 8, 0.3, envgen);
     Out.ar(outbus, rhpf + sin2);
 }).add;
@@ -443,11 +391,20 @@ Pdef(\sin1,
         \im, Pshuf((11..17) / 10, inf),
         \legato, 0.25,
         \note, Pshuf(~ringzchords, inf),
-        \octave, Pshuf([6, 7, 8].powerset.reject({ |i| i.isEmpty }), inf),
+        \octave, 8,
 ));
 Pdef(\sin2, Pbindf(Pdef(\sin1)));
 Pdef(\sin3, Pbindf(Pdef(\sin1)));
-Pdef(\sinbass, Pbindf(Pdef(\sin1), \level, 0.02, \note, Pshuf([-2, 0, 2, 7], inf), \octave, [4, 5, 6]));
+
+Pdef(\sinbass,
+    Pbind(
+        \instrument, \sin,
+        \dur, Pshuf(~ringzdurs, inf),
+        \legato, 0.25,
+        \level, 0.05,
+        \note, Pshuf([-2, 0, 2, 7], inf),
+        \octave, 6
+));
 );
 
 /*
@@ -533,11 +490,12 @@ MIDIdef.noteOn(\sinbass, {
 // SINPRC: SYNTH
 
 (
-SynthDef(\sinprc, { |curve = -4, fb = 0.1, foldfactor = 1, freq = 440, im = 1, level = 0.1, outbus = 0, pan = 0|
-    var env             =   Env.perc(0.005, 1, level, curve);
+SynthDef(\sinprc, { |curve = -4, fb = 0.1, freq = 440, im = 1, level = 0.1, mode = 1, outbus = 0, pan = 0|
+    var env             =   Env.perc(0.003, 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var fbsin           =   FBSineC.ar(freq, im, fb, mul: envgen).fold2(level / foldfactor) * foldfactor;
-    var pan2            =   Pan2.ar(fbsin, pan).fold2(level);
+    var fbsin           =   FBSineC.ar(freq, im, fb, mul: envgen);
+    var rhpf            =   BMoog.ar(fbsin, freq.clip(50, SampleRate.ir / 2.5), 0.9, mode, 0);
+    var pan2            =   Pan2.ar(rhpf, pan).fold2(level);
     Out.ar(outbus, pan2);
 }).add;
 );
@@ -548,36 +506,47 @@ SynthDef(\sinprc, { |curve = -4, fb = 0.1, foldfactor = 1, freq = 440, im = 1, l
 Pdef(\sinprc1,
     Pbind(
         \instrument, \sinprc,
-        \curve, Pshuf([-64, -32, -16], inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.5, 0.75, 1, 1.5, 2, 3].stutter(3), inf),
-        \fb, Pshuf((9..20) / 5, inf),
-        \foldfactor, Pshuf((2..4), inf),
-        \level, Prand([0.4, 1] * 0.03, inf),
-        \note, [-2, 0, 2, 7],
-        \octave, Pshuf((4..10), inf),
-        \outbus, Pshuf([0, ~rhpfbus, [0, ~verbus]], inf),
+        \curve, -8,
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        //\fb, Pshuf([0.2, 0.4, 0.6, 0.8, 1.0], inf),
+        //\level, Prand([0.4, 1] * 0.05, inf),
+        \level, 0.1,
+        \mode, 1,
+        \note, [2, 7, 10, 12],
+        \octave, 8,
+        \outbus, Pshuf([0, [0, ~verbus]], inf),
         \pan, Pshuf([-0.5, 0, 0.5], inf),
 ));
 
-(
 Pdef(\sinprc2,
     Pbindf(
         Pdef(\sinprc1),
-        \curve, -16,
-        \dur, Pseq([0.75, 0.75, 1, 0.75, 0.75, 0.75, 1, 0.75, 0.75, 0.75, 0.75, 1], inf),
+        \level, 0.01
 ));
-);
+
+Pdef(\sinprcs1and2, Ppar([Pdef(\sinprc1), Pdef(\sinprc2)], inf));
 
 Pdef(\sinprc3,
+    Pbindf(
+        Pdef(\sinprc1),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        \level, 0.2,
+        \mode, 0,
+        \note, Pshuf([-2, 0, 2], inf),
+        \octave, [5, 6],
+        \pan, 0
+));
+
+Pdef(\sinprc4,
     Pbind(
         \instrument, \sinprc,
         \curve, Pshuf([-256, -128, -64].stutter(3), inf),
-        \dur, Pshuf([Pshuf([0.25, 0.5, 0.75].stutter(11)), Pseq([1/6], 3), Pseq([9, 1, 1, 1] / 12)], inf),
+        \dur, Pshuf([Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3)), Pseq([1/6], 3), Pseq([9, 1, 1, 1] / 12)], inf),
         \fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
         \level, 0.02,
         \note, Pshuf([2, 7, 10, 12].powerset.reject({ |i| i.isEmpty }), inf),
         \octave, 12,
-        \outbus, Prand([0, ~rhpfbus, [0, ~verbus]], inf)
+        \outbus, Prand([0, [0, ~verbus]], inf)
 ));
 );
 
@@ -599,46 +568,52 @@ Pdef(\sinprc3).isPlaying;
 Pdef(\sinprc3).stop;
 */
 
+/*
+Pdef(\sinprc4).play(~tempo, quant: 1);
+Pdef(\sinprc4).isPlaying;
+Pdef(\sinprc4).stop;
+*/
+
 // SINPRC: MIDI CONTROL
 
 (
-MIDIdef.noteOn(\sinprc1, {
-    if(Pdef(\sinprc1).isPlaying.not) {
-        Pdef(\sinprc1).play(~tempo, quant: 1);
+MIDIdef.noteOn(\sinprca1and2, {
+    if(Pdef(\sinprcs1and2).isPlaying.not) {
+        Pdef(\sinprcs1and2).play(~tempo, quant: 1);
         m.noteOn(0, 32, ~red);
-        "sinprc1 play".postln;
+        "sinprcs 1 and 2 play".postln;
     } {
-        Pdef(\sinprc1).stop;
+        Pdef(\sinprcs1and2).stop;
         m.noteOn(0, 32, 0);
-        "sinprc1 stop".postln;
+        "sinprcs 1 and 2 stop".postln;
     };
 }, 32, srcID: ~lp.uid);
-);
-
-(
-MIDIdef.noteOn(\sinprc2, {
-    if(Pdef(\sinprc2).isPlaying.not) {
-        Pdef(\sinprc2).play(~tempo, quant: 1);
-        m.noteOn(0, 33, ~red);
-        "sinprc2 play".postln;
-    } {
-        Pdef(\sinprc2).stop;
-        m.noteOn(0, 33, 0);
-        "sinprc2 stop".postln;
-    };
-}, 33, srcID: ~lp.uid);
 );
 
 (
 MIDIdef.noteOn(\sinprc3, {
     if(Pdef(\sinprc3).isPlaying.not) {
         Pdef(\sinprc3).play(~tempo, quant: 1);
-        m.noteOn(0, 34, ~red);
+        m.noteOn(0, 33, ~red);
         "sinprc3 play".postln;
     } {
         Pdef(\sinprc3).stop;
-        m.noteOn(0, 34, 0);
+        m.noteOn(0, 33, 0);
         "sinprc3 stop".postln;
+    };
+}, 33, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\sinprc4, {
+    if(Pdef(\sinprc4).isPlaying.not) {
+        Pdef(\sinprc4).play(~tempo, quant: 1);
+        m.noteOn(0, 34, ~red);
+        "sinprc4 play".postln;
+    } {
+        Pdef(\sinprc4).stop;
+        m.noteOn(0, 34, 0);
+        "sinprc4 stop".postln;
     };
 }, 34, srcID: ~lp.uid);
 );
@@ -659,7 +634,7 @@ SynthDef(\latprc, { |a = 1, curve = 0, envlength = 0.3, ffreq = 4000, freq = 200
 // LATPRC: PATTERN
 
 (
-~latprcdurs = [0.75, 0.75, 1, 0.75, 0.75, 0.75, 1, 0.75, 0.75, 0.75, 0.75, 1, 3];
+~latprcdurs = [0.75, 0.75, 1, 0.75, 0.75, 0.75, 1, 0.75, 0.75, 0.75, 0.75, 1, 6];
 Pdef(\latprc1,
     Pbind(
         \instrument, \latprc,
@@ -670,7 +645,7 @@ Pdef(\latprc1,
         \ffreq, Pshuf((2..8) * 1000, inf),
         \freq, Prand([1/64, 1] * 22050, inf),
         //\octave, Pshuf([12..20], inf),
-        \outbus, Prand([0, ~dfmbus, [0, ~dfmbus]], inf)
+        \outbus, Prand([0, ~dfmbus1, ~dfmbus2, [0, ~dfmbus1], [~dfmbus2]], inf)
 ));
 
 Pdef(\latprc2, Pbindf(Pdef(\latprc1), \dur, Pshuf(~latprcdurs.mirror2, inf), \level, 0.02));
@@ -709,17 +684,23 @@ Pdef(\sfstut,
         \attack, 0.003,
         \bufnum, Prand([1, 3, 5], inf),
         \curve, 0,
-        \dur, Prand([0.25, 0.5, 0.75], inf),
-        \legato, 0.3,
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25], inf),
+        \legato, 0.5,
         \loop, 1,
         \note, Pseq([Pseq([0], 300), Pseq([Rest], 100)], inf),
-        \outbus, Prand([0, ~rezbus], inf),
+        \outbus, [0, ~rezbus],
         \release, 0.3,
         \startPos, Pwhite(0, 1000000, inf),
-        \vol, 0.05
+        \vol, 0.03
 ));
-Pdef(\sfstuts, Ppar([Pdef(\sfstut), Pdef(\sfstut), Pdef(\sfstut), Pdef(\sfstut)], inf));
+//Pdef(\sfstuts, Ppar([Pdef(\sfstut), Pdef(\sfstut), Pdef(\sfstut), Pdef(\sfstut)], inf));
 );
+
+/*
+Pdef(\sfstut).play(~tempo, quant: 1);
+Pdef(\sfstut).isPlaying;
+Pdef(\sfstut).stop;
+*/
 
 /*
 Pdef(\sfstuts).play(~tempo, quant: 1);
@@ -730,13 +711,13 @@ Pdef(\sfstuts).stop;
 // SOUNDFILE STUTTER: MIDI CONTROL:
 
 (
-MIDIdef.noteOn(\sfstuts, {
-    if(Pdef(\sfstuts).isPlaying.not) {
-        Pdef(\sfstuts).play(~tempo, quant: 1);
+MIDIdef.noteOn(\sfstut, {
+    if(Pdef(\sfstut).isPlaying.not) {
+        Pdef(\sfstut).play(~tempo, quant: 1);
         m.noteOn(0, 4, ~green);
         "sfstuts play".postln;
     } {
-        Pdef(\sfstuts).stop;
+        Pdef(\sfstut).stop;
         m.noteOn(0, 4, 0);
         "sfstuts stop".postln;
     }
