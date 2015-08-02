@@ -48,7 +48,6 @@ m.connect(~lp.uid);
 ~rezbus1 = Bus.audio(s, 2);
 ~rezbus2 = Bus.audio(s, 2);
 ~rezbus3 = Bus.audio(s, 2);
-//~rezbus4 = Bus.audio(s, 2);
 ~verbus = Bus.audio(s, 2);
 ~dfmbus1 = Bus.audio(s, 2);
 ~dfmbus2 = Bus.audio(s, 2);
@@ -219,15 +218,32 @@ Pdef(\rez1,
         \decaytime, 0.1,
         \dur, Pshuf(~ringzdurs, inf),
         \inbus, ~rezbus1,
-        \level, 0.00005,
         \note, Pshuf(~ringzchords, inf),
         \octave, 5,
         \scale, ~scale
 ));
 
-Pdef(\rez2, Pbindf(Pdef(\rez1), \decaytime, 0.3, \inbus, ~rezbus2, \note, Pshuf(~ringzchords, inf), \octave, 4));
+Pdef(\rez2,
+    Pmono(
+        \rez,
+        \decaytime, 0.5,
+        \dur, Pshuf(~ringzdurs, inf),
+        \inbus, ~rezbus2,
+        \note, Pshuf(~ringzchords, inf),
+        \octave, 4,
+        \scale, ~scale
+));
 
-Pdef(\rez3, Pbindf(Pdef(\rez2), \inbus, ~rezbus3, \octave, 6));
+Pdef(\rez3,
+    Pmono(
+        \rez,
+        \decaytime, 0.1,
+        \dur, Pshuf(~ringzdurs, inf),
+        \inbus, ~rezbus3,
+        \note, Pshuf(~ringzchords, inf),
+        \octave, 5,
+        \scale, ~scale
+));
 
 Pdef(\rez, Ppar([Pdef(\rez1), Pdef(\rez2), Pdef(\rez3)], inf));
 );
@@ -668,6 +684,94 @@ MIDIdef.noteOn(\shapes, {
 );
 
 ////////////////////////////////////////////////////////////////
+// PULSE: SYNTH
+
+(
+SynthDef(\pulse, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
+    var env             =   Env.perc(0.01, dur + 0.5, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var sin1            =   SinOscFB.ar(freq!2, fb, envgen);
+    //var sin2            =   SinOscFB.ar(freq!2 * 2, mul: envgen / 32);
+    var rhpf            =   RHPF.ar(sin1, (freq * 4).clip(50, SampleRate.ir / 2.5));
+    Out.ar(0, sin1 + rhpf);
+}).add;
+);
+
+(
+Pdef(\pulse1,
+    Pbind(
+        \instrument, \pulse,
+        \curve, 0,
+        \dur, Pseq([0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5, 0.75], inf),
+        \fb, 0.3,
+        \level, 0.02,
+        \note, Pseq([
+            Pseq([[7, 10]], 31),
+            Pseq([[7, 10, 12]], 37),
+            Pseq([[7, 10, 12, 14]], 41)
+        ], inf),
+        \octave, 4,
+        \scale, ~scale
+));
+
+Pdef(\pulse2,
+    Pbindf(
+        Pdef(\pulse1),
+        \dur, Pshuf([1, 1.25, 1.5, 1.75, 2], inf),
+        //\dur, 0.25,
+        \fb, 0.3,
+        \note, Pseq([
+            Pseq([~ringzchords[0]], 23),
+            Pseq([~ringzchords[1]], 23),
+            Pseq([~ringzchords[2]], 23),
+            Pseq([~ringzchords[3]], 23)
+        ], inf),
+        \octave, 5,
+        \scale, ~scale
+));
+);
+
+/*
+Pdef(\pulse1).play(~tempo, quant: 1);
+Pdef(\pulse1).isPlaying;
+Pdef(\pulse1).stop;
+*/
+
+/*
+Pdef(\pulse2).play(~tempo, quant: 1);
+Pdef(\pulse2).isPlaying;
+Pdef(\pulse2).stop;
+*/
+
+(
+MIDIdef.noteOn(\pulse1, {
+    if(Pdef(\pulse1).isPlaying.not) {
+        Pdef(\pulse1).play(~tempo, quant: 1);
+        m.noteOn(0, 21, ~red);
+        "pulse1 play".postln;
+    } {
+        Pdef(\pulse1).stop;
+        m.noteOn(0, 21, 0);
+        "pulse1 stop".postln;
+    }
+}, 21, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\pulse2, {
+    if(Pdef(\pulse2).isPlaying.not) {
+        Pdef(\pulse2).play(~tempo, quant: 1);
+        m.noteOn(0, 22, ~red);
+        "pulse2 play".postln;
+    } {
+        Pdef(\pulse2).stop;
+        m.noteOn(0, 22, 0);
+        "pulse2 stop".postln;
+    }
+}, 22, srcID: ~lp.uid);
+);
+
+////////////////////////////////////////////////////////////////
 // SINPRC: SYNTH
 
 (
@@ -814,7 +918,7 @@ MIDIdef.noteOn(\sinprcs4and5, {
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\pinz, { |curve = -4, fb = 0, freq = 440, level = 0.01, pan = 0|
+SynthDef(\pinz, { |curve = -4, fb = 0, freq = 440, level = 0.02, pan = 0|
     var env         =   Env.perc(0.003, 1, level, curve);
     var envgen      =   EnvGen.kr(env, doneAction: 2);
     var sin         =   SinOscFB.ar(freq, fb, envgen);
@@ -844,7 +948,9 @@ Pdef(\pinz1,
 
 Pdef(\pinz2, Pbindf(Pdef(\pinz1), \pan, 1));
 
-Pdef(\pinz, Ppar([Pdef(\pinz1), Pdef(\pinz2)], inf));
+Pdef(\pinz3, Pbindf(Pdef(\pinz1), \dur, 0.25, \note, 0, \pan, 0));
+
+Pdef(\pinz, Ppar([Pdef(\pinz1), Pdef(\pinz2), Pdef(\pinz3)], inf));
 );
 
 /*
@@ -909,7 +1015,7 @@ Pdef(\latprcs, Ppar([Pdef(\latprc1), Pdef(\latprc2)], inf));
 Pdef(\lathat1,
     Pbind(
         \instrument, \latprc,
-        \a, Pshuf((-2..2).stutter(5) / 10, inf),
+        \a, Pseq((-2..2).mirror1 / 10, inf),
         \curve, -64,
         \dur, Prand([0.25, 0.5, 0.75], inf),
         \ffreq, 18000,
@@ -982,56 +1088,12 @@ MIDIdef.noteOn(\lathats, {
 );
 
 ////////////////////////////////////////////////////////////////
-// PULSE: SYNTH
-(
-SynthDef(\pulse, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
-    var env             =   Env.perc(0.01, dur + 0.5, level, curve);
-    var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sin             =   SinOscFB.ar(freq!2, fb, envgen);
-    Out.ar(0, sin);
-}).add;
-);
-
-(
-Pdef(\pulse,
-    Pbind(
-        \instrument, \pulse,
-        \curve, 0,
-        \dur, Prand([0.5, 0.75], inf),
-        \fb, 0.2,
-        \level, 0.02,
-        \note, Pseq([Pseq([[7, 10]], 19), Pseq([[7, 10, 12]], 23), Pseq([[7, 10, 12, 14]], 29)], inf),
-        \octave, 4,
-        \scale, ~scale
-));
-);
-
-/*
-Pdef(\pulse).play(~tempo, quant: 1);
-Pdef(\pulse).isPlaying;
-Pdef(\pulse).stop;
-*/
-
-(
-MIDIdef.noteOn(\pulse, {
-    if(Pdef(\pulse).isPlaying.not) {
-        Pdef(\pulse).play(~tempo, quant: 1);
-        m.noteOn(0, 21, ~red);
-        "pulse play".postln;
-    } {
-        Pdef(\pulse).stop;
-        m.noteOn(0, 21, 0);
-        "pulse stop".postln;
-    }
-}, 21, srcID: ~lp.uid);
-);
-
-////////////////////////////////////////////////////////////////
 // REZSOUND: SYNTH
 
 (
-~rezsound1buf = ~arrayOfBuffers.detect { |b| b.path.containsi("pei.taidong") };
-~rezsound2buf = ~arrayOfBuffers.detect { |b| b.path.containsi("1971") };
+~rezsound1buf = ~arrayOfBuffers.detect { |b| b.path.containsi("0692.Pei.Taidong.east_coast_pebble_engulf01.aif") };
+~rezsound2buf = ~arrayOfBuffers.detect { |b| b.path.containsi("1971.Caspar_StrAm.Baltic_Sea.Viking_Line_Taxfree") };
+~rezsound3buf = ~arrayOfBuffers.detect { |b| b.path.containsi("traffic01") };
 Pdef(\rezsound1,
     Pmono(
         \sfplay,
@@ -1043,7 +1105,27 @@ Pdef(\rezsound1,
         \vol, 0.05
 ));
 
-Pdef(\rezsound2, Pbindf(Pdef(\rezsound1), \bufnum, ~rezsound2buf.bufnum, \loop, 0, \outbus, [0, ~rezbus2]));
+Pdef(\rezsound2,
+    Pbindf(
+        Pdef(\rezsound1),
+        \attack, 5,
+        \bufnum, ~rezsound2buf.bufnum,
+        \dur, Pseq([(~rezsound2buf.numFrames / s.sampleRate).round(1) - 40]),
+        \loop, 0,
+        \outbus, ~rezbus2,
+        \startPos, s.sampleRate * 40
+));
+
+Pdef(\rezsound3,
+    Pbindf(
+        Pdef(\rezsound1),
+        \attack, 8,
+        \bufnum, ~rezsound3buf.bufnum,
+        \dur, Pseq([329]),
+        \loop, 0,
+        \outbus, [0, ~rezbus3],
+        \vol, 0.1
+));
 );
 
 /*
@@ -1056,6 +1138,12 @@ Pdef(\rezsound1).stop;
 Pdef(\rezsound2).play(~tempo, quant: 1);
 Pdef(\rezsound2).isPlaying;
 Pdef(\rezsound2).stop;
+*/
+
+/*
+Pdef(\rezsound3).play(~tempo, quant: 1);
+Pdef(\rezsound3).isPlaying;
+Pdef(\rezsound3).stop;
 */
 
 (
@@ -1084,4 +1172,18 @@ MIDIdef.noteOn(\rezsound2, {
         "rezsound2 stop".postln;
     }
 }, 5, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\rezsound3, {
+    if(Pdef(\rezsound3).isPlaying.not) {
+        Pdef(\rezsound3).play(~tempo, quant: 1);
+        m.noteOn(0, 6, ~green);
+        "rezsound3 play".postln;
+    } {
+        Pdef(\rezsound3).stop;
+        m.noteOn(0, 6, 0);
+        "rezsound3 stop".postln;
+    }
+}, 6, srcID: ~lp.uid);
 );
