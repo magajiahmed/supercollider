@@ -544,24 +544,27 @@ Pdef(\snrpar3).isPlaying;
 Pdef(\snrpar3).stop;
 */
 
+Pdef(\snrs, Ppar([Pdef(\snrpar0), Pdef(\snrpar2), Pdef(\snrpar2)]));
+
 // Midi Control
 
 (
-MIDIdef.cc(\snrpar0playktrl, {
-    if(Pdef(\snrpar0).isPlaying.not) {
-        Pdef(\snrpar0).play(~tempo, quant: 1);
-        "snr0 play".postln;
+MIDIdef.cc(\snrsplay, {
+    if(Pdef(\snrs).isPlaying.not) {
+        Pdef(\snrs).play(~tempo, quant: 1);
+        "snrs play".postln;
     }
 }, 34, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
-MIDIdef.cc(\snrpar0stopktrl, {
-    if(Pdef(\snrpar0).isPlaying) {
-        Pdef(\snrpar0).stop;
-        "snr0 stop".postln;
+MIDIdef.cc(\snrsstop, {
+    if(Pdef(\snrs).isPlaying) {
+        Pdef(\snrs).stop;
+        "snrs stop".postln;
     }
 }, 34, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\snrpar2playktrl, {
     if(Pdef(\snrpar2).isPlaying.not) {
@@ -593,6 +596,7 @@ MIDIdef.cc(\snrpar3stopktrl, {
     };
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // HAT /////////////////////////////////////////////////////////

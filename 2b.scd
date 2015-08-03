@@ -109,7 +109,7 @@ Pdef(\bass,
 		//\instrument, \bass,
         \instrument, \abass,
 		//\a, Pwhite(0.9, 1.1, inf),
-        \note, Pseq([Pshuf(~bassnotes.stutter(2), 2), Pseq([Rest], ~bassnotes.size)], inf),
+        \degree, Pseq([Pshuf(~bassnotes.stutter(2), 2), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf((10..17) / 9, inf),
         //\ffreq, Pwhite(4000, 8000, inf),
@@ -270,7 +270,7 @@ Pdef(\dinglepat1,
             Pseq([1.5], 7),
             Pseq([1.75], 7)
 		], inf),
-		\note, Pwrand([0, Rest], [2, 1].normalizeSum, inf),
+		\degree, Pwrand([0, Rest], [2, 1].normalizeSum, inf),
 		\level, ~dinglelvl,
 		\octave, 5,
 		\scale, ~scale,
@@ -337,7 +337,7 @@ SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.1, rt =
 Pdef(\snappat,
 	Pbind(
 		\instrument, \snap,
-		\note, [2, 7],
+		\degree, [2, 7],
 		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3].stutter(7), inf),
 		\im, Pshuf((1..10), inf),
 		\level, 0.05,
@@ -405,7 +405,7 @@ Pdef(\cnprc4,
         \curve, -64,
         \dur, Pseq([1, 1.5, 1, 1.5, 1, 1, 1.5], inf),
         \freq, 1600,
-        \note, Pseq([Pseq([0], 14), Pseq([Rest], 21)], inf)
+        \degree, Pseq([Pseq([0], 14), Pseq([Rest], 21)], inf)
 ));
 Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2), Pdef(\cnprc3), Pdef(\cnprc4)], inf));
 );
@@ -568,7 +568,7 @@ Pdef(\plunkpat1,
         \a, Pshuf((5..10) / 5, inf),
         \curve, -16,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24, 32, 48, 64, 96], inf),
-		\note, 0,
+		\degree, 0,
         \fb, Pshuf(([0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]), inf),
         \octave, 6,
 		\scale, ~scale,
@@ -680,13 +680,13 @@ Pdef(\pad1,
         \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
         \legato, 0.5,
-        \note, Pseq([[-2, 0, 7], Rest], inf),
+        \degree, Pseq([[-2, 0, 7], Rest], inf),
         \octave, 6,
         \scale, ~scale,
 ));
-Pdef(\pad2, Pbindf(Pdef(\pad1), \note, Pseq([Rest, [7, 10]], inf)));
-Pdef(\pad3, Pbindf(Pdef(\pad1), \note, Pseq([[7, 12], Rest], inf)));
-Pdef(\pad4, Pbindf(Pdef(\pad1), \note, Pseq([Rest, [7, 13]], inf)));
+Pdef(\pad2, Pbindf(Pdef(\pad1), \degree, Pseq([Rest, [7, 10]], inf)));
+Pdef(\pad3, Pbindf(Pdef(\pad1), \degree, Pseq([[7, 12], Rest], inf)));
+Pdef(\pad4, Pbindf(Pdef(\pad1), \degree, Pseq([Rest, [7, 13]], inf)));
 Pdef(\pads, Ppar([Pdef(\pad1), Pdef(\pad2), Pdef(\pad3), Pdef(\pad4)]));
 );
 
@@ -696,7 +696,7 @@ Pdef(\pads).isPlaying;
 Pdef(\pads).stop;
 */
 
-Pdef(\paddrone, Pmono(\pad, \note, [0, 7], \scale, ~scale));
+Pdef(\paddrone, Pmono(\pad, \degree, [0, 7], \scale, ~scale));
 
 /*
 Pdef(\paddrone).play(t, quant: 1);
@@ -778,7 +778,7 @@ Pdef(\larry1,
         \fb, 0,
         \legato, 0.5,
         \level, 0.005,
-        \note, Pseq([[7, 12], Rest], inf),
+        \degree, Pseq([[7, 12], Rest], inf),
         \octave, 5,
         \s, Pwhite(8.0, 12.0, inf),
         \scale, ~scale
@@ -788,16 +788,16 @@ Pdef(\larry1,
 Pdef(\larry2,
 	Pbindf(
 		Pdef(\larry1),
-        \note, Pshuf([[7, 10, 12], Rest], inf),
+        \degree, Pshuf([[7, 10, 12], Rest], inf),
 ));
 
 Pdef(\larry3,
 	Pbindf(
 		Pdef(\larry1),
-        \note, Pshuf([[7, 12, 13], Rest], inf)
+        \degree, Pshuf([[7, 12, 13], Rest], inf)
 ));
 
-Pdef(\larry4, Pbindf(Pdef(\larry1), \note, Pshuf([0, Rest], inf), \octave, 4));
+Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pshuf([0, Rest], inf), \octave, 4));
 
 Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
 );
@@ -877,7 +877,7 @@ Pdef(\pnopulse1,
         \dur, Pseq(~pnodurs + 0.25, inf),
 		\fb, 0,
         \level, ~pnopulselvl,
-        \note, 0,
+        \degree, 0,
         \octave, 7,
         \rq1, 0.1,
         \scale, ~scale,
@@ -899,7 +899,7 @@ Pdef(\pno1,
         \fb2mul, 0.4,
         \hffreq, 8000,
         \level, ~pnolvl,
-        \note, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 2), inf),
+        \degree, Pseq([0].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 2), inf),
         \octave, 7,
         \rq1, 0.3,
         \rq2, 0.3,
@@ -910,13 +910,13 @@ Pdef(\pno1,
 Pdef(\pno2,
     Pbindf(
         Pdef(\pno1),
-        \note, Pseq([-2].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 3), inf)
+        \degree, Pseq([-2].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 3), inf)
 ));
 
 Pdef(\pno3,
     Pbindf(
         Pdef(\pno1),
-        \note, Pseq([7].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 4), inf)
+        \degree, Pseq([7].stutter(~pnodurs.size) ++ [Rest].stutter(~pnodurs.size * 4), inf)
 ));
 
 Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)], inf));
@@ -946,7 +946,7 @@ Pdef(\pnobass1,
         \hffreq, Pshuf((4..12) * 1000, inf),
         \level, 0.3,
         \lffreq, 5000,
-        \note, 2,
+        \degree, 2,
         \octave, 3,
         \octavelowermul, 1,
 		\rq1, 1,
@@ -1030,8 +1030,8 @@ Pdef(\pgnpat1,
 	Pbind(
 		\instrument, \penguin,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        //\note, Pshuf([0, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
-        \note, Pshuf([0, 2, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
+        //\degree, Pshuf([0, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
+        \degree, Pshuf([0, 2, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
 		\dur, Pshuf([24, 32, 48, 64, 96] + 0.25, inf),
 		\legato, 0.5,
 		\octave, 6,
@@ -1097,7 +1097,7 @@ SynthDef(\pad2, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.008 |
 Pdef(\pad2pat,
 	Pbind(
 		\instrument, \pad2,
-		\note, Pseq([
+		\degree, Pseq([
             ~padchords2shuf[0], Rest,
             ~padchords2shuf[1], ~padchords2shuf[2], Rest,
             ~padchords2shuf[3], ~padchords2shuf[4], ~padchords2shuf[5], Rest,
@@ -1116,8 +1116,8 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \note, [-5, 0].stutter(2), \octave, 5, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \note, [0, 12, 19], \octave, 3, \scale, ~scale));
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [-5, 0].stutter(2), \octave, 5, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 19], \octave, 3, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);

@@ -27,8 +27,8 @@ m.connect(~lp.uid);
 // PITCH LOGIC
 
 (
-~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
-~tuning = Tuning.new(~ratios.ratiomidi);
+~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 243/128];
+~tuning = Tuning.new(~ratios.collect({ |i| i.ratiomidi }));
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 ~chord = [-2, 0, 2, 7];
@@ -97,7 +97,7 @@ Pdef(\ringz1,
         \dur, Pshuf(~ringzdurs, inf),
         \decaytime, 0.8,
         \inbus, ~ringzbus1,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \scale, ~scale
 ));
 
@@ -218,7 +218,7 @@ Pdef(\rez1,
         \decaytime, 0.1,
         \dur, Pshuf(~ringzdurs, inf),
         \inbus, ~rezbus1,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -229,7 +229,7 @@ Pdef(\rez2,
         \decaytime, 0.5,
         \dur, Pshuf(~ringzdurs, inf),
         \inbus, ~rezbus2,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 4,
         \scale, ~scale
 ));
@@ -237,10 +237,10 @@ Pdef(\rez2,
 Pdef(\rez3,
     Pmono(
         \rez,
-        \decaytime, 0.1,
+        \decaytime, 0.2,
         \dur, Pshuf(~ringzdurs, inf),
         \inbus, ~rezbus3,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -330,7 +330,7 @@ Pdef(\dfm1,
         \inbus, ~dfmbus1,
         \legato, 0.999,
         \level, 0.2,
-        \note, Pshuf(~chord, inf),
+        \degree, Pshuf(~chord, inf),
         \octave, [3, 3, 4],
         \res, 0.997,
         \scale, ~scale
@@ -341,7 +341,7 @@ Pdef(\dfm2,
         Pdef(\dfm1),
         \inbus, ~dfmbus2,
         \level, 0.1,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 7,
         \res, 0.999
 ));
@@ -512,7 +512,7 @@ Pdef(\sin1,
         \fb, Pshuf((1..11) / 10, inf),
         \im, Pshuf((11..17) / 10, inf),
         \legato, 0.5,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 8,
         \scale, ~scale
 ));
@@ -525,7 +525,7 @@ Pdef(\sinbass,
         \dur, Pshuf(~ringzdurs, inf),
         \legato, 0.25,
         \level, 0.05,
-        \note, Pshuf([-2, 0, 2, 7], inf),
+        \degree, Pshuf([-2, 0, 2, 7], inf),
         \octave, [5, 6],
         \scale, ~scale
 ));
@@ -630,9 +630,7 @@ SynthDef(\shapely, { |a = 1, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.02
 (
 Pdef(\shapely1,
     Pbind(
-    //Pmono(
         \instrument, \shapely,
-        //\shapely,
         \a, Pwhite(0.8, 1.2, inf),
         \dur, Pshuf(~ringzdurs, inf),
         \fb, 1,
@@ -640,7 +638,7 @@ Pdef(\shapely1,
         \lfreq, ~tempo.tempo * 4,
         \limitmodmin, 0.08,
         \limitmodmax, 0.16,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 7,
         \pan, -0.5,
         \scale, ~scale
@@ -649,6 +647,18 @@ Pdef(\shapely1,
 Pdef(\shapely2, Pbindf(Pdef(\shapely1), \pan, 0.5));
 
 Pdef(\shapes, Ppar([Pdef(\shapely1), Pdef(\shapely2)], inf));
+
+Pdef(\shapely3,
+    Pbind(
+        \instrument, \shapely,
+        \a, Pwhite(0.8, 1.2, inf),
+        \dur, Pshuf(~ringzdurs, inf),
+        \legato, 0.5,
+        \lfreq, ~tempo.tempo * (Pkey(\dur)).reciprocal,
+        \degree, Pshuf(~ringzchords, inf),
+        \octave, 6,
+        \scale, ~scale
+));
 );
 
 /*
@@ -669,6 +679,13 @@ Pdef(\shapes).isPlaying;
 Pdef(\shapes).stop;
 */
 
+/*
+Pdef(\shapely3).play(~tempo, quant: 1);
+Pdef(\shapely3).isPlaying;
+Pdef(\shapely3).stop;
+*/
+
+
 (
 MIDIdef.noteOn(\shapes, {
     if(Pdef(\shapes).isPlaying.not) {
@@ -683,17 +700,31 @@ MIDIdef.noteOn(\shapes, {
 }, 20, srcID: ~lp.uid);
 );
 
+(
+MIDIdef.noteOn(\shapely3, {
+    if(Pdef(\shapely3).isPlaying.not) {
+        Pdef(\shapely3).play(~tempo, quant: 1);
+        m.noteOn(0, 22, ~red);
+        "shapely3 play".postln;
+    } {
+        Pdef(\shapely3).stop;
+        m.noteOn(0, 22, 0);
+        "shapely3 stop".postln;
+    }
+}, 22, srcID: ~lp.uid);
+);
+
 ////////////////////////////////////////////////////////////////
 // PULSE: SYNTH
 
 (
-SynthDef(\pulse, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
+SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
     var env             =   Env.perc(0.01, dur + 0.5, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sin1            =   SinOscFB.ar(freq!2, fb, envgen);
-    //var sin2            =   SinOscFB.ar(freq!2 * 2, mul: envgen / 32);
-    var rhpf            =   RHPF.ar(sin1, (freq * 4).clip(50, SampleRate.ir / 2.5));
-    Out.ar(0, sin1 + rhpf);
+    var sin             =   SinOscFB.ar(freq!2, fb, envgen);
+    var lat             =   LatoocarfianC.ar(a: a, mul: envgen / 16);
+    var rhpf            =   RHPF.ar(lat, (freq * 8).clip(50, SampleRate.ir / 2.5), 0.03, 0.2);
+    Out.ar(0, sin + rhpf);
 }).add;
 );
 
@@ -701,32 +732,19 @@ SynthDef(\pulse, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
 Pdef(\pulse1,
     Pbind(
         \instrument, \pulse,
+        \a, Pshuf((-2..2), inf),
         \curve, 0,
-        \dur, Pseq([0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5, 0.75], inf),
-        \fb, 0.3,
-        \level, 0.02,
-        \note, Pseq([
+        //\dur, Pseq([0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5, 0.75], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(5), inf),
+        \fb, 0.4,
+        \level, 0.03,
+        \degree, Pseq([
             Pseq([[7, 10]], 31),
             Pseq([[7, 10, 12]], 37),
-            Pseq([[7, 10, 12, 14]], 41)
+            Pseq([[7, 10, 12, 14]], 41),
+            Pseq([Rest], 11)
         ], inf),
         \octave, 4,
-        \scale, ~scale
-));
-
-Pdef(\pulse2,
-    Pbindf(
-        Pdef(\pulse1),
-        \dur, Pshuf([1, 1.25, 1.5, 1.75, 2], inf),
-        //\dur, 0.25,
-        \fb, 0.3,
-        \note, Pseq([
-            Pseq([~ringzchords[0]], 23),
-            Pseq([~ringzchords[1]], 23),
-            Pseq([~ringzchords[2]], 23),
-            Pseq([~ringzchords[3]], 23)
-        ], inf),
-        \octave, 5,
         \scale, ~scale
 ));
 );
@@ -735,12 +753,6 @@ Pdef(\pulse2,
 Pdef(\pulse1).play(~tempo, quant: 1);
 Pdef(\pulse1).isPlaying;
 Pdef(\pulse1).stop;
-*/
-
-/*
-Pdef(\pulse2).play(~tempo, quant: 1);
-Pdef(\pulse2).isPlaying;
-Pdef(\pulse2).stop;
 */
 
 (
@@ -755,20 +767,6 @@ MIDIdef.noteOn(\pulse1, {
         "pulse1 stop".postln;
     }
 }, 21, srcID: ~lp.uid);
-);
-
-(
-MIDIdef.noteOn(\pulse2, {
-    if(Pdef(\pulse2).isPlaying.not) {
-        Pdef(\pulse2).play(~tempo, quant: 1);
-        m.noteOn(0, 22, ~red);
-        "pulse2 play".postln;
-    } {
-        Pdef(\pulse2).stop;
-        m.noteOn(0, 22, 0);
-        "pulse2 stop".postln;
-    }
-}, 22, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -795,7 +793,7 @@ Pdef(\sinprc1,
         \dur, Pshuf([Pseq([0.125], 2), Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3))], inf),
         \level, 0.2,
         \mode, 1,
-        \note, Pshuf(~ringzchords, inf),
+        \degree, Pshuf(~ringzchords, inf),
         \octave, 8,
         \outbus, Pshuf([0, [0, ~verbus]], inf),
         \pan, Pshuf([-0.5, 0, 0.5], inf),
@@ -816,7 +814,7 @@ Pdef(\sinprc3,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
         \level, 0.2,
         \mode, 0,
-        \note, Pshuf([-2, 0, 2].mirror1, inf),
+        \degree, Pshuf([-2, 0, 2].mirror1, inf),
         \octave, 6,
         \outbus, 0,
         \pan, 0,
@@ -830,7 +828,7 @@ Pdef(\sinprc4,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(3), inf),
         \fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
         \level, 0.05,
-        \note, 0,
+        \degree, 0,
         \octave, 12,
         \outbus, 0,
         \scale, ~scale
@@ -935,7 +933,7 @@ Pdef(\pinz1,
         \dur, Pshuf([0.5, 0.75].stutter(31), inf),
         //\dur, 0.25,
         \fb, Pshuf((9..22) / 10, inf),
-        \note, Pseq([
+        \degree, Pseq([
             Pshuf(~ringzchords[0].stutter(11)),
             Pshuf(~ringzchords[1].stutter(11)),
             Pshuf(~ringzchords[2].stutter(11)),
@@ -948,7 +946,7 @@ Pdef(\pinz1,
 
 Pdef(\pinz2, Pbindf(Pdef(\pinz1), \pan, 1));
 
-Pdef(\pinz3, Pbindf(Pdef(\pinz1), \dur, 0.25, \note, 0, \pan, 0));
+Pdef(\pinz3, Pbindf(Pdef(\pinz1), \dur, 0.25, \degree, 0, \pan, 0));
 
 Pdef(\pinz, Ppar([Pdef(\pinz1), Pdef(\pinz2), Pdef(\pinz3)], inf));
 );
@@ -999,7 +997,8 @@ Pdef(\latprc1,
         \instrument, \latprc,
         \a, Pshuf((-3..2) + 0.5, inf),
         \curve, -64,
-        \dur, Pseq(~latprcdurs, inf),
+        //\dur, Pseq(~latprcdurs, inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
         \envlength, 0.6,
         \ffreq, Pshuf((2..8) * 1000, inf),
         \freq, Pshuf([1/64, 1] * 22050, inf),
@@ -1008,7 +1007,13 @@ Pdef(\latprc1,
         \scale, ~scale
 ));
 
-Pdef(\latprc2, Pbindf(Pdef(\latprc1), \dur, Pseq(~latprcdurs - 0.25, inf), \level, 0.02, \outbus, 0));
+Pdef(\latprc2,
+    Pbindf(
+        Pdef(\latprc1),
+        //\dur, Pseq(~latprcdurs - 0.25, inf),
+        \level, 0.02,
+        \outbus, 0
+));
 
 Pdef(\latprcs, Ppar([Pdef(\latprc1), Pdef(\latprc2)], inf));
 
@@ -1017,14 +1022,14 @@ Pdef(\lathat1,
         \instrument, \latprc,
         \a, Pseq((-2..2).mirror1 / 10, inf),
         \curve, -64,
-        \dur, Prand([0.25, 0.5, 0.75], inf),
+        \dur, Prand([0.25, 0.5, 0.75, 1, 1.25], inf),
         \ffreq, 18000,
         \freq, 22050,
-        \level, 0.1,
+        \level, 0.2,
         \outbus, 0
 ));
 
-Pdef(\lathat2, Pbindf(Pdef(\lathat1), \level, 0.02));
+Pdef(\lathat2, Pbindf(Pdef(\lathat1), \level, 0.04));
 
 Pdef(\lathats, Ppar([Pdef(\lathat1), Pdef(\lathat2)], inf));
 );
@@ -1093,7 +1098,7 @@ MIDIdef.noteOn(\lathats, {
 (
 ~rezsound1buf = ~arrayOfBuffers.detect { |b| b.path.containsi("0692.Pei.Taidong.east_coast_pebble_engulf01.aif") };
 ~rezsound2buf = ~arrayOfBuffers.detect { |b| b.path.containsi("1971.Caspar_StrAm.Baltic_Sea.Viking_Line_Taxfree") };
-~rezsound3buf = ~arrayOfBuffers.detect { |b| b.path.containsi("traffic01") };
+~rezsound3buf = ~arrayOfBuffers.detect { |b| b.path.containsi("Chinatown") };
 Pdef(\rezsound1,
     Pmono(
         \sfplay,
@@ -1121,10 +1126,11 @@ Pdef(\rezsound3,
         Pdef(\rezsound1),
         \attack, 8,
         \bufnum, ~rezsound3buf.bufnum,
-        \dur, Pseq([329]),
+        //\dur, Pseq([329]),
+        \dur, ~rezsound3buf.numFrames,
         \loop, 0,
         \outbus, [0, ~rezbus3],
-        \vol, 0.1
+        \vol, 0.05
 ));
 );
 

@@ -49,7 +49,7 @@ Pdef(\basspat1,
 		\instrument, \bass,
 		\dur, Pshuf(~bassdurs, inf),
 		\fb, Pwhite(2.0, 3.0, inf),
-		\note, Pshuf(((-2..6) ++ [Rest].stutter(3)).stutter(3), inf),
+		\degree, Pshuf(((-2..6) ++ [Rest].stutter(3)).stutter(3), inf),
 		\octave, 2,
 		\rhpffrq, 8000,
 		\root, ~root,
@@ -63,7 +63,7 @@ Pdef(\basspat1).isPlaying;
 Pdef(\basspat1).stop;
 */
 
-Pdef(\basspat2, Pbindf(Pdef(\basspat1), \curve, -8, \note, Prand([0, 7, 12], inf)));
+Pdef(\basspat2, Pbindf(Pdef(\basspat1), \curve, -8, \degree, Prand([0, 7, 12], inf)));
 
 /*
 Pdef(\basspat2).play(~tempo, quant: 1);
@@ -132,7 +132,7 @@ Pdef(\hatpat1,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 6].stutter(3), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
 		\level, 0.05,
-		\note, 0,
+		\degree, 0,
 		\octave, 8,
 		\root, ~root,
 		\scale, ~scale
@@ -169,7 +169,7 @@ Pdef(\pulsepat1a,
         \dur, Pshuf([0.5, 0.75, 1.25, 0.5, 0.5, 0.75, 1.5].stutter(5), inf),
 		\fb, Pwhite(2.7, 3.2, inf),
 		\level, ~pulselvl,
-		\note, 0,
+		\degree, 0,
 		\octave, 3,
 		\root, ~root,
 		\scale, ~scale
@@ -185,7 +185,7 @@ Pdef(\pulsepar1).stop;
 */
 
 (
-Pdef(\pulsepat2a, Pbindf(Pdef(\pulsepat1a), \note, [-2, 7]));
+Pdef(\pulsepat2a, Pbindf(Pdef(\pulsepat1a), \degree, [-2, 7]));
 Pdef(\pulsepat2b, Pbindf(Pdef(\pulsepat2a), \level, ~pulseecholvl));
 Pdef(\pulsepar2, Ppar([Pdef(\pulsepat2a), Pdef(\pulsepat2b), Pdef(\pulsepat2b)]));
 );
@@ -197,7 +197,7 @@ Pdef(\pulsepar2).stop;
 */
 
 (
-Pdef(\pulsepat3a, Pbindf(Pdef(\pulsepat1a), \note, [7, 12, 14]));
+Pdef(\pulsepat3a, Pbindf(Pdef(\pulsepat1a), \degree, [7, 12, 14]));
 Pdef(\pulsepat3b, Pbindf(Pdef(\pulsepat3a), \level, ~pulseecholvl));
 Pdef(\pulsepar3, Ppar([Pdef(\pulsepat3a), Pdef(\pulsepat3b), Pdef(\pulsepat3b)]));
 );
@@ -216,7 +216,7 @@ Pdef(\pulsepat4,
         \dur, 0.25,
         \fb, Pshuf(Array.series(10, 0, 0.25), inf),
         \level, Prand([0.3, 1], inf) * 0.002,
-        \note, [7, 10, 12],
+        \degree, [7, 10, 12],
         \octave, [5, 8]
 ));
 Pdef(\pulsepar4, Ppar([Pdef(\pulsepat4)].stutter(4), inf));
@@ -234,7 +234,7 @@ Pdef(\pingpat,
         \instrument, \hat,
         \curve, 0,
         \dur, Pshuf([1, 1.25, 1.5], inf),
-        \note, Pseq([
+        \degree, Pseq([
             Rest, Rest, 0, 0,
             Rest, Rest, Rest, 0, 0,
             Rest, Rest, Rest, Rest, 0, 0,
@@ -383,7 +383,7 @@ Pdef(\prcpat1a,
         \dur, Pshuf([0.25, 0.5, Pseq([0.375], 2), 1, 1.5, 2, 3, 4, 6], inf),
 		\foldfactor, Pwhite(1, 10, inf),
 		\level, Pshuf([0.2, 1, 1] * 0.1, inf),
-		\note, Pshuf([Rest, 0, 0, 0], inf),
+		\degree, Pshuf([Rest, 0, 0, 0], inf),
 		\octave, 7,
 		\root, ~root,
 		\scale, ~scale,
@@ -410,7 +410,7 @@ Pdef(\prcpat2a,
             0.5, 0.5, 0.5, 0.75, 1.25
         ], inf),
         \level, 0.1,
-        \note, 7,
+        \degree, 7,
         \octave, 8
 ));
 Pdef(\prcpat2b, Pbindf(Pdef(\prcpat2a), \level, 0.04));
@@ -444,7 +444,7 @@ Pdef(\kikpat,
 		\ffreq, 1000,
 		\frq, 0.1,
 		\level, Prand([0.2, 1], inf) * 0.1,
-		\note, [0, 7],
+		\degree, [0, 7],
 		\octave, 5,
 		\root, ~root,
 		\scale, ~scale
@@ -522,7 +522,7 @@ Pdef(\banjopat,
 		\fb, Pwhite(0.0, 1.0, inf),
 		\foldfactor, Pwhite(1, 20, inf),
         \level, 0.05,
-		\note, Pshuf([-2, 0, 1, 2, 3, 7], inf),
+		\degree, Pshuf([-2, 0, 1, 2, 3, 7], inf),
 		\octave, Pwhite(4, 6, inf),
 		//\octave, 4,
 		\rlpf_freq, Pwhite(100.0, 10000.0, inf),
@@ -587,7 +587,7 @@ Pdef(\pnopat,
         \dur, Pshuf([13, 17, 19] + 0.25, inf),
         \fb, 2,
         \level, 0.005,
-        \note, [-5, -2, 0, 2],
+        \degree, [-5, -2, 0, 2],
         \octave, [5, 8],
         \root, ~root,
         \scale, ~scale,
@@ -681,7 +681,7 @@ Pdef(\stringpat0,
 		\string,
 		\delaytime, ~stringpat0delayktrlbus.asMap,
 		\dur, Pwhite(3, 5, inf),
-		\note, [-5, 0],
+		\degree, [-5, 0],
 		\root, ~root,
 		\scale, ~scale,
 		\xlinestart, 1
@@ -721,7 +721,7 @@ Pdef(\stringpat1,
 		\delaytime, ~stringpat1delayktrlbus.asMap,
 		\dur, Pshuf(Array.fill(4, { |i| (i + 7).nthPrime }), inf),
 		\legato, 1,
-		\note, Pshuf(~chordsandrests, inf),
+		\degree, Pshuf(~chordsandrests, inf),
 		\octave, 5,
 		\root, ~root,
 		\scale, ~scale,
@@ -754,7 +754,7 @@ Pdef(\stringpat2,
 	Pbindf(
 		Pdef(\stringpat1),
 		\delaytime, ~stringpat2delayktrlbus.asMap,
-		\note, [-5, 0],
+		\degree, [-5, 0],
         \octave, 6
 ));
 );
@@ -784,7 +784,7 @@ Pdef(\stringpat3,
 	Pbindf(
 		Pdef(\stringpat2),
 		\delaytime, ~stringpat3delayktrlbus,
-		\note, [-2, 2],
+		\degree, [-2, 2],
 		\octave, 6
 ));
 );
@@ -814,7 +814,7 @@ Pdef(\stringpat4,
 	Pbindf(
 		Pdef(\stringpat2),
 		\delaytime, ~stringpat4delayktrlbus.asMap,
-        \note, [-5, 0],
+        \degree, [-5, 0],
 		\octave, 4
 ));
 );
@@ -843,7 +843,7 @@ Pdef(\stringpat5setdelaytime,
 Pdef(\stringpat5,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat5delayktrlbus.asMap,
-		\note, [-2, 2],
+		\degree, [-2, 2],
 		\octave, 4,
 ));
 );
@@ -872,7 +872,7 @@ Pdef(\stringpat6setdelaytime,
 Pdef(\stringpat6,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat6delayktrlbus.asMap,
-		\note, [-5, 0],
+		\degree, [-5, 0],
 		\octave, 7,
 ));
 );
@@ -901,7 +901,7 @@ Pdef(\stringpat7setdelaytime,
 Pdef(\stringpat7,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat7delayktrlbus.asMap,
-		\note, [-2, 2],
+		\degree, [-2, 2],
 		\octave, 7
 ));
 );
@@ -930,7 +930,7 @@ Pdef(\stringpat8setdelaytime,
 Pdef(\stringpat8,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat8delayktrlbus.asMap,
-        \note, [0, 12, 19],
+        \degree, [0, 12, 19],
         \octave, 2,
 		\xlinestart, 1.01
 ));
@@ -960,7 +960,7 @@ Pdef(\stringpat9setdelaytime,
 Pdef(\stringpat9,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat9delayktrlbus.asMap,
-        \note, [0, 12, 19],
+        \degree, [0, 12, 19],
         \octave, 2,
 		\xlinestart, 0.99
 ));
