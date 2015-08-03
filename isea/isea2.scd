@@ -719,11 +719,11 @@ MIDIdef.noteOn(\shapely3, {
 
 (
 SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
-    var env             =   Env.perc(0.01, dur + 0.5, level, curve);
+    var env             =   Env.perc(0.003, dur + 0.5, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, fb, envgen);
     var lat             =   LatoocarfianC.ar(a: a, mul: envgen / 16);
-    var rhpf            =   RHPF.ar(lat, (freq * 8).clip(50, SampleRate.ir / 2.5), 0.03, 0.2);
+    var rhpf            =   RHPF.ar(lat, (freq * 8).clip(50, SampleRate.ir / 2.5), 0.03, 0.5);
     Out.ar(0, sin + rhpf);
 }).add;
 );
@@ -747,12 +747,35 @@ Pdef(\pulse1,
         \octave, 4,
         \scale, ~scale
 ));
+
+Pdef(\ping,
+    Pbind(
+        \instrument, \pulse,
+        \a, Pshuf((-2..2), inf),
+        \degree, Pswitch1(~chord, Pbrown(0, ~chord.size - 1, 1, inf)),
+        //\degree, Pshuf(~chord.stutter(3), inf),
+        \dur, Pshuf([
+            Pseq([0.25], 2), Pseq([0.25], 3), Pseq([0.25], 4), Pseq([0.25], 5), Pseq([0.25], 6), Pseq([0.25], 7), 6
+        ].stutter(3), inf),
+        \fb, 0,
+        \octave, 7,
+        //\offset, Pwhite(-0.01, 0.01, inf),
+        \scale, ~scale
+));
+
+Pdef(\pings, Ppar([Pdef(\ping), Pdef(\ping)], inf));
 );
 
 /*
 Pdef(\pulse1).play(~tempo, quant: 1);
 Pdef(\pulse1).isPlaying;
 Pdef(\pulse1).stop;
+*/
+
+/*
+Pdef(\pulsestream).play(~tempo, quant: 1);
+Pdef(\pulsestream).isPlaying;
+Pdef(\pulsestream).stop;
 */
 
 (
