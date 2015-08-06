@@ -38,8 +38,11 @@ m.connect(~lp.uid);
 
 // TIME
 
+(
 ~tempo = TempoClock(80/60);
 ~durs = Array.fill(7, { |i| (i + 9).nthPrime });
+~quickdurs = [Pseq([0.125], 37), 11, Pseq([0.125], 41), 13, Pseq([0.125], 43), 15];
+);
 
 // BUS DEPOT
 
@@ -55,6 +58,8 @@ m.connect(~lp.uid);
 ~dfmbus1 = Bus.audio(s, 2);
 ~dfmbus2 = Bus.audio(s, 2);
 ~dfmbus3 = Bus.audio(s, 2);
+~rhpfbus1 = Bus.audio(s, 2);
+~rhpfbus2 = Bus.audio(s, 2);
 );
 
 /////////////////////////////////////////////////////////////////
@@ -110,28 +115,28 @@ Pdef(\ringz4, Pbindf(Pdef(\ringz1), \inbus, ~ringzbus4));
 );
 
 
-Pdef(\ringz1).play(~tempo, quant: 1);
+Pdef(\ringz1).play(~tempo, quant: 0.5);
 m.control(0, 104, ~orange);
 /*
 Pdef(\ringz1).isPlaying;
 Pdef(\ringz1).stop;
 */
 
-Pdef(\ringz2).play(~tempo, quant: 1);
+Pdef(\ringz2).play(~tempo, quant: 0.5);
 m.control(0, 105, ~yellow);
 /*
 Pdef(\ringz2).isPlaying;
 Pdef(\ringz2).stop;
 */
 
-Pdef(\ringz3).play(~tempo, quant: 1);
+Pdef(\ringz3).play(~tempo, quant: 0.5);
 m.control(0, 106, ~orange);
 /*
 Pdef(\ringz3).isPlaying;
 Pdef(\ringz3).stop;
 */
 
-Pdef(\ringz4).play(~tempo, quant: 1);
+Pdef(\ringz4).play(~tempo, quant: 0.5);
 m.control(0, 107, ~yellow);
 /*
 Pdef(\ringz4).isPlaying;
@@ -143,7 +148,7 @@ Pdef(\ringz4).stop;
 (
 MIDIdef.cc(\ringz1, {
     if(Pdef(\ringz1).isPlaying.not) {
-        Pdef(\ringz1).play(~tempo, quant: 1);
+        Pdef(\ringz1).play(~tempo, quant: 0.5);
         m.control(0, 104, ~orange);
         "ringz1 play".postln;
     } {
@@ -157,7 +162,7 @@ MIDIdef.cc(\ringz1, {
 (
 MIDIdef.cc(\ringz2, {
     if(Pdef(\ringz2).isPlaying.not) {
-        Pdef(\ringz2).play(~tempo, quant: 1);
+        Pdef(\ringz2).play(~tempo, quant: 0.5);
         m.control(0, 105, ~yellow);
         "ringz2 play".postln;
     } {
@@ -171,7 +176,7 @@ MIDIdef.cc(\ringz2, {
 (
 MIDIdef.cc(\ringz3, {
     if(Pdef(\ringz3).isPlaying.not) {
-        Pdef(\ringz3).play(~tempo, quant: 1);
+        Pdef(\ringz3).play(~tempo, quant: 0.5);
         m.control(0, 106, ~orange);
         "ringz3 play".postln;
     } {
@@ -185,7 +190,7 @@ MIDIdef.cc(\ringz3, {
 (
 MIDIdef.cc(\ringz4, {
     if(Pdef(\ringz4).isPlaying.not) {
-        Pdef(\ringz4).play(~tempo, quant: 1);
+        Pdef(\ringz4).play(~tempo, quant: 0.5);
         m.control(0, 107, ~orange);
         "ringz4 play".postln;
     } {
@@ -249,7 +254,7 @@ Pdef(\rez3,
 Pdef(\rez, Ppar([Pdef(\rez1), Pdef(\rez2), Pdef(\rez3)], inf));
 );
 
-Pdef(\rez).play(~tempo, quant: 1);
+Pdef(\rez).play(~tempo, quant: 0.5);
 m.control(0, 108, ~orange);
 /*
 Pdef(\rez).isPlaying;
@@ -261,7 +266,7 @@ Pdef(\rez).stop;
 (
 MIDIdef.cc(\rez, {
     if(Pdef(\rez).isPlaying.not) {
-        Pdef(\rez).play(~tempo, quant: 1);
+        Pdef(\rez).play(~tempo, quant: 0.5);
         m.control(0, 108, ~orange);
         "rez play".postln;
     } {
@@ -289,7 +294,7 @@ SynthDef(\verb, { |gate = 1, inbus = 0, level = 0.1, outbus = 0|
 
 Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
 
-Pdef(\verb).play(~tempo, quant: 1);
+Pdef(\verb).play(~tempo, quant: 0.5);
 m.control(0, 109, ~yellow);
 /*
 Pdef(\verb).isPlaying;
@@ -299,7 +304,7 @@ Pdef(\verb).stop;
 (
 MIDIdef.cc(\verb, {
     if(Pdef(\verb).isPlaying.not) {
-        Pdef(\verb).play(~tempo, quant: 1);
+        Pdef(\verb).play(~tempo, quant: 0.5);
         m.control(0, 109, ~yellow);
         "verb play".postln;
     } {
@@ -353,7 +358,7 @@ Pdef(\dfms, Ppar([Pdef(\dfm1), Pdef(\dfm2), Pdef(\dfm3)], inf));
 );
 
 /*
-Pdef(\dfms).play(~tempo, quant: 1);
+Pdef(\dfms).play(~tempo, quant: 0.5);
 m.control(0, 110, ~yellow);
 Pdef(\dfms).isPlaying;
 Pdef(\dfms).stop;
@@ -362,7 +367,7 @@ Pdef(\dfms).stop;
 (
 MIDIdef.cc(\dfms, {
     if(Pdef(\dfms).isPlaying.not) {
-        Pdef(\dfms).play(~tempo, quant: 1);
+        Pdef(\dfms).play(~tempo, quant: 0.5);
         m.control(0, 110, ~yellow);
         "dfm play".postln;
     } {
@@ -372,6 +377,35 @@ MIDIdef.cc(\dfms, {
     }
 }, 110, srcID: ~lp.uid, argTemplate: { |a| a > 0 });
 );
+
+////////////////////////////////////////////////////////////////
+//
+
+(
+SynthDef(\rhpf, { |ffreq = 4000, gate = 1, inbus = 0, level = 0.5|
+    var env             =   Env.asr(sustainLevel: level);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var in              =   In.ar(inbus, 2);
+    var rhpf            =   RHPF.ar(in, ffreq, 0.1, envgen);
+    Out.ar(0, rhpf);
+}).add;
+);
+
+Pdef(\rhpf1, Pmono(\rhpf, \ffreq, 2000, \inbus, ~rhpfbus1));
+
+Pdef(\rhpf2, Pmono(\rhpf, \ffreq, 4000, \inbus, ~rhpfbus2));
+
+Pdef(\rhpf1).play(~tempo, quant: 0.5);
+/*
+Pdef(\rhpf1).isPlaying;
+Pdef(\rhpf1).stop;
+*/
+
+Pdef(\rhpf2).play(~tempo, quant: 0.5);
+/*
+Pdef(\rhpf2).isPlaying;
+Pdef(\rhpf2).stop;
+*/
 
 ////////////////////////////////////////////////////////////////
 // SOUNDFILE PLAYER: SYNTH
@@ -407,25 +441,25 @@ Pdef(\sfplay4, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus4]));
 );
 
 /*
-Pdef(\sfplay1).play(~tempo, quant: 1);
+Pdef(\sfplay1).play(~tempo, quant: 0.5);
 Pdef(\sfplay1).isPlaying;
 Pdef(\sfplay1).stop;
 */
 
 /*
-Pdef(\sfplay2).play(~tempo, quant: 1);
+Pdef(\sfplay2).play(~tempo, quant: 0.5);
 Pdef(\sfplay2).isPlaying;
 Pdef(\sfplay2).stop;
 */
 
 /*
-Pdef(\sfplay3).play(~tempo, quant: 1);
+Pdef(\sfplay3).play(~tempo, quant: 0.5);
 Pdef(\sfplay3).isPlaying;
 Pdef(\sfplay3).stop;
 */
 
 /*
-Pdef(\sfplay4).play(~tempo, quant: 1);
+Pdef(\sfplay4).play(~tempo, quant: 0.5);
 Pdef(\sfplay4).isPlaying;
 Pdef(\sfplay4).stop;
 */
@@ -435,7 +469,7 @@ Pdef(\sfplay4).stop;
 (
 MIDIdef.noteOn(\sfplay1, {
     if(Pdef(\sfplay1).isPlaying.not) {
-        Pdef(\sfplay1).play(~tempo, quant: 1);
+        Pdef(\sfplay1).play(~tempo, quant: 0.5);
         m.noteOn(0, 0, ~green);
         "sfplay1 play".postln;
     } {
@@ -449,7 +483,7 @@ MIDIdef.noteOn(\sfplay1, {
 (
 MIDIdef.noteOn(\sfplay2, {
     if(Pdef(\sfplay2).isPlaying.not) {
-        Pdef(\sfplay2).play(~tempo, quant: 1);
+        Pdef(\sfplay2).play(~tempo, quant: 0.5);
         m.noteOn(0, 1, ~green);
         "sfplay2 play".postln;
     } {
@@ -463,7 +497,7 @@ MIDIdef.noteOn(\sfplay2, {
 (
 MIDIdef.noteOn(\sfplay3, {
     if(Pdef(\sfplay3).isPlaying.not) {
-        Pdef(\sfplay3).play(~tempo, quant: 1);
+        Pdef(\sfplay3).play(~tempo, quant: 0.5);
         m.noteOn(0, 2, ~green);
         "sfplay3 play".postln;
     } {
@@ -477,7 +511,7 @@ MIDIdef.noteOn(\sfplay3, {
 (
 MIDIdef.noteOn(\sfplay4, {
     if(Pdef(\sfplay4).isPlaying.not) {
-        Pdef(\sfplay4).play(~tempo, quant: 1);
+        Pdef(\sfplay4).play(~tempo, quant: 0.5);
         m.noteOn(0, 3, ~green);
         "sfplay4 play".postln;
     } {
@@ -535,25 +569,25 @@ Pdef(\sinbass,
 
 
 /*
-Pdef(\sin1).play(~tempo, quant: 1);
+Pdef(\sin1).play(~tempo, quant: 0.5);
 Pdef(\sin1).isPlaying;
 Pdef(\sin1).stop;
 */
 
 /*
-Pdef(\sin2).play(~tempo, quant: 1);
+Pdef(\sin2).play(~tempo, quant: 0.5);
 Pdef(\sin2).isPlaying;
 Pdef(\sin2).stop;
 */
 
 /*
-Pdef(\sin3).play(~tempo, quant: 1);
+Pdef(\sin3).play(~tempo, quant: 0.5);
 Pdef(\sin3).isPlaying;
 Pdef(\sin3).stop;
 */
 
 /*
-Pdef(\sinbass).play(~tempo, quant: 1);
+Pdef(\sinbass).play(~tempo, quant: 0.5);
 Pdef(\sinbass).isPlaying;
 Pdef(\sinbass).stop;
 */
@@ -561,7 +595,7 @@ Pdef(\sinbass).stop;
 (
 MIDIdef.noteOn(\sin1, {
     if(Pdef(\sin1).isPlaying.not) {
-        Pdef(\sin1).play(~tempo, quant: 1);
+        Pdef(\sin1).play(~tempo, quant: 0.5);
         m.noteOn(0, 16, ~red);
         "sin1 play".postln;
     } {
@@ -575,7 +609,7 @@ MIDIdef.noteOn(\sin1, {
 (
 MIDIdef.noteOn(\sin2, {
     if(Pdef(\sin2).isPlaying.not) {
-        Pdef(\sin2).play(~tempo, quant: 1);
+        Pdef(\sin2).play(~tempo, quant: 0.5);
         m.noteOn(0, 17, ~red);
         "sin2 play".postln;
     } {
@@ -589,7 +623,7 @@ MIDIdef.noteOn(\sin2, {
 (
 MIDIdef.noteOn(\sin3, {
     if(Pdef(\sin3).isPlaying.not) {
-        Pdef(\sin3).play(~tempo, quant: 1);
+        Pdef(\sin3).play(~tempo, quant: 0.5);
         m.noteOn(0, 18, ~red);
         "sin3 play".postln;
     } {
@@ -603,7 +637,7 @@ MIDIdef.noteOn(\sin3, {
 (
 MIDIdef.noteOn(\sinbass, {
     if(Pdef(\sinbass).isPlaying.not) {
-        Pdef(\sinbass).play(~tempo, quant: 1);
+        Pdef(\sinbass).play(~tempo, quant: 0.5);
         m.noteOn(0, 19, ~red);
         "sinbass play".postln;
     } {
@@ -648,70 +682,47 @@ Pdef(\shapely1,
 
 Pdef(\shapely2, Pbindf(Pdef(\shapely1), \pan, 0.5));
 
-Pdef(\shapes, Ppar([Pdef(\shapely1), Pdef(\shapely2)], inf));
+Pdef(\shapes1, Ppar([Pdef(\shapely1), Pdef(\shapely2)], inf));
 
-Pdef(\shapely3,
-    Pbind(
-        \instrument, \shapely,
-        \a, Pwhite(0.8, 1.2, inf),
-        \dur, Pshuf(~durs, inf),
-        \legato, 0.5,
-        \lfreq, ~tempo.tempo * (Pkey(\dur)).reciprocal,
-        \degree, Pshuf(~chords, inf),
-        \octave, 6,
-        \scale, ~scale
-));
+Pdef(\shapes2, Pbindf(Pdef(\shapes1), \lfreq, ~tempo.tempo * (Pkey(\dur)).reciprocal));
 );
 
 /*
-Pdef(\shapely1).play(~tempo, quant: 1);
-Pdef(\shapely1).isPlaying;
-Pdef(\shapely1).stop;
+Pdef(\shapes1).play(~tempo, quant: 0.5);
+Pdef(\shapes1).isPlaying;
+Pdef(\shapes1).stop;
 */
 
 /*
-Pdef(\shapely2).play(~tempo, quant: 1);
-Pdef(\shapely2).isPlaying;
-Pdef(\shapely2).stop;
+Pdef(\shapes2).play(~tempo, quant: 0.5);
+Pdef(\shapes2).isPlaying;
+Pdef(\shapes2).stop;
 */
-
-/*
-Pdef(\shapes).play(~tempo, quant: 1);
-Pdef(\shapes).isPlaying;
-Pdef(\shapes).stop;
-*/
-
-/*
-Pdef(\shapely3).play(~tempo, quant: 1);
-Pdef(\shapely3).isPlaying;
-Pdef(\shapely3).stop;
-*/
-
 
 (
-MIDIdef.noteOn(\shapes, {
-    if(Pdef(\shapes).isPlaying.not) {
-        Pdef(\shapes).play(~tempo, quant: 1);
+MIDIdef.noteOn(\shapes1, {
+    if(Pdef(\shapes1).isPlaying.not) {
+        Pdef(\shapes1).play(~tempo, quant: 0.5);
         m.noteOn(0, 20, ~red);
-        "shapes play".postln;
+        "shapes1 play".postln;
     } {
-        Pdef(\shapes).stop;
+        Pdef(\shapes1).stop;
         m.noteOn(0, 20, 0);
-        "shapes stop".postln;
+        "shapes1 stop".postln;
     }
 }, 20, srcID: ~lp.uid);
 );
 
 (
-MIDIdef.noteOn(\shapely3, {
-    if(Pdef(\shapely3).isPlaying.not) {
-        Pdef(\shapely3).play(~tempo, quant: 1);
+MIDIdef.noteOn(\shapes2, {
+    if(Pdef(\shapes2).isPlaying.not) {
+        Pdef(\shapes2).play(~tempo, quant: 0.5);
         m.noteOn(0, 22, ~red);
-        "shapely3 play".postln;
+        "shapes2 play".postln;
     } {
-        Pdef(\shapely3).stop;
+        Pdef(\shapes2).stop;
         m.noteOn(0, 22, 0);
-        "shapely3 stop".postln;
+        "shapes2 stop".postln;
     }
 }, 22, srcID: ~lp.uid);
 );
@@ -720,9 +731,11 @@ MIDIdef.noteOn(\shapely3, {
 // PULSE: SYNTH
 
 (
-SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
-    var env             =   Env.perc(0.003, dur + 0.5, level, curve);
-    var envgen          =   EnvGen.kr(env, doneAction: 2);
+SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005|
+    //var env             =   Env.perc(0.003, dur + 0.5, level, curve);
+    //var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var env             =   Env.asr(0.01, level, 0.1);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, fb, envgen);
     var lat             =   LatoocarfianC.ar(a: a, mul: envgen / 16);
     var rhpf            =   RHPF.ar(lat, (freq * 32).clip(50, SampleRate.ir / 2.5), 0.03, 0.3);
@@ -730,42 +743,100 @@ SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01
 }).add;
 );
 
+/*
 (
 Pdef(\pulse1,
     Pbind(
         \instrument, \pulse,
-        \a, Pshuf((-2..2), inf),
-        \curve, 0,
+        \a, Pshuf((-2..2).stutter(13), inf),
+        \curve, -1,
         //\dur, Pseq([0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5, 0.75], inf),
-        \dur, Pseq([Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(5)), 12], inf),
+        //\dur, Pseq([Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(5)), 12], inf),
+        //\dur, Pshuf(~durs, inf),
+        //\dur, 0.125,
+        \dur, Pseq(~quickdurs * 2, inf),
         \fb, 0.4,
         \level, 0.02,
+        /*
         \degree, Pseq([
             Pseq([[7, 10]], 31),
             Pseq([[7, 10, 12]], 37),
             Pseq([[7, 10, 12, 14]], 41),
         ], inf),
-        \octave, 4,
+        */
+        //\degree, Pwalk(~chord, Prand([-1, 1], inf), Prand([-1, 1], inf)),
+        \degree, Pshuf([Pshuf(~chord), Pshuf(~chord.mirror1)], inf),
+        \octave, 5,
         \scale, ~scale
 ));
+
+Pdef(\pulse2, Pbindf(Pdef(\pulse1)));
 );
 
 /*
-Pdef(\pulse1).play(~tempo, quant: 1);
+Pdef(\pulse1).play(~tempo, quant: 0.5);
 Pdef(\pulse1).isPlaying;
 Pdef(\pulse1).stop;
 */
 
+/*
+Pdef(\pulse2).play(~tempo, quant: 0.5);
+Pdef(\pulse2).isPlaying;
+Pdef(\pulse2).stop;
+*/
+
+*/
+
+(
+Pdef(\switch1,
+    Pbind(
+        \instrument, \pulse,
+        \dur, Pshuf(~durs, inf),
+        \fb, 0,
+        \legato, 0.5,
+        \degree, Pshuf(~chords, inf),
+        \scale, ~scale
+));
+
+Pdef(\switch2, Pbindf(Pdef(\switch1), \fb, 1));
+
+Pdef(\switch3, Pbindf(Pdef(\switch1), \fb, 2));
+
+Pdef(\switches, Ppar([Pdef(\switch1), Pdef(\switch2), Pdef(\switch3)], inf));
+);
+
+/*
+Pdef(\switches).play(~tempo, quant: 0.5);
+Pdef(\switches).isPlaying;
+Pdef(\switches).stop;
+*/
+
+/*
 (
 MIDIdef.noteOn(\pulse1, {
     if(Pdef(\pulse1).isPlaying.not) {
-        Pdef(\pulse1).play(~tempo, quant: 1);
+        Pdef(\pulse1).play(~tempo, quant: 0.5);
         m.noteOn(0, 21, ~red);
         "pulse1 play".postln;
     } {
         Pdef(\pulse1).stop;
         m.noteOn(0, 21, 0);
         "pulse1 stop".postln;
+    }
+}, 21, srcID: ~lp.uid);
+);
+*/
+
+(
+MIDIdef.noteOn(\switches, {
+    if(Pdef(\switches).isPlaying.not) {
+        Pdef(\switches).play(~tempo, quant: 0.5);
+        m.noteOn(0, 21, ~red);
+        "switches play".postln;
+    } {
+        Pdef(\switches).stop;
+        m.noteOn(0, 21, 0);
+        "switches stop".postln;
     }
 }, 21, srcID: ~lp.uid);
 );
@@ -841,31 +912,31 @@ Pdef(\sinprcs4and5, Ppar([Pdef(\sinprc4), Pdef(\sinprc5)], inf));
 );
 
 /*
-Pdef(\sinprc1).play(~tempo, quant: 1);
+Pdef(\sinprc1).play(~tempo, quant: 0.5);
 Pdef(\sinprc1).isPlaying;
 Pdef(\sinprc1).stop;
 */
 
 /*
-Pdef(\sinprc2).play(~tempo, quant: 1);
+Pdef(\sinprc2).play(~tempo, quant: 0.5);
 Pdef(\sinprc2).isPlaying;
 Pdef(\sinprc2).stop;
 */
 
 /*
-Pdef(\sinprc3).play(~tempo, quant: 1);
+Pdef(\sinprc3).play(~tempo, quant: 0.5);
 Pdef(\sinprc3).isPlaying;
 Pdef(\sinprc3).stop;
 */
 
 /*
-Pdef(\sinprc4).play(~tempo, quant: 1);
+Pdef(\sinprc4).play(~tempo, quant: 0.5);
 Pdef(\sinprc4).isPlaying;
 Pdef(\sinprc4).stop;
 */
 
 /*
-Pdef(\sinprcs4and5).play(~tempo, quant: 1);
+Pdef(\sinprcs4and5).play(~tempo, quant: 0.5);
 Pdef(\sinprcs4and5).isPlaying;
 Pdef(\sinprcs4and5).stop;
 */
@@ -875,7 +946,7 @@ Pdef(\sinprcs4and5).stop;
 (
 MIDIdef.noteOn(\sinprcs1and2, {
     if(Pdef(\sinprcs1and2).isPlaying.not) {
-        Pdef(\sinprcs1and2).play(~tempo, quant: 1);
+        Pdef(\sinprcs1and2).play(~tempo, quant: 0.5);
         m.noteOn(0, 32, ~red);
         "sinprcs 1 and 2 play".postln;
     } {
@@ -889,7 +960,7 @@ MIDIdef.noteOn(\sinprcs1and2, {
 (
 MIDIdef.noteOn(\sinprc3, {
     if(Pdef(\sinprc3).isPlaying.not) {
-        Pdef(\sinprc3).play(~tempo, quant: 1);
+        Pdef(\sinprc3).play(~tempo, quant: 0.5);
         m.noteOn(0, 33, ~red);
         "sinprc3 play".postln;
     } {
@@ -903,7 +974,7 @@ MIDIdef.noteOn(\sinprc3, {
 (
 MIDIdef.noteOn(\sinprcs4and5, {
     if(Pdef(\sinprcs4and5).isPlaying.not) {
-        Pdef(\sinprcs4and5).play(~tempo, quant: 1);
+        Pdef(\sinprcs4and5).play(~tempo, quant: 0.5);
         m.noteOn(0, 34, ~red);
         "sinprcs 4 and 5 play".postln;
     } {
@@ -953,7 +1024,7 @@ Pdef(\pinz, Ppar([Pdef(\pinz1), Pdef(\pinz2), Pdef(\pinz3)], inf));
 );
 
 /*
-Pdef(\pinz).play(~tempo, quant: 1);
+Pdef(\pinz).play(~tempo, quant: 0.5);
 Pdef(\pinz).isPlaying;
 Pdef(\pinz).stop;
 */
@@ -961,7 +1032,7 @@ Pdef(\pinz).stop;
 (
 MIDIdef.noteOn(\pinz, {
     if(Pdef(\pinz).isPlaying.not) {
-        Pdef(\pinz).play(~tempo, quant: 1);
+        Pdef(\pinz).play(~tempo, quant: 0.5);
         m.noteOn(0, 35, ~red);
         "pinz play".postln;
     } {
@@ -985,7 +1056,7 @@ SynthDef(\latprc, { |a = 1, curve = 0, envlength = 0.3, ffreq = 4000, freq = 200
 }).add;
 );
 
-// LATPRC: PATTERN
+// LATPRC: PATTERNS
 
 (
 ~latprcdurs = [
@@ -1022,12 +1093,12 @@ Pdef(\lathat1,
     Pbind(
         \instrument, \latprc,
         \a, Pseq((-2..2).mirror1 / 10, inf),
-        \curve, -64,
+        \curve, -16,
         \dur, Prand([0.25, 0.5, 0.75, 1, 1.25], inf),
         \ffreq, 18000,
         \freq, 22050,
         \level, 0.2,
-        \outbus, 0
+        \outbus, ~rhpfbus1
 ));
 
 Pdef(\lathat2, Pbindf(Pdef(\lathat1), \level, 0.04));
@@ -1037,29 +1108,30 @@ Pdef(\lathats, Ppar([Pdef(\lathat1), Pdef(\lathat2)], inf));
 Pdef(\latquick,
     Pbind(
         \instrument, \latprc,
-        \a, Pshuf(((52..65) / 100), inf),
-        \curve, -64,
-        \dur, Pshuf([0.125, 0.25, 0.5, 1, 2].stutter(7), inf),
+        \a, Pshuf(((52..65) / 100).stutter(7), inf),
+        \curve, -32,
+        \dur, Pseq(~quickdurs, inf),
         \ffreq, 13000,
-        \level, 0.05,
-        \octave, 11
+        \level, 0.1,
+        \octave, 11,
+        \outbus, ~rhpfbus2
 ));
 );
 
 /*
-Pdef(\latprcs).play(~tempo, quant: 1);
+Pdef(\latprcs).play(~tempo, quant: 0.5);
 Pdef(\latprcs).isPlaying;
 Pdef(\latprcs).stop;
 */
 
 /*
-Pdef(\lathats).play(~tempo, quant: 1);
+Pdef(\lathats).play(~tempo, quant: 0.5);
 Pdef(\lathats).isPlaying;
 Pdef(\lathats).stop;
 */
 
 /*
-Pdef(\latquick).play(~tempo, quant: 1);
+Pdef(\latquick).play(~tempo, quant: 0.5);
 Pdef(\latquick).isPlaying;
 Pdef(\latquick).stop;
 */
@@ -1070,7 +1142,7 @@ Pdef(\latquick).stop;
 (
 MIDIdef.noteOn(\latprcs, {
     if(Pdef(\latprcs).isPlaying.not) {
-        Pdef(\latprcs).play(~tempo, quant: 1);
+        Pdef(\latprcs).play(~tempo, quant: 0.5);
         m.noteOn(0, 36, ~red);
         "latprcs play".postln;
     } {
@@ -1084,7 +1156,7 @@ MIDIdef.noteOn(\latprcs, {
 (
 MIDIdef.noteOn(\lathats, {
     if(Pdef(\lathats).isPlaying.not) {
-        Pdef(\lathats).play(~tempo, quant: 1);
+        Pdef(\lathats).play(~tempo, quant: 0.5);
         m.noteOn(0, 37, ~red);
         "lathats play".postln;
     } {
@@ -1098,7 +1170,7 @@ MIDIdef.noteOn(\lathats, {
 (
 MIDIdef.noteOn(\latquick, {
     if(Pdef(\latquick).isPlaying.not) {
-        Pdef(\latquick).play(~tempo, quant: 1);
+        Pdef(\latquick).play(~tempo, quant: 0.5);
         m.noteOn(0, 38, ~red);
         "latquick play".postln;
     } {
@@ -1152,19 +1224,19 @@ Pdef(\rezsound3,
 );
 
 /*
-Pdef(\rezsound1).play(~tempo, quant: 1);
+Pdef(\rezsound1).play(~tempo, quant: 0.5);
 Pdef(\rezsound1).isPlaying;
 Pdef(\rezsound1).stop;
 */
 
 /*
-Pdef(\rezsound2).play(~tempo, quant: 1);
+Pdef(\rezsound2).play(~tempo, quant: 0.5);
 Pdef(\rezsound2).isPlaying;
 Pdef(\rezsound2).stop;
 */
 
 /*
-Pdef(\rezsound3).play(~tempo, quant: 1);
+Pdef(\rezsound3).play(~tempo, quant: 0.5);
 Pdef(\rezsound3).isPlaying;
 Pdef(\rezsound3).stop;
 */
@@ -1172,7 +1244,7 @@ Pdef(\rezsound3).stop;
 (
 MIDIdef.noteOn(\rezsound1, {
     if(Pdef(\rezsound1).isPlaying.not) {
-        Pdef(\rezsound1).play(~tempo, quant: 1);
+        Pdef(\rezsound1).play(~tempo, quant: 0.5);
         m.noteOn(0, 4, ~green);
         "rezsound1 play".postln;
     } {
@@ -1186,7 +1258,7 @@ MIDIdef.noteOn(\rezsound1, {
 (
 MIDIdef.noteOn(\rezsound2, {
     if(Pdef(\rezsound2).isPlaying.not) {
-        Pdef(\rezsound2).play(~tempo, quant: 1);
+        Pdef(\rezsound2).play(~tempo, quant: 0.5);
         m.noteOn(0, 5, ~green);
         "rezsound2 play".postln;
     } {
@@ -1200,7 +1272,7 @@ MIDIdef.noteOn(\rezsound2, {
 (
 MIDIdef.noteOn(\rezsound3, {
     if(Pdef(\rezsound3).isPlaying.not) {
-        Pdef(\rezsound3).play(~tempo, quant: 1);
+        Pdef(\rezsound3).play(~tempo, quant: 0.5);
         m.noteOn(0, 6, ~green);
         "rezsound3 play".postln;
     } {
