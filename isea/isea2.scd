@@ -58,6 +58,7 @@ m.connect(~lp.uid);
 ~dfmbus1 = Bus.audio(s, 2);
 ~dfmbus2 = Bus.audio(s, 2);
 ~dfmbus3 = Bus.audio(s, 2);
+~dfmbus4 = Bus.audio(s, 2);
 ~rhpfbus1 = Bus.audio(s, 2);
 ~rhpfbus2 = Bus.audio(s, 2);
 );
@@ -382,30 +383,43 @@ MIDIdef.cc(\dfms, {
 //
 
 (
-SynthDef(\rhpf, { |ffreq = 4000, gate = 1, inbus = 0, level = 0.5|
+SynthDef(\rhpf, { |freq = 4000, gate = 1, inbus = 0, level = 0.5|
     var env             =   Env.asr(sustainLevel: level);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
-    var rhpf            =   RHPF.ar(in, ffreq, 0.1, envgen);
+    var rhpf            =   RHPF.ar(in, freq, 0.01, envgen);
     Out.ar(0, rhpf);
 }).add;
 );
 
-Pdef(\rhpf1, Pmono(\rhpf, \ffreq, 2000, \inbus, ~rhpfbus1));
+(
+Pdef(\rhpf1, Pmono(\rhpf, \inbus, ~rhpfbus1, \octave, 9, \scale, ~scale));
 
-Pdef(\rhpf2, Pmono(\rhpf, \ffreq, 4000, \inbus, ~rhpfbus2));
+Pdef(\rhpf2, Pmono(\rhpf, \inbus, ~rhpfbus2, \note, 7, \octave, 9, \scale, ~scale));
 
-Pdef(\rhpf1).play(~tempo, quant: 0.5);
+Pdef(\rhpfs, Ppar([Pdef(\rhpf1), Pdef(\rhpf2)], inf));
+);
+
+Pdef(\rhpfs).play(~quant: 0.5);
+m.control(0, 111, ~yellow);
 /*
-Pdef(\rhpf1).isPlaying;
-Pdef(\rhpf1).stop;
+Pdef(\rhpfs).isPlaying;
+Pdef(\rhpfs).stop;
 */
 
-Pdef(\rhpf2).play(~tempo, quant: 0.5);
-/*
-Pdef(\rhpf2).isPlaying;
-Pdef(\rhpf2).stop;
-*/
+(
+MIDIdef.cc(\rhpfs, {
+    if(Pdef(\rhpfs).isPlaying.not) {
+        Pdef(\rhpfs).play(~tempo, quant: 0.5);
+        m.control(0, 111, ~yellow);
+        "rhpfs play".postln;
+    } {
+        Pdef(\rhpfs).stop;
+        m.control(0, 111, 0);
+        "rhpfs stop".postln;
+    }
+}, 111, srcID: ~lp.uid, argTemplate: { |x| x > 0 });
+);
 
 ////////////////////////////////////////////////////////////////
 // SOUNDFILE PLAYER: SYNTH
@@ -684,7 +698,7 @@ Pdef(\shapely2, Pbindf(Pdef(\shapely1), \pan, 0.5));
 
 Pdef(\shapes1, Ppar([Pdef(\shapely1), Pdef(\shapely2)], inf));
 
-Pdef(\shapes2, Pbindf(Pdef(\shapes1), \lfreq, ~tempo.tempo * (Pkey(\dur)).reciprocal));
+Pdef(\shapes2, Pbindf(Pdef(\shapes1), \lfreq, ~tempo.tempo * 8));
 );
 
 /*
@@ -717,21 +731,21 @@ MIDIdef.noteOn(\shapes1, {
 MIDIdef.noteOn(\shapes2, {
     if(Pdef(\shapes2).isPlaying.not) {
         Pdef(\shapes2).play(~tempo, quant: 0.5);
-        m.noteOn(0, 22, ~red);
+        m.noteOn(0, 23, ~red);
         "shapes2 play".postln;
     } {
         Pdef(\shapes2).stop;
-        m.noteOn(0, 22, 0);
+        m.noteOn(0, 23, 0);
         "shapes2 stop".postln;
     }
-}, 22, srcID: ~lp.uid);
+}, 23, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
 // PULSE: SYNTH
 
 (
-SynthDef(\pulse, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005|
+SynthDef(\switch, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005|
     //var env             =   Env.perc(0.003, dur + 0.5, level, curve);
     //var envgen          =   EnvGen.kr(env, doneAction: 2);
     var env             =   Env.asr(0.01, level, 0.1);
@@ -790,11 +804,12 @@ Pdef(\pulse2).stop;
 (
 Pdef(\switch1,
     Pbind(
-        \instrument, \pulse,
+        \instrument, \switch,
         \dur, Pshuf(~durs, inf),
         \fb, 0,
         \legato, 0.5,
         \degree, Pshuf(~chords, inf),
+        \octave, 5,
         \scale, ~scale
 ));
 
@@ -802,13 +817,21 @@ Pdef(\switch2, Pbindf(Pdef(\switch1), \fb, 1));
 
 Pdef(\switch3, Pbindf(Pdef(\switch1), \fb, 2));
 
-Pdef(\switches, Ppar([Pdef(\switch1), Pdef(\switch2), Pdef(\switch3)], inf));
+Pdef(\switches1, Ppar([Pdef(\switch1), Pdef(\switch2), Pdef(\switch3)], inf));
+
+Pdef(\switches2, Pbindf(Pdef(\switches1), \octave, 6));
 );
 
 /*
-Pdef(\switches).play(~tempo, quant: 0.5);
-Pdef(\switches).isPlaying;
-Pdef(\switches).stop;
+Pdef(\switches1).play(~tempo, quant: 0.5);
+Pdef(\switches1).isPlaying;
+Pdef(\switches1).stop;
+*/
+
+/*
+Pdef(\switches2).play(~tempo, quant: 0.5);
+Pdef(\switches2).isPlaying;
+Pdef(\switches2).stop;
 */
 
 /*
@@ -828,17 +851,31 @@ MIDIdef.noteOn(\pulse1, {
 */
 
 (
-MIDIdef.noteOn(\switches, {
-    if(Pdef(\switches).isPlaying.not) {
-        Pdef(\switches).play(~tempo, quant: 0.5);
+MIDIdef.noteOn(\switches1, {
+    if(Pdef(\switches1).isPlaying.not) {
+        Pdef(\switches1).play(~tempo, quant: 0.5);
         m.noteOn(0, 21, ~red);
-        "switches play".postln;
+        "switches1 play".postln;
     } {
-        Pdef(\switches).stop;
+        Pdef(\switches1).stop;
         m.noteOn(0, 21, 0);
-        "switches stop".postln;
+        "switches1 stop".postln;
     }
 }, 21, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\switches2, {
+    if(Pdef(\switches2).isPlaying.not) {
+        Pdef(\switches2).play(~tempo, quant: 0.5);
+        m.noteOn(0, 22, ~red);
+        "switches2 play".postln;
+    } {
+        Pdef(\switches2).stop;
+        m.noteOn(0, 22, 0);
+        "switches2 stop".postln;
+    }
+}, 22, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1047,12 +1084,13 @@ MIDIdef.noteOn(\pinz, {
 // LATPRC: SYNTH
 
 (
-SynthDef(\latprc, { |a = 1, curve = 0, envlength = 0.3, ffreq = 4000, freq = 2000, level = 0.1, outbus|
+SynthDef(\latprc, { |a = 1, bal = 0, curve = 0, envlength = 0.3, ffreq = 4000, freq = 2000, level = 0.1, outbus|
     var env             =   Env.perc(0.01, envlength, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var lat             =   LatoocarfianC.ar([freq, freq - 1], a: [a, a - 0.001], mul: envgen);
     var rlpf            =   RLPF.ar(lat, ffreq, 0.3);
-    Out.ar(outbus, rlpf);
+    var bal2            =   Balance2.ar(rlpf[0], rlpf[1], bal);
+    Out.ar(outbus, bal2);
 }).add;
 );
 
@@ -1097,7 +1135,7 @@ Pdef(\lathat1,
         \dur, Prand([0.25, 0.5, 0.75, 1, 1.25], inf),
         \ffreq, 18000,
         \freq, 22050,
-        \level, 0.2,
+        \level, 0.3,
         \outbus, ~rhpfbus1
 ));
 
@@ -1108,11 +1146,12 @@ Pdef(\lathats, Ppar([Pdef(\lathat1), Pdef(\lathat2)], inf));
 Pdef(\latquick,
     Pbind(
         \instrument, \latprc,
-        \a, Pshuf(((52..65) / 100).stutter(7), inf),
+        \a, Pshuf(((58..63) / 100).stutter(7), inf),
+        \bal, Pshuf([-0.5, 0, 0.5].stutter(31), inf),
         \curve, -32,
         \dur, Pseq(~quickdurs, inf),
         \ffreq, 13000,
-        \level, 0.1,
+        \level, 0.3,
         \octave, 11,
         \outbus, ~rhpfbus2
 ));
