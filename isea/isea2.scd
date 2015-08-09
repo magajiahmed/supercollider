@@ -16,7 +16,7 @@ c.free;
 n.free;
 c = MIDIdef.cc(\postcc, { |...args| args.postln; });
 n = MIDIdef.noteOn(\postnoteon, { |...args| args.postln; });
-~lp = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad")};
+~lp = MIDIClient.sources.detect{ |s| s.name.contains("Launchpad")};
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
 if(~lp.isNil) { ~lp = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 m = MIDIOut(0);
@@ -27,8 +27,8 @@ m.connect(~lp.uid);
 // PITCH LOGIC
 
 (
-//~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 243/128];
-~ratios = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 16/9, 15/8];
+~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 243/128];
+//~ratios = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 16/9, 15/8];
 ~tuning = Tuning.new(~ratios.collect({ |i| i.ratiomidi }));
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
@@ -222,22 +222,22 @@ SynthDef(\rez, { |decaytime = 0.1, freq = 440, gate = 1, inbus = 0, level = 0.1,
 Pdef(\rez1,
     Pmono(
         \rez,
-        \decaytime, 0.1,
+        \decaytime, 0.2,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus1,
         \degree, Pshuf(~chords, inf),
-        \octave, 5,
+        \octave, 4,
         \scale, ~scale
 ));
 
 Pdef(\rez2,
     Pmono(
         \rez,
-        \decaytime, 0.5,
+        \decaytime, 0.2,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus2,
         \degree, Pshuf(~chords, inf),
-        \octave, 4,
+        \octave, [4, 5],
         \scale, ~scale
 ));
 
@@ -248,7 +248,7 @@ Pdef(\rez3,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus3,
         \degree, Pshuf(~chords, inf),
-        \octave, 5,
+        \octave, [4, 5, 6],
         \scale, ~scale
 ));
 
@@ -369,7 +369,7 @@ Pdef(\dfms).stop;
 MIDIdef.cc(\dfms, {
     if(Pdef(\dfms).isPlaying.not) {
         Pdef(\dfms).play(~tempo, quant: 0.5);
-        m.control(0, 110, ~yellow);
+        m.control(0, 110, ~orange);
         "dfm play".postln;
     } {
         Pdef(\dfms).stop;
@@ -400,7 +400,7 @@ Pdef(\rhpf2, Pmono(\rhpf, \inbus, ~rhpfbus2, \note, 7, \octave, 9, \scale, ~scal
 Pdef(\rhpfs, Ppar([Pdef(\rhpf1), Pdef(\rhpf2)], inf));
 );
 
-Pdef(\rhpfs).play(~quant: 0.5);
+Pdef(\rhpfs).play(~tempo, quant: 0.5);
 m.control(0, 111, ~yellow);
 /*
 Pdef(\rhpfs).isPlaying;
@@ -806,7 +806,7 @@ Pdef(\switch1,
     Pbind(
         \instrument, \switch,
         \dur, Pshuf(~durs, inf),
-        \fb, 0,
+        \fb, 0.5,
         \legato, 0.5,
         \degree, Pshuf(~chords, inf),
         \octave, 5,
@@ -1226,12 +1226,14 @@ MIDIdef.noteOn(\latquick, {
 (
 ~rezsound1buf = ~arrayOfBuffers.detect { |b| b.path.containsi("0692.Pei.Taidong.east_coast_pebble_engulf01.aif") };
 ~rezsound2buf = ~arrayOfBuffers.detect { |b| b.path.containsi("1971.Caspar_StrAm.Baltic_Sea.Viking_Line_Taxfree") };
-~rezsound3buf = ~arrayOfBuffers.detect { |b| b.path.containsi("Chinatown") };
+~rezsound3buf = ~arrayOfBuffers.detect { |b| b.path.containsi("1794.schuettelgrat.Himara.Pebble_Beach_in_Himara") };
+
 Pdef(\rezsound1,
-    Pmono(
+    PmonoArtic(
         \sfplay,
         \bufnum, ~rezsound1buf.bufnum,
         \curve, -4,
+        \legato, 1,
         \loop, 1,
         \outbus, [0, ~rezbus1],
         \release, 5,
@@ -1252,13 +1254,11 @@ Pdef(\rezsound2,
 Pdef(\rezsound3,
     Pbindf(
         Pdef(\rezsound1),
-        \attack, 8,
         \bufnum, ~rezsound3buf.bufnum,
-        //\dur, Pseq([329]),
-        \dur, ~rezsound3buf.numFrames,
-        \loop, 0,
+        \dur, Pseq([(~rezsound3buf.numFrames / s.sampleRate).round(1) * 2]),
+        \loop, 1,
         \outbus, [0, ~rezbus3],
-        \vol, 0.05
+        \vol, 0.03
 ));
 );
 
