@@ -119,6 +119,7 @@ Pdef(\ringz4,
     Pbindf(
         Pdef(\ringz1),
         \inbus, ~ringzbus4,
+        \octave, Pshuf([5, 6, 7].powerset.reject { |o| o.isEmpty }, inf)
 ));
 );
 
@@ -449,7 +450,7 @@ Pdef(\sfplay1,
     Pbind(
         \instrument, \sfplay,
         \bufnum, Pshuf((0..(~arrayOfBuffers.size - 1)), inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 16, 24, 32, 64, 96], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 16, 24, 32], inf),
         \legato, 1,
         \loop, 1,
         \outbus, [0, ~ringzbus1],
@@ -460,7 +461,7 @@ Pdef(\sfplay2, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus2]));
 
 Pdef(\sfplay3, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus3]));
 
-Pdef(\sfplay4, Pbindf(Pdef(\sfplay1), \dur, 64, \outbus, [0, ~ringzbus4]));
+Pdef(\sfplay4, Pbindf(Pdef(\sfplay1), \dur, Pshuf([64, 96], inf), \outbus, [0, ~ringzbus4]));
 );
 
 /*
@@ -566,25 +567,25 @@ SynthDef(\sin, { |fb = 0.1, freq = 440, gate = 1, im = 1, level = 0.01, outbus =
 Pdef(\sin1,
     Pbind(
         \instrument, \sin,
+        \degree, Pshuf(~chords, inf),
         \dur, Pshuf(~durs, inf),
         \fb, Pshuf((1..11) / 10, inf),
         \im, Pshuf((11..17) / 10, inf),
         \legato, 0.5,
-        \degree, Pshuf(~chords, inf),
         \octave, 8,
         \scale, ~scale
 ));
 Pdef(\sin2, Pbindf(Pdef(\sin1), \octave, 9));
 
-Pdef(\sin3, Pbindf(Pdef(\sin1), \octave, 10));
+Pdef(\sin3, Pbindf(Pdef(\sin1), \degree, Pshuf(~chord, inf), \octave, 7));
 
 Pdef(\sinbass,
     Pbind(
         \instrument, \sin,
-        \dur, Pshuf(~durs, inf),
-        \legato, 0.25,
-        \level, 0.05,
         \degree, Pshuf(~chord, inf),
+        \dur, Pshuf(~durs, inf),
+        \legato, 0.5,
+        \level, 0.05,
         \octave, [5, 6],
         \scale, ~scale
 ));
@@ -929,7 +930,7 @@ Pdef(\sinprc2,
 
 Pdef(\sinprcs1and2, Ppar([Pdef(\sinprc1), Pdef(\sinprc2)], inf));
 
-~sinprcdegrees = [-5, -2, 0, 2].scramble.mirror1;
+//~sinprcdegrees = [-5, -2, 0, 2].scramble.mirror1;
 Pdef(\sinprc3,
     Pbindf(
         Pdef(\sinprc1),
@@ -938,7 +939,7 @@ Pdef(\sinprc3,
         \mode, 0,
         //\degree, Pseq(~sinprcdegrees, inf),
         \degree, 0,
-        \octave, 6,
+        \octave, [5, 6],
         \outbus, 0,
         \pan, 0,
         \scale, ~scale
@@ -953,7 +954,7 @@ Pdef(\sinprc4,
         \degree, Pshuf([2, 7, 10, 12].powerset.reject { |c| c.isEmpty }.stutter(11), inf),
         //\degree, Pshuf([7, 12].powerset.reject { |d| d.isEmpty }, inf),
         \dur, Pshuf([
-            0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6, 8
+            0.25, 0.5, 0.75, Pseq([0.75, 0.75, 0.5] / 2), 1, 1.5, 2, 3, 4, 6, 8
         ], inf),
         //\fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
         \fb, Pshuf((0..10) / 10, inf),
@@ -971,7 +972,21 @@ Pdef(\sinprc5,
 
 Pdef(\sinprcs4and5, Ppar([Pdef(\sinprc4), Pdef(\sinprc5)], inf));
 
-Pdef(\sinprc6, Pbindf(Pdef(\sinprcs4and5), \degree, 12));
+Pdef(\sinprc6, Pbindf(Pdef(\sinprc4), \degree, 12));
+
+Pdef(\sinprc7, Pbindf(Pdef(\sinprc6), \level, ~sinprc5lvl));
+
+Pdef(\sinprcs6and7, Ppar([Pdef(\sinprc6), Pdef(\sinprc7)], inf));
+
+Pdef(\sinprc8,
+    Pbind(
+        \instrument, \sinprc,
+        \curve, -2,
+        \degree, Pseq([Rest, [7, 12]], inf),
+        \dur, Pshuf([1, 1.25, 1.5], inf),
+        \octave, 6,
+        \scale, ~scale
+));
 );
 
 /*
@@ -993,21 +1008,21 @@ Pdef(\sinprc3).stop;
 */
 
 /*
-Pdef(\sinprc4).play(~tempo, quant: 0.5);
-Pdef(\sinprc4).isPlaying;
-Pdef(\sinprc4).stop;
-*/
-
-/*
 Pdef(\sinprcs4and5).play(~tempo, quant: 0.5);
 Pdef(\sinprcs4and5).isPlaying;
 Pdef(\sinprcs4and5).stop;
 */
 
 /*
-Pdef(\sinprc6).play(~tempo, quant: 0.5);
-Pdef(\sinprc6).isPlaying;
-Pdef(\sinprc6).stop;
+Pdef(\sinprcs6and7).play(~tempo, quant: 0.5);
+Pdef(\sinprcs6and7).isPlaying;
+Pdef(\sinprcs6and7).stop;
+*/
+
+/*
+Pdef(\sinprc8).play(~tempo, quant: 0.5);
+Pdef(\sinprc8).isPlaying;
+Pdef(\sinprc8).stop;
 */
 
 // SINPRC: MIDI CONTROL
@@ -1055,20 +1070,35 @@ MIDIdef.noteOn(\sinprcs4and5, {
 );
 
 (
-MIDIdef.noteOn(\sinprc6, {
-    if(Pdef(\sinprc6).isPlaying.not) {
-        Pdef(\sinprc6).play(~tempo, quant: 0.5);
+MIDIdef.noteOn(\sinprcs6and7, {
+    if(Pdef(\sinprcs6and7).isPlaying.not) {
+        Pdef(\sinprcs6and7).play(~tempo, quant: 0.5);
         m.noteOn(0, 35, ~red);
-        "sinprc6 play".postln;
+        "sinprcs 6 and 7 play".postln;
     } {
-        Pdef(\sinprc6).stop;
+        Pdef(\sinprcs6and7).stop;
         m.noteOn(0, 35, 0);
-        "sinprc6 stop".postln;
+        "sinprcs 6 and 7 stop".postln;
     };
 }, 35, srcID: ~lp.uid);
 );
 
+(
+MIDIdef.noteOn(\sinprc8, {
+    if(Pdef(\sinprc8).isPlaying.not) {
+        Pdef(\sinprc8).play(~tempo, quant: 0.5);
+        m.noteOn(0, 48, ~red);
+        "sinprc8 play".postln;
+    } {
+        Pdef(\sinprc8).stop;
+        m.noteOn(0, 48, 0);
+        "sinprc8 stop".postln;
+    };
+}, 48, srcID: ~lp.uid);
+);
+
 ////////////////////////////////////////////////////////////////
+// PINZ: SYNTH
 
 (
 SynthDef(\pinz, { |curve = -4, fb = 0, freq = 440, level = 0.05, pan = 0|
@@ -1085,15 +1115,17 @@ SynthDef(\pinz, { |curve = -4, fb = 0, freq = 440, level = 0.05, pan = 0|
 Pdef(\pinz1,
     Pbind(
         \instrument, \pinz,
-        \dur, Pshuf([0.5, 0.75].stutter(31), inf),
+        \dur, Pshuf([0.5, 0.75].stutter(7), inf),
         //\dur, 0.25,
         \fb, Pshuf((9..22) / 10, inf),
+        /*
         \degree, Pseq([
             Pshuf(~chords[0].stutter(11)),
             Pshuf(~chords[1].stutter(11)),
             Pshuf(~chords[2].stutter(11)),
             Pshuf(~chords[3].stutter(11))
         ], inf),
+        */
         \octave, 7,
         \pan, -1,
         \scale, ~scale
@@ -1101,7 +1133,7 @@ Pdef(\pinz1,
 
 Pdef(\pinz2, Pbindf(Pdef(\pinz1), \pan, 1));
 
-Pdef(\pinz3, Pbindf(Pdef(\pinz1), \dur, 0.25, \degree, 0, \pan, 0));
+Pdef(\pinz3, Pbindf(Pdef(\pinz1), \degree, 0, \pan, 0));
 
 Pdef(\pinz, Ppar([Pdef(\pinz1), Pdef(\pinz2), Pdef(\pinz3)], inf));
 );
@@ -1116,14 +1148,14 @@ Pdef(\pinz).stop;
 MIDIdef.noteOn(\pinz, {
     if(Pdef(\pinz).isPlaying.not) {
         Pdef(\pinz).play(~tempo, quant: 0.5);
-        m.noteOn(0, 48, ~red);
+        m.noteOn(0, 51, ~red);
         "pinz play".postln;
     } {
         Pdef(\pinz).stop;
-        m.noteOn(0, 48, 0);
+        m.noteOn(0, 51, 0);
         "pinz stop".postln;
     };
-}, 48, srcID: ~lp.uid);
+}, 51, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
