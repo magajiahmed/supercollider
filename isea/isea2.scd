@@ -300,6 +300,8 @@ SynthDef(\verb, { |ampmodmin = 0.3, ampmodmax = 1, dampmodfreq = 7, gate = 1, in
 }).add;
 );
 
+// VERB: PATTERN
+
 Pdef(\verb1, Pmono(\verb, \inbus, ~verbus1));
 
 Pdef(\verb1).play(~tempo, quant: 0.5);
@@ -308,6 +310,8 @@ m.control(0, 109, ~yellow);
 Pdef(\verb1).isPlaying;
 Pdef(\verb1).stop;
 */
+
+// VERB: MIDI CONTROL
 
 (
 MIDIdef.cc(\verb, {
@@ -324,7 +328,7 @@ MIDIdef.cc(\verb, {
 );
 
 ////////////////////////////////////////////////////////////////
-// DFM1
+// SELF-OSCILLATING RESONANT FILTER: SYNTH
 
 (
 SynthDef(\dfm, { |freq = 1000, gate = 1, inbus = 0, level = 0.1, outbus = 0, res = 0, type = 0|
@@ -335,6 +339,8 @@ SynthDef(\dfm, { |freq = 1000, gate = 1, inbus = 0, level = 0.1, outbus = 0, res
     Out.ar(outbus, dfm).fold2(level);
 }).add;
 );
+
+// SELF-OSCILLATING RESONANT FILTER: PATTERNS
 
 (
 Pdef(\dfm1,
@@ -373,6 +379,8 @@ Pdef(\dfms).isPlaying;
 Pdef(\dfms).stop;
 */
 
+// SELF-OSCILLATING RESONANT FILTER: MIDI CONTROL
+
 (
 MIDIdef.cc(\dfms, {
     if(Pdef(\dfms).isPlaying.not) {
@@ -388,7 +396,7 @@ MIDIdef.cc(\dfms, {
 );
 
 ////////////////////////////////////////////////////////////////
-//
+// RESONANT HIGH-PASS FILTER: SYNTH
 
 (
 SynthDef(\rhpf, { |freq = 4000, gate = 1, inbus = 0, level = 0.5|
@@ -433,7 +441,8 @@ MIDIdef.cc(\rhpfs, {
 // SOUNDFILE PLAYER: SYNTH
 
 (
-SynthDef(\sfplay, { |attack = 0.01, bufnum, curve = 0, gate = 1, loop = 0, outbus = 0, rate = 1, release = 0.01, startPos = 0, vol = 0.1|
+SynthDef(\sfplay, { |
+    attack = 0.01, bufnum, curve = 0, gate = 1, loop = 0, outbus = 0, rate = 1, release = 0.01, startPos = 0, vol = 0.1|
 	var env			 	=	Env.asr(attack, vol, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var playbuf			=	PlayBuf.ar(
@@ -455,7 +464,8 @@ Pdef(\sfplay1,
         \loop, 1,
         \outbus, [0, ~ringzbus1],
         \startPos, Pwhite(0, 1000000, inf),
-        \vol, 0.1,
+        //\startPos, Pwhite(0, ~arrayOfBuffers[Pkey(\bufnum)].numFrames, inf),
+        \vol, 0.05,
 ));
 Pdef(\sfplay2, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus2]));
 
@@ -577,7 +587,16 @@ Pdef(\sin1,
 ));
 Pdef(\sin2, Pbindf(Pdef(\sin1), \octave, 9));
 
-Pdef(\sin3, Pbindf(Pdef(\sin1), \degree, Pshuf(~chord, inf), \octave, 7));
+Pdef(\sin3,
+    Pmono(
+        \sin,
+        \degree, [7, 12],
+        \dur, Pshuf(~durs, inf),
+        \fb, Pshuf((1..11) / 10, inf),
+        \im, Pshuf((11..17) / 10, inf),
+        \octave, 7,
+        \scale, ~scale
+));
 
 Pdef(\sinbass,
     Pbind(
@@ -899,7 +918,7 @@ SynthDef(\sinprc, { |curve = -4, fb = 0.1, freq = 440, im = 1, level = 0.1, mode
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var fbsin           =   FBSineC.ar(freq, im, fb, mul: envgen);
     var rhpf            =   BMoog.ar(fbsin, freq.clip(50, SampleRate.ir / 2.5), 0.9, mode, 0);
-    var sin             =   SinOsc.ar(freq!2, mul: envgen / 8);
+    var sin             =   SinOsc.ar(freq!2, mul: envgen / 16);
     var pan2            =   Pan2.ar(rhpf + sin, pan).fold2(level);
     Out.ar(outbus, pan2);
 }).add;
@@ -981,12 +1000,20 @@ Pdef(\sinprcs6and7, Ppar([Pdef(\sinprc6), Pdef(\sinprc7)], inf));
 Pdef(\sinprc8,
     Pbind(
         \instrument, \sinprc,
-        \curve, -2,
-        \degree, Pseq([Rest, [7, 12]], inf),
-        \dur, Pshuf([1, 1.25, 1.5], inf),
-        \octave, 6,
+        \curve, -8,
+        \degree, Pseq([Rest, [0, 7]], inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75], inf),
+        \im, Pwhite(0.9, 1.1, inf),
+        \level, 0.1,
+        \octave, 7,
         \scale, ~scale
 ));
+
+Pdef(\sinprc9, Pbindf(Pdef(\sinprc8), \level, 0.02, \pan, -1));
+
+Pdef(\sinprc10, Pbindf(Pdef(\sinprc9), \pan, 1));
+
+Pdef(\sinprcs8and9and10, Ppar([Pdef(\sinprc8), Pdef(\sinprc9), Pdef(\sinprc10)], inf));
 );
 
 /*
@@ -1084,15 +1111,15 @@ MIDIdef.noteOn(\sinprcs6and7, {
 );
 
 (
-MIDIdef.noteOn(\sinprc8, {
-    if(Pdef(\sinprc8).isPlaying.not) {
-        Pdef(\sinprc8).play(~tempo, quant: 0.5);
+MIDIdef.noteOn(\sinprcs8and9and10, {
+    if(Pdef(\sinprcs8and9and10).isPlaying.not) {
+        Pdef(\sinprcs8and9and10).play(~tempo, quant: 0.5);
         m.noteOn(0, 48, ~red);
-        "sinprc8 play".postln;
+        "sinprcs 8, 9, and 10 play".postln;
     } {
-        Pdef(\sinprc8).stop;
+        Pdef(\sinprcs8and9and10).stop;
         m.noteOn(0, 48, 0);
-        "sinprc8 stop".postln;
+        "sinprcs 8, 9, and 10 stop".postln;
     };
 }, 48, srcID: ~lp.uid);
 );
