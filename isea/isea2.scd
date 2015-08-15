@@ -2,7 +2,7 @@
 // SOURCE SOUNDS. You may need lots of RAM to load them all!
 
 (
-~arrayOfBuffers = "/run/media/phil/LMA Aug Sho/ISEA/*".pathMatch.sort.collect {
+~arrayOfBuffers = "/run/media/phil/LMA Aug Sho/ISEA/*".pathMatch.collect {
     |f| Buffer.read(s, f, action: { |b| [b.path, b.duration].postln })
 };
 );
@@ -56,7 +56,7 @@ m.connect(~lp.uid);
 ~rezbus1 = Bus.audio(s, 2);
 ~rezbus2 = Bus.audio(s, 2);
 ~rezbus3 = Bus.audio(s, 2);
-~verbus = Bus.audio(s, 2);
+~verbus1 = Bus.audio(s, 2);
 ~dfmbus1 = Bus.audio(s, 2);
 ~dfmbus2 = Bus.audio(s, 2);
 ~dfmbus3 = Bus.audio(s, 2);
@@ -115,7 +115,11 @@ Pdef(\ringz2, Pbindf(Pdef(\ringz1), \inbus, ~ringzbus2, \octave, 6));
 
 Pdef(\ringz3, Pbindf(Pdef(\ringz1), \inbus, ~ringzbus3, \octave, 7));
 
-Pdef(\ringz4, Pbindf(Pdef(\ringz1), \inbus, ~ringzbus4, \octave, 5));
+Pdef(\ringz4,
+    Pbindf(
+        Pdef(\ringz1),
+        \inbus, ~ringzbus4,
+));
 );
 
 
@@ -224,7 +228,7 @@ SynthDef(\rez, { |decaytime = 0.1, freq = 440, gate = 1, inbus = 0, level = 0.1,
 Pdef(\rez1,
     Pmono(
         \rez,
-        \decaytime, 0.1,
+        \decaytime, 0.2,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus1,
         \degree, Pshuf(~chords, inf),
@@ -235,7 +239,7 @@ Pdef(\rez1,
 Pdef(\rez2,
     Pmono(
         \rez,
-        \decaytime, 0.1,
+        \decaytime, 0.2,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus2,
         \degree, Pshuf(~chords, inf),
@@ -246,7 +250,7 @@ Pdef(\rez2,
 Pdef(\rez3,
     Pmono(
         \rez,
-        \decaytime, 0.1,
+        \decaytime, 0.2,
         \dur, Pshuf(~durs, inf),
         \inbus, ~rezbus3,
         \degree, Pshuf(~chords, inf),
@@ -284,24 +288,24 @@ MIDIdef.cc(\rez, {
 // VERB: SYNTH
 
 (
-SynthDef(\verb, { |gate = 1, inbus = 0, level = 0.2, outbus = 0|
+SynthDef(\verb, { |ampmodmin = 0.3, ampmodmax = 1, dampmodfreq = 7, gate = 1, inbus = 0, level = 0.2, outbus = 0|
     var env             =   Env.asr(0.01, level, 5);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
-    var dampmod         =   LFBrownNoise2.kr(7!2).range(0.0, 1.0).round(0.5);
-    var ampmod          =   LFClipNoise.kr(15!2).range(0.3, 1);
+    var dampmod         =   LFBrownNoise2.kr(dampmodfreq!2).range(0.0, 1.0).round(0.25);
+    var ampmod          =   LFClipNoise.kr(15!2).range(ampmodmin, ampmodmax);
     var verb            =   GVerb.ar(in, 7, 20, dampmod, drylevel: 0, mul: envgen * ampmod);
     Out.ar(outbus, verb);
 }).add;
 );
 
-Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
+Pdef(\verb1, Pmono(\verb, \inbus, ~verbus1));
 
-Pdef(\verb).play(~tempo, quant: 0.5);
+Pdef(\verb1).play(~tempo, quant: 0.5);
 m.control(0, 109, ~yellow);
 /*
-Pdef(\verb).isPlaying;
-Pdef(\verb).stop;
+Pdef(\verb1).isPlaying;
+Pdef(\verb1).stop;
 */
 
 (
@@ -671,7 +675,7 @@ MIDIdef.noteOn(\sinbass, {
 // SHAPELY: SYNTH
 
 (
-SynthDef(\shapely, { |a = 1, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.02, lfreq = 1, limitmodmin = 0.1, limitmodmax = 0.2, pan = 0|
+SynthDef(\shapely, { |a = 1, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.03, lfreq = 1, limitmodmin = 0.1, limitmodmax = 0.2, pan = 0|
     var env             =   Env.asr(0.01, level, 0.01);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin             =   SinOscFB.ar(freq, fb);
@@ -701,9 +705,9 @@ Pdef(\shapely1,
 
 Pdef(\shapely2, Pbindf(Pdef(\shapely1), \pan, 0.5));
 
-Pdef(\shapely3, Pbindf(Pdef(\shapely1), \lfreq, Pkey(\dur).reciprocal, \pan, 0));
+//Pdef(\shapely3, Pbindf(Pdef(\shapely1), \lfreq, Pkey(\dur).reciprocal, \pan, 0));
 
-Pdef(\shapes1, Ppar([Pdef(\shapely1), Pdef(\shapely2), Pdef(\shapely3)], inf));
+Pdef(\shapes1, Ppar([Pdef(\shapely1), Pdef(\shapely2)], inf));
 );
 
 /*
@@ -727,7 +731,7 @@ MIDIdef.noteOn(\shapes1, {
 );
 
 ////////////////////////////////////////////////////////////////
-// PULSE: SYNTH
+// SWITCH: SYNTH
 
 (
 SynthDef(\switch, { |a = 1, curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005|
@@ -790,10 +794,10 @@ Pdef(\pulse2).stop;
 Pdef(\switch1,
     Pbind(
         \instrument, \switch,
+        \degree, Pshuf(~chords, inf),
         \dur, Pshuf(~durs, inf),
         \fb, 0.5,
         \legato, 0.5,
-        \degree, Pshuf(~chords, inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -805,6 +809,8 @@ Pdef(\switch3, Pbindf(Pdef(\switch1), \fb, 2));
 Pdef(\switches1, Ppar([Pdef(\switch1), Pdef(\switch2), Pdef(\switch3)], inf));
 
 Pdef(\switches2, Pbindf(Pdef(\switches1), \octave, 6));
+
+Pdef(\switches3, Pbindf(Pdef(\switches1), \degree, Pshuf(~chord, inf), \octave, 4));
 );
 
 /*
@@ -817,6 +823,12 @@ Pdef(\switches1).stop;
 Pdef(\switches2).play(~tempo, quant: 0.5);
 Pdef(\switches2).isPlaying;
 Pdef(\switches2).stop;
+*/
+
+/*
+Pdef(\switches3).play(~tempo, quant: 0.5);
+Pdef(\switches3).isPlaying;
+Pdef(\switches3).stop;
 */
 
 /*
@@ -863,6 +875,20 @@ MIDIdef.noteOn(\switches2, {
 }, 22, srcID: ~lp.uid);
 );
 
+(
+MIDIdef.noteOn(\switches3, {
+    if(Pdef(\switches3).isPlaying.not) {
+        Pdef(\switches3).play(~tempo, quant: 0.5);
+        m.noteOn(0, 23, ~red);
+        "switches3 play".postln;
+    } {
+        Pdef(\switches3).stop;
+        m.noteOn(0, 23, 0);
+        "switches3 stop".postln;
+    }
+}, 23, srcID: ~lp.uid);
+);
+
 ////////////////////////////////////////////////////////////////
 // SINPRC: SYNTH
 
@@ -890,7 +916,7 @@ Pdef(\sinprc1,
         \mode, 1,
         \degree, Pshuf(~chords, inf),
         \octave, 8,
-        \outbus, Pshuf([0, [0, ~verbus]], inf),
+        \outbus, Pshuf([0, [0, ~verbus1]], inf),
         \pan, Pshuf([-0.5, 0, 0.5], inf),
         \scale, ~scale
 ));
@@ -903,34 +929,37 @@ Pdef(\sinprc2,
 
 Pdef(\sinprcs1and2, Ppar([Pdef(\sinprc1), Pdef(\sinprc2)], inf));
 
-~sinprcdegrees = [-2, 0, 2].scramble.mirror1;
+~sinprcdegrees = [-5, -2, 0, 2].scramble.mirror1;
 Pdef(\sinprc3,
     Pbindf(
         Pdef(\sinprc1),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \level, 0.2,
         \mode, 0,
-        \degree, Pseq(~sinprcdegrees, inf),
+        //\degree, Pseq(~sinprcdegrees, inf),
+        \degree, 0,
         \octave, 6,
         \outbus, 0,
         \pan, 0,
         \scale, ~scale
 ));
 
-~sinprc4lvl = 0.02;
+~sinprc4lvl = 0.03;
 ~sinprc5lvl = ~sinprc4lvl / 5;
 Pdef(\sinprc4,
     Pbind(
         \instrument, \sinprc,
-        \curve, Pshuf([-64, -32, -16, -8, -4], inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(3), inf),
-        //\fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
-        \fb, Pshuf((0..10) / 11, inf),
-        \level, Pshuf([0.5, 1] * ~sinprc4lvl, inf),
+        \curve, Pshuf([-64, -32, -16].stutter(3), inf),
         \degree, Pshuf([2, 7, 10, 12].powerset.reject { |c| c.isEmpty }.stutter(11), inf),
         //\degree, Pshuf([7, 12].powerset.reject { |d| d.isEmpty }, inf),
+        \dur, Pshuf([
+            0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6, 8
+        ], inf),
+        //\fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
+        \fb, Pshuf((0..10) / 10, inf),
+        \level, Pshuf([0.5, 1] * ~sinprc4lvl, inf),
         \octave, 11,
-        \outbus, 0,
+        \outbus, Pshuf([0, [0, ~ringzbus2], [0, ~ringzbus3], [0, ~verbus1], ~verbus1], inf),
         \scale, ~scale
 ));
 
@@ -1168,6 +1197,17 @@ Pdef(\latquick,
         \octave, 11,
         \outbus, ~rhpfbus2
 ));
+
+Pdef(\latsnr,
+    Pbind(
+        \instrument, \latprc,
+        \a, -1.5,
+        \bal, Pshuf([-0.5, 0, 0.5], inf),
+        \dur, Pseq([0.25, 11, 0.25, 12, 0.25, 13], inf),
+        \curve, -8,
+        \level, Pshuf([0.2, 1].stutter(5) * 0.05, inf),
+        \octave, Pshuf([9, 11, 13].powerset.reject { |o| o.isEmpty }, inf),
+));
 );
 
 /*
@@ -1188,6 +1228,11 @@ Pdef(\latquick).isPlaying;
 Pdef(\latquick).stop;
 */
 
+/*
+Pdef(\latsnr).play(~tempo, quant: 0.5);
+Pdef(\latsnr).isPlaying;
+Pdef(\latsnr).stop;
+*/
 
 // LATPRC: MIDI CONTROL
 
@@ -1235,6 +1280,20 @@ MIDIdef.noteOn(\latquick, {
         "latquick stop".postln;
     }
 }, 38, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\latsnr, {
+    if(Pdef(\latsnr).isPlaying.not) {
+        Pdef(\latsnr).play(~tempo, quant: 0.5);
+        m.noteOn(0, 39, ~red);
+        "latsnr play".postln;
+    } {
+        Pdef(\latsnr).stop;
+        m.noteOn(0, 39, 0);
+        "latsnr stop".postln;
+    }
+}, 39, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
