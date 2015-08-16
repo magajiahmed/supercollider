@@ -459,7 +459,8 @@ Pdef(\sfplay1,
     Pbind(
         \instrument, \sfplay,
         \bufnum, Pshuf((0..(~arrayOfBuffers.size - 1)), inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 16, 24, 32], inf),
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+        \dur, Pseq([0.25, 0.5, 0.75, 8, 12], inf),
         \legato, 1,
         \loop, 1,
         \outbus, [0, ~ringzbus1],
@@ -467,6 +468,7 @@ Pdef(\sfplay1,
         //\startPos, Pwhite(0, ~arrayOfBuffers[Pkey(\bufnum)].numFrames, inf),
         \vol, 0.05,
 ));
+
 Pdef(\sfplay2, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus2]));
 
 Pdef(\sfplay3, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus3]));
@@ -953,11 +955,11 @@ Pdef(\sinprcs1and2, Ppar([Pdef(\sinprc1), Pdef(\sinprc2)], inf));
 Pdef(\sinprc3,
     Pbindf(
         Pdef(\sinprc1),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
         \level, 0.2,
         \mode, 0,
         //\degree, Pseq(~sinprcdegrees, inf),
-        \degree, 0,
+        \degree, Pseq([0].stutter(17) ++ [-2].stutter(15) ++ [2].stutter(13), inf),
         \octave, [5, 6],
         \outbus, 0,
         \pan, 0,
@@ -973,7 +975,7 @@ Pdef(\sinprc4,
         \degree, Pshuf([2, 7, 10, 12].powerset.reject { |c| c.isEmpty }.stutter(11), inf),
         //\degree, Pshuf([7, 12].powerset.reject { |d| d.isEmpty }, inf),
         \dur, Pshuf([
-            0.25, 0.5, 0.75, Pseq([0.75, 0.75, 0.5] / 2), 1, 1.5, 2, 3, 4, 6, 8
+            0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6, 8
         ], inf),
         //\fb, Pshuf([0.1, 0.2, 0.4, 0.8, 1.6, 3.2], inf),
         \fb, Pshuf((0..10) / 10, inf),
@@ -1000,7 +1002,6 @@ Pdef(\sinprcs6and7, Ppar([Pdef(\sinprc6), Pdef(\sinprc7)], inf));
 Pdef(\sinprc8,
     Pbind(
         \instrument, \sinprc,
-        \curve, -8,
         \degree, Pseq([Rest, [0, 7]], inf),
         \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75], inf),
         \im, Pwhite(0.9, 1.1, inf),
@@ -1014,18 +1015,14 @@ Pdef(\sinprc9, Pbindf(Pdef(\sinprc8), \level, 0.02, \pan, -1));
 Pdef(\sinprc10, Pbindf(Pdef(\sinprc9), \pan, 1));
 
 Pdef(\sinprcs8and9and10, Ppar([Pdef(\sinprc8), Pdef(\sinprc9), Pdef(\sinprc10)], inf));
+
+Pdef(\sinprc11, Pbindf(Pdef(\sinprcs8and9and10), \octave, 9));
 );
 
 /*
-Pdef(\sinprc1).play(~tempo, quant: 0.5);
-Pdef(\sinprc1).isPlaying;
-Pdef(\sinprc1).stop;
-*/
-
-/*
-Pdef(\sinprc2).play(~tempo, quant: 0.5);
-Pdef(\sinprc2).isPlaying;
-Pdef(\sinprc2).stop;
+Pdef(\sinprcs1and2).play(~tempo, quant: 0.5);
+Pdef(\sinprcs1and2).isPlaying;
+Pdef(\sinprcs1and2).stop;
 */
 
 /*
@@ -1047,9 +1044,15 @@ Pdef(\sinprcs6and7).stop;
 */
 
 /*
-Pdef(\sinprc8).play(~tempo, quant: 0.5);
-Pdef(\sinprc8).isPlaying;
-Pdef(\sinprc8).stop;
+Pdef(\sinprcs8and9and10).play(~tempo, quant: 0.5);
+Pdef(\sinprcs8and9and10).isPlaying;
+Pdef(\sinprcs8and9and10).stop;
+*/
+
+/*
+Pdef(\sinprc11).play(~tempo, quant: 0.5);
+Pdef(\sinprc11).isPlaying;
+Pdef(\sinprc11).stop;
 */
 
 // SINPRC: MIDI CONTROL
@@ -1122,6 +1125,20 @@ MIDIdef.noteOn(\sinprcs8and9and10, {
         "sinprcs 8, 9, and 10 stop".postln;
     };
 }, 48, srcID: ~lp.uid);
+);
+
+(
+MIDIdef.noteOn(\sinprc11, {
+    if(Pdef(\sinprc11).isPlaying.not) {
+        Pdef(\sinprc11).play(~tempo, quant: 0.5);
+        m.noteOn(0, 49, ~red);
+        "sinprc11 play".postln;
+    } {
+        Pdef(\sinprc11).stop;
+        m.noteOn(0, 49, 0);
+        "sinprc11 stop".postln;
+    };
+}, 49, srcID: ~lp.uid);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -1263,8 +1280,8 @@ Pdef(\latsnr,
         \a, -1.5,
         \bal, Pshuf([-0.5, 0, 0.5], inf),
         \dur, Pseq([0.25, 11, 0.25, 12, 0.25, 13], inf),
-        \curve, -8,
-        \level, Pshuf([0.2, 1].stutter(5) * 0.05, inf),
+        \curve, -16,
+        \level, Pshuf([0.2, 1].stutter(5) * 0.03, inf),
         \octave, Pshuf([9, 11, 13].powerset.reject { |o| o.isEmpty }, inf),
 ));
 );
