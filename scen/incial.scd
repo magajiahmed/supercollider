@@ -436,8 +436,8 @@ MIDIdef.cc(\cnstopktrl, {
 // prc
 
 (
-SynthDef(\prc, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level = 0.08, pan = 0 |
-	var env				=	Env.perc(releaseTime: 0.1, level: level, curve: curve);
+SynthDef(\prc, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level = 0.08, pan = 0, releaseTime = 0.2 |
+	var env				=	Env.perc(releaseTime: releaseTime, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
 	var lfn				=	LFNoise0.ar(15).range(0, 1);
@@ -458,7 +458,8 @@ Pdef(\prc1,
 	Pbind(
 		\instrument, \prc,
 		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1, 1.2, 2.2, 3.2], inf),
-        \curve, -4,
+        //\a, Pshuf((1..3) + 0.2, inf),
+        \curve, Pshuf([-64, -16, -4], inf),
         \dfrq, Pshuf((1..19) * 400, inf),
         /*
         \dur, Pshuf([
@@ -468,8 +469,8 @@ Pdef(\prc1,
         ], inf),
         */
         \dur, Pshuf([
-            Pseq([0.125], 2), Pseq([0.25, 0.5], 2), Pseq([0.5, 0.75], 2), Pseq([0.75, 1], 2),
-            Pseq([1, 1.25], 2), Pseq([1.25, 1.5], 2), Pseq([1.5, 1.75], 2)
+            Pseq([0.125], 2), Pseq([0.25, 0.5]), Pseq([0.5, 0.75]), Pseq([0.75, 1]),
+            Pseq([1, 1.25]), Pseq([1.25, 1.5]), Pseq([1.5, 1.75]), Pseq([1.75, 2]), Pseq([2, 2.25])
         ], inf),
 		\freq, Pshuf([
 			Pseq([~prcpatfrq1, ~prcpatfrq2, ~prcpatfrq2]),
@@ -478,6 +479,7 @@ Pdef(\prc1,
 			Pseq([~prcpatfrq2, ~prcpatfrq2, ~prcpatfrq2])
 		], inf),
 		\level, ~prcpatlvl,
+        \releaseTime, 0.1
 ));
 //Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \level, ~prcpatecholvl, \pan, -1));
 //Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
@@ -490,21 +492,23 @@ Pdef(\prc2,
     Pbindf(
         Pdef(\prc1),
         //\a, 3.5,
-        \a, Pshuf((340..363) / 100, inf),
+        \a, Pwhite(3.49, 3.51, inf),
         \curve, -64,
-        \freq, ~prcpatfrq2
+        \freq, ~prcpatfrq2 * 2
 ));
 
 //
 
-~prc3durs = [1, 1.5, 1, 1.5, 1, 1, 1.5];
+~prc3durs = [1, 1.5, 1, 1, 1.5, 1, 1, 1, 1.5];
 Pdef(\prc3,
     Pbindf(
         Pdef(\prc1),
-        \a, Pshuf((290..313) / 100, inf),
-        \curve, -64,
-        \dur, Pshuf([Pseq(~prcpat3durs - 0.25), Pseq(~prcpat3durs), Pseq(~prcpat3durs + 0.25)], inf),
-        \freq, ~prcpatfrq2
+        \a, Pwhite(2.99, 3.01, inf),
+        \curve, -16,
+        \dur, Pshuf([Pseq((~prc3durs * 2) - 0.25), Pseq(~prc3durs * 2), Pseq((~prc3durs * 2) + 0.25)], inf),
+        //\dur, 0.25,
+        \freq, ~prcpatfrq2,
+        \releaseTime, 1
 ));
 
 //
@@ -908,7 +912,7 @@ Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
         \curve, -8,
-        \dur, Pseq(~pnodurs + 0.25, inf),
+        \dur, Pseq(~pnodurs, inf),
 		\fb, 0,
         \level, ~pnopulselvl,
         \degree, 0,
@@ -918,7 +922,7 @@ Pdef(\pnopulse1,
         \sinhimul, 0.1
 ));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \curve, -16, \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnopulselvl / 3));
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnopulselvl / 3));
 Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
 
 //
@@ -927,7 +931,7 @@ Pdef(\pno1,
     Pbind(
         \instrument, \pno,
         \curve, -4,
-        \dur, Pseq(~pnodurs, inf),
+        \dur, Pseq(~pnodurs + 0.25, inf),
         \fb, 0.6,
         \fb2, 2.5,
         \fb2mul, 0.1,
@@ -1066,16 +1070,16 @@ Pdef(\pgn1,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
         //\degree, Pshuf([0, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
         //\degree, Pshuf([2, 7, 10, 12].powerset.reject({ |i| i.isEmpty }), inf),
-        \degree, [2, 7, 10, 12],
+        \degree, Pshuf([2, 7, 10, 12], inf),
 		\dur, Pshuf([24, 32, 48, 64, 96] + 0.25, inf),
 		\legato, 0.5,
-		\octave, 4,
+		\octave, 5,
 		\scale, ~scale,
         \shapermin, 0.001,
         \shapermax, 0.008,
 ));
-Pdef(\pgn2, Pbindf(Pdef(\pgnpat1), \octave, 5));
-Pdef(\pgn3, Pbindf(Pdef(\pgnpat1), \octave, 6));
+Pdef(\pgn2, Pbindf(Pdef(\pgn1)));
+Pdef(\pgn3, Pbindf(Pdef(\pgn1)));
 //Pdef(\pgns, Ppar([Pdef(\pgn1), Pdef(\pgn2), Pdef(\pgn3)]));
 );
 
@@ -1182,9 +1186,9 @@ Pdef(\pad2pat,
             ~padchords2shuf[0], Rest,
             ~padchords2shuf[1], ~padchords2shuf[2], Rest,
             ~padchords2shuf[3], ~padchords2shuf[4], ~padchords2shuf[5], Rest,
-            ~padchords2shuf[6], Rest,
-            ~padchords2shuf[7], ~padchords2shuf[8], Rest,
-            ~padchords2shuf[9], ~padchords2shuf[10], ~padchords2shuf[11], Rest,
+            ~padchords2shuf[6], ~padchords2shuf[7], ~padchords2shuf[8], Rest,
+            ~padchords2shuf[9], ~padchords2shuf[10], Rest,
+            ~padchords2shuf[11], Rest,
 		 ], inf),
 		\dur, Pshuf([11, 13, 15], inf),
 		\level, 0.02,
