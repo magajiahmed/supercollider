@@ -25,6 +25,7 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 (
 ~bassfxbus = Bus.audio(s, 2);
 ~prcfxbus = Bus.audio(s, 2);
+~verbus = Bus.audio(s, 2);
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -234,41 +235,52 @@ MIDIdef.cc(\snapstopktrl, {
 // clip noise percussion
 
 (
-SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1|
-    var env             =   Env.perc(0.003, 1, level, curve);
+SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1, outbus = 0, releaseTime = 0.1|
+    var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var blip            =   Blip.ar(0, mul: envgen);
     var clipnoiz        =   LFClipNoise.ar(freq!2, envgen);
-    var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir / 2.5), 0.3);
-    var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.3);
+    var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir / 2.5), 0.1);
+    var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.2);
     var balance         =   Balance2.ar((rlpf + rhpf)[0], (rlpf + rhpf)[1], bal);
-    Out.ar(0, balance);
+    Out.ar(outbus, balance);
 }).add;
 );
 
 (
 ~cnprclvl = 0.1;
-~cnprcecholvl = ~cnprclvl / 5;
+~cnprcecholvl = ~cnprclvl / 4;
 Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
-        \curve, Pshuf([-64, -32], inf),
-        \dur, Pshuf(Array.fill(17, { |d| (d + 1) * 0.25 }), inf),
-        \freq, Pshuf(Array.fill(5, { |i| pi.pow(i + 1) * 25 }), inf),
+        //\bal, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
+        \curve, Pshuf([-8, -4, -2], inf),
+        \dur, Pshuf(Array.fill(23, { |d| (d + 1) * (0.25) }), inf),
+        //\freq, Pshuf(Array.fill(3, { |i| pi.pow(i + 1) * 50 }), inf),
+        \freq, Pseq([100, 1000, 100, 100, 1000, 100, 100, 100, 1000], inf),
         \level, ~cnprclvl,
+        \offset, Pwhite(-0.01, 0.01, inf),
+        \outbus, [~prcfxbus, ~verbus],
+        \releaseTime, Pshuf([0.05, 0.075, 0.1, 0.15], inf)
 ));
 Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \bal, -1, \level, ~cnprcecholvl));
 Pdef(\cnprc3, Pbindf(Pdef(\cnprc2), \bal, 1));
-//Pdef(\cnprc4, Pbindf(Pdef(\cnprc3), \bal, 0));
+Pdef(\cnprc4, Pbindf(Pdef(\cnprc1), \level, ~cnprcecholvl));
 Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2), Pdef(\cnprc3)], inf));
+//Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc4)], inf));
 );
 
 /*
-Pdef(\cnprc2).play(t, quant: 1);
-Pdef(\cnprc2).isPlaying;
-Pdef(\cnprc2).stop;
+Pdef(\cnprc1).play(t, quant: 1);
+Pdef(\cnprc1).isPlaying;
+Pdef(\cnprc1).stop;
 */
 
+/*
+Pdef(\cnprc4).play(t, quant: 1);
+Pdef(\cnprc4).isPlaying;
+Pdef(\cnprc4).stop;
+*/
 
 /*
 Pdef(\cnprcpar).play(t, quant: 1);
@@ -290,6 +302,49 @@ MIDIdef.cc(\cnstopktrl, {
 		"cnprc stop".postln;
 	};
 }, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+////////////////////////////////////////////////////////////////
+// VERB
+
+(
+SynthDef(\verb, { |gate = 1, inbus = 0, outbus = 0|
+    var env             =   Env.asr(0.01, 0.3);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var in              =   In.ar(inbus, 2);
+    //var tmod            =   LFNoise2.kr(1!2).range(5, 15);
+    var dampmod         =   LFNoise2.kr(1!2, 1, 1);
+    //var sizemod         =   LFNoise0.kr(0.1!2).range(0.1, 1);
+    var lowmod          =   LFNoise0.kr(0.13!2, 1, 1);
+    var midmod          =   LFNoise0.kr(0.23!2, 1, 1);
+    var himod           =   LFNoise0.kr(0.17!2, 1, 1);
+    var verb            =   JPverb.ar(in, 0.1, dampmod, 0.05, low: lowmod, mid: midmod, high: himod, lowcut: 1000, highcut: 4000) * envgen;
+    Out.ar(outbus, verb);
+}).add;
+);
+
+Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
+
+Pdef(\verb).play(t, quant: 1);
+/*
+Pdef(\verb).isPlaying;
+Pdef(\verb).stop;
+*/
+
+(
+MIDIdef.cc(\verbplay, {
+    if(Pdef(\verb).isPlaying.not) {
+        Pdef(\verb).play(t, quant: 1);
+        "verb play".postln;
+    };
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\verbstop, {
+    if(Pdef(\verb).isPlaying) {
+        Pdef(\verb).stop;
+        "verb stop".postln;
+    };
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -418,7 +473,7 @@ Pdef(\larry3,
 
 Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pshuf([0, Rest], inf), \octave, 4));
 
-Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
+Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
 );
 
 /*
@@ -492,7 +547,7 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \degree, Pseq([Pshuf(~bassnotes.stutter(2), 2), Pseq([Rest], ~bassnotes.size)], inf),
+        \degree, Pseq([Pshuf(~bassnotes, 2), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf((10..17) / 9, inf),
         \ffreq, 4000,
