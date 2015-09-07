@@ -332,7 +332,7 @@ MIDIdef.cc(\cnstopktrl, {
 
 (
 SynthDef(\verb, { |gate = 1, inbus = 0, outbus = 0|
-    var env             =   Env.asr(0.01, 0.3);
+    var env             =   Env.asr(0.01, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
     var tmod            =   LFNoise2.kr(1!2).range(5, 15);
@@ -348,8 +348,8 @@ SynthDef(\verb, { |gate = 1, inbus = 0, outbus = 0|
 
 Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
 
-Pdef(\verb).play(t, quant: 0.5);
 /*
+Pdef(\verb).play(t, quant: 0.5);
 Pdef(\verb).isPlaying;
 Pdef(\verb).stop;
 */
@@ -397,7 +397,7 @@ Pdef(\pad1,
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
         \legato, 0.5,
         \degree, Pseq([[-2, 0, 7], Rest], inf),
-        \octave, 5,
+        \octave, 6,
         \scale, ~scale,
 ));
 Pdef(\pad2, Pbindf(Pdef(\pad1), \degree, Pseq([Rest, [7, 10]], inf)));
@@ -573,7 +573,7 @@ Pdef(\bass,
         \instrument, \abass,
         \degree, Pseq([Pshuf(~bassnotes, 2), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
-        \fb, Pshuf((10..17) / 9, inf),
+        \fb, Pshuf((11..17) / 9, inf),
         \ffreq, 4000,
 		\octave, 3,
 		\scale, ~scale,

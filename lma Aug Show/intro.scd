@@ -19,6 +19,15 @@ s.scope(2);
 t = TempoClock(140/60);
 
 ////////////////////////////////////////////////////////////////
+// RECORDING
+
+/*
+s.prepareForRecord;
+s.record;
+s.stopRecording;
+*/
+
+////////////////////////////////////////////////////////////////
 
 ~lmamediadir = "/media/lma";
 
@@ -124,7 +133,7 @@ Pdef(\cdpat,
 	Pmono(
 		\cricketdelay,
 		\decay, 3,
-		\degree, [0, 7, 12],
+		\degree, [0, 7, 12, 19],
 		\level, 0.2,
 		\octave, 1,
 		\root, ~root,
@@ -159,13 +168,13 @@ MIDIdef.cc(\cdpatstopktrl, {
 
 (
 ~drone =
-SynthDef(\drone, { | a = 1.1, c = 0.5, fb = 0.1, freq = 440, gate = 1, im = 1, level = 0.02 |
+SynthDef(\drone, { | a = 1.1, c = 0.5, fb = 0.3, freq = 440, gate = 1, im = 1, level = 0.02 |
 	var env				=	Env.asr(0.01, level, 0.05, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var lfn1			=	LFNoise2.kr(0.1.dup, 0.01, 1);
 	var lfn2			=	LFNoise1.kr(0.1.dup, 0.0005, 1);
 	var fbsin			=	FBSineC.ar([freq, freq * 1.004] * 8 * lfn1, im, fb, a, c, mul: envgen).round(0.0003);
-	var sinfb			=	SinOscFB.ar(freq.dup * lfn2, 0.2, mul: envgen);
+	var sinfb			=	SinOscFB.ar(freq.dup * lfn2, fb, mul: envgen);
 	var sin				=	SinOsc.ar(freq, mul: envgen / 4);
 	var kbn1			=	LFBrownNoise0.kr(15.dup).range(0, 1).round(1);
 	var rhpf1			=	RHPF.ar(fbsin, (freq * 8).clip(50, SampleRate.ir / 3), 0.01, kbn1);
@@ -183,6 +192,7 @@ Pdef(\dronepat1,
 	Pmono(
 		\drone,
 		\degree, [0, 19, 24],
+		\fb, 0,
 		\octave, 3,
 		\root, ~root,
 		\scale, ~scale
@@ -261,7 +271,7 @@ SynthDef(\pno, { | curve = -8, dur = 1, fb = 0, ffreqmult = 8, freq = 400, level
 	var env				=	Env.perc(0.003, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfbnampmod		=	LFNoise0.kr(15.dup).range(0.75, 1).round(0.25);
-	var sin				=	SinOscFB.ar(freq, fb, envgen);
+	var sin				=	SinOscFB.ar([freq, freq * 1.01], fb, envgen);
 	var lfbn1			=	LFBrownNoise2.ar(10000.dup, mul: envgen * lfbnampmod);
 	var rhpf			=	RHPF.ar(lfbn1, (freq * ffreqmult).clip(30, SampleRate.ir / 3), 0.05);
 	Out.ar(0, (sin + (rhpf)) * lfbnampmod);
@@ -275,8 +285,9 @@ Pdef(\pnopat1,
 		\instrument, \pno,
 		\degree, Pshuf([[-5, -2], [-5, 0], [-9, 1], [0, 3], [0, 5]].mirror2, inf),
 		\dur, Pshuf([2, 3, 4, 6, 8, 12, 16, 24, 32, 48], inf),
-		\fb, Pwhite(0, 0.5, inf),
-		\octave, 7,
+		\fb, Pshuf((0..5) / 10, inf),
+		\ffreqmult, 16,
+		\octave, 6,
 		\root, ~root,
 		\scale, ~scale));
 );
@@ -500,7 +511,7 @@ Pdef(\basspat,
 		\instrument, \bass,
 		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
 		\degree, Pshuf([0, 1, 2, 3, 7].stutter(5), inf),
-		\fb, Pwhite(0.5, 0.8, inf),
+		\fb, Pshuf((4..8) / 10, inf),
 		\octave, 3,
 		\root, ~root,
 		\scale, ~scale,
@@ -589,7 +600,7 @@ Pdef(\beepat1,
 		\bufnum, ~bees.bufnum,
 		\dur, Pshuf([7, 9, 11], inf),
 		\loop, 1,
-		\rate, Pshuf([0.5, 1], inf),
+		\rate, Pshuf([0.5, 0.5, 1], inf),
 		\vol, 0.2
 ));
 );
@@ -746,7 +757,7 @@ Pdef(\bpadmelos,
 ~bpadmelos.stop;
 */
 
-~bpadcontrapunctus = Pdef(\bpadcontrapunctus, Ppar(Array.fill(2, { ~bpadmelos })));
+~bpadcontrapunctus = Pdef(\bpadcontrapunctus, Ppar(Array.fill(8, { ~bpadmelos })));
 
 /*
 ~bpadcontrapunctus.play(t, quant: 1);
@@ -754,7 +765,7 @@ Pdef(\bpadmelos,
 ~bpadcontrapunctus.stop;
 */
 
-~bpaddrone1 = Pdef(\bpaddrone1, Pmono(\pad, \degree, [-5, 0].stutter(2), \octave, 5, \root, ~root2, \scale, ~scale));
+~bpaddrone1 = Pdef(\bpaddrone1, Pmono(\pad, \degree, [-5, 0].stutter(3), \octave, 5, \root, ~root2, \scale, ~scale));
 
 /*
 ~bpaddrone1.play(t, quant: 1);
@@ -762,7 +773,7 @@ Pdef(\bpadmelos,
 ~bpaddrone1.stop;
 */
 
-~bpaddrone2 = Pdef(\bpaddrone2, Pmono(\pad, \degree, [0, 2].stutter(2), \octave, 5, \root, ~root2, \scale, ~scale));
+~bpaddrone2 = Pdef(\bpaddrone2, Pmono(\pad, \degree, [0, 2].stutter(3), \octave, 5, \root, ~root2, \scale, ~scale));
 
 /*
 ~bpaddrone2.play(t, quant: 1);
@@ -1073,7 +1084,15 @@ Pdef(\jfifths,
 */
 
 (
-~jchords = [[-12, -11, -5, -2], [-5, 0, 1], [-5, 0, 1, 2], [-5, 0, 1, 6], [-5, 0, 1, 8], [-5, 0, 1, 9], [-5, 0, 1, 11]];
+~jchords = [
+	[-12, -11, -5, -2],	//1
+	[-5, 0, 1],			//2
+	[-5, 0, 1, 2],		//3
+	[-5, 0, 1, 6],		//4
+	[-5, 0, 1, 8],		//5
+	[-5, 0, 1, 9],		//6
+	[-5, 0, 1, 11]		//7
+];
 ~jchordpat =
 Pdef(\jchordpat,
 	Pbind(

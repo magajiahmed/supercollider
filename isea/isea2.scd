@@ -3,7 +3,7 @@
 
 (
 ~arrayOfBuffers = "/run/media/phil/LMA Aug Sho/ISEA/*".pathMatch.collect {
-    |f| Buffer.read(s, f, action: { |b| [b.path, b.duration].postln })
+    |f| Buffer.read(s, f, action: { |b| [b.path, b.duration.round(1)].postln })
 };
 );
 
@@ -119,7 +119,7 @@ Pdef(\ringz4,
     Pbindf(
         Pdef(\ringz1),
         \inbus, ~ringzbus4,
-        \octave, Pshuf([5, 6, 7].powerset.reject { |o| o.isEmpty }, inf)
+        \octave, [5, 6, 7]
 ));
 );
 
@@ -466,7 +466,7 @@ Pdef(\sfplay1,
         \outbus, [0, ~ringzbus1],
         \startPos, Pwhite(0, 1000000, inf),
         //\startPos, Pwhite(0, ~arrayOfBuffers[Pkey(\bufnum)].numFrames, inf),
-        \vol, 0.05,
+        \vol, 0.1,
 ));
 
 Pdef(\sfplay2, Pbindf(Pdef(\sfplay1), \outbus, [0, ~ringzbus2]));
@@ -596,7 +596,7 @@ Pdef(\sin3,
         \dur, Pshuf(~durs, inf),
         \fb, Pshuf((1..11) / 10, inf),
         \im, Pshuf((11..17) / 10, inf),
-        \octave, 7,
+        \octave, 8,
         \scale, ~scale
 ));
 
@@ -1283,6 +1283,7 @@ Pdef(\latsnr,
         \curve, -16,
         \level, Pshuf([0.2, 1].stutter(5) * 0.03, inf),
         \octave, Pshuf([9, 11, 13].powerset.reject { |o| o.isEmpty }, inf),
+        \outbus, [0, ~rhpfbus1]
 ));
 );
 
