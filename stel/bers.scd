@@ -80,27 +80,30 @@ SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, 
 (
 ~pnolvl = 0.03;
 ~pnopulselvl = ~pnolvl / 4;
-~pnodurs = [1, 1.5, 1, 1, 1.5, 1, 1, 1, 1.5];
+~pnodurs = [1, 1, 1.5, 1, 1, 1, 1.5, 1, 1, 1, 1, 1.5];
 
 Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
         \curve, -8,
-        \dur, Pseq(~pnodurs, inf),
+        //\dur, Pshuf(~pnodurs, inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5].stutter(2), inf),
 		\fb, 0,
         \level, ~pnopulselvl,
         \degree, 0,
-        \octave, 7,
+        //\octave, 7,
+        \octave, 6,
         \rq1, 0.1,
         \scale, ~scale,
-        \sinhimul, 0.1
+        \sinhimul, 0.0
 ));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnopulselvl / 3));
-Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
+//Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \dur, Pseq(~pnodurs - 0.25, inf), \level, ~pnopulselvl / 3));
+//Pdef(\pnopulses, Ppar([Pdef(\pnopulse1), Pdef(\pnopulse2)]));
 
 //
 
+/*
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
@@ -132,7 +135,9 @@ Pdef(\pno3,
 ));
 
 Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2), Pdef(\pno3)], inf));
+*/
 );
+
 
 /*
 Pdef(\pnopulses).play(t, quant: 1);
@@ -175,35 +180,37 @@ Pdef(\pnobass1).stop;
 
 (
 MIDIdef.cc(\pnopulseplay, {
-    if(Pdef(\pnopulses).isPlaying.not) {
-		Pdef(\pnopulses).play(t, quant: 1);
+    if(Pdef(\pnopulse1).isPlaying.not) {
+		Pdef(\pnopulse1).play(t, quant: 1);
 		"pnopulse play".postln;
 	}
 }, 32, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pnopulsestop, {
-    if(Pdef(\pnopulses).isPlaying) {
-		Pdef(\pnopulses).stop;
+    if(Pdef(\pnopulse1).isPlaying) {
+		Pdef(\pnopulse1).stop;
 		"pnopulse stop".postln;
 	}
 }, 32, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\pnoplay, {
     if(Pdef(\pnos).isPlaying.not) {
 		Pdef(\pnos).play(t, quant: 1);
 		"pnos play".postln;
 	}
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 127, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pnostop, {
     if(Pdef(\pnos).isPlaying) {
 		Pdef(\pnos).stop;
 		"pnos stop".postln;
 	}
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 127, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 (
 MIDIdef.cc(\pnobassplay, {
@@ -261,8 +268,10 @@ Pdef(\pad2pat,
             ~padchords2shuf[6], ~padchords2shuf[7], ~padchords2shuf[8], Rest,
             ~padchords2shuf[9], ~padchords2shuf[10], Rest,
             ~padchords2shuf[11], Rest,
-		 ], inf),
-		\dur, Pshuf([11, 13, 15], inf),
+		 ]),
+        //\dur, Pshuf((23..28)),
+        \dur, 23,
+        \legato, 0.75,
 		\level, 0.02,
         \octave, 5,
 		\scale, ~scale,
@@ -276,7 +285,7 @@ Pdef(\pad2pat).stop;
 */
 
 Pdef(\pad2pat2, Pmono(\pad2, \degree, [-5, 0].stutter(2), \octave, 5, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 19], \octave, 3, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 24, 31], \octave, 2, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
@@ -352,7 +361,7 @@ SynthDef(\prc, { | a = 1, curve = -8, dfrq = 2000, dur = 1, freq = 1000, level =
 	var sin				=	SinOsc.ar(freq * cusp, pi / 2, envgen);
 	var sin2			=	sin.round(0.01) / 2;
 	var rez				=	Resonz.ar(sin, freq, 0.05, 4);
-	var pan2			=	Pan2.ar(sin2 + rez, pan);
+    var pan2			=	Pan2.ar(sin2 + rez, pan).fold2(1);
 	Out.ar(~prcfxbus, pan2);
 }).add;
 );
@@ -400,7 +409,7 @@ Pdef(\prc2,
     Pbindf(
         Pdef(\prc1),
         //\a, 3.5,
-        \a, Pwhite(3.49, 3.51, inf),
+        \a, Pshuf([2.5, 3.5], inf),
         \curve, -64,
         \freq, ~prcpatfrq2 * 2
 ));
@@ -491,6 +500,45 @@ MIDIdef.cc(\prc1stop, {
 );
 
 ////////////////////////////////////////////////////////////////
+// SIN
+
+(
+SynthDef(\sin, { |a = 1.4, fb = 0, freq = 440, gate = 1, hfreq = 1, level = 0.005|
+    var env             =   Env.asr(sustainLevel: level, releaseTime: 0.1);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    //var fbmod           =   LFBrownNoise0.ar([13, 14]).range(0.0, 0.5);
+    var fbmod           =   HenonN.ar([13, 17], [a, a + 0.05]).range(0.0, 0.5);
+    var sin1            =   SinOscFB.ar(freq!2, fbmod, envgen);
+    //var sin2            =   SinOscFB.ar(freq!2, fb, envgen);
+    Out.ar(0, (sin1).round(0.001));
+}).add;
+);
+
+Pdef(\sin, Pmono(\sin, \fb, 0.2, \scale, ~scale));
+
+/*
+Pdef(\sin).play(t, quant: 1);
+Pdef(\sin).isPlaying;
+Pdef(\sin).stop;
+*/
+
+(
+MIDIdef.cc(\sinplay, {
+    if(Pdef(\sin).isPlaying.not) {
+		Pdef(\sin).play(t, quant: 1);
+		"sin play".postln;
+	}
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\sinstop, {
+    if(Pdef(\sin).isPlaying) {
+		Pdef(\sin).stop;
+		"sin stop".postln;
+	}
+}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+////////////////////////////////////////////////////////////////
 // PENGUIN
 
 (
@@ -506,23 +554,23 @@ SynthDef(\penguin, { | a = 1, curve = 0, freq = 400, gate = 1, level = 0.01, sha
 }).add;
 );
 
+
 (
 Pdef(\pgn1,
 	Pbind(
 		\instrument, \penguin,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        //\degree, Pshuf([0, 7, 10].powerset.reject({ |i| i.isEmpty }), inf),
-        //\degree, Pshuf([2, 7, 10, 12].powerset.reject({ |i| i.isEmpty }), inf),
-        \degree, Pshuf([[0, 2], [0, 7], [0, 10]], inf),
-		\dur, Pshuf([24, 32, 48, 64, 96] + 0.25, inf),
+        \degree, Pshuf([[0, 2, 7, 10], [2, 7, 10, 12], [7, 10, 12, 14], [10, 12, 14, 19]], inf),
+		//\dur, Pshuf([24, 32, 48, 64, 96], inf),
+        \dur, 47,
 		\legato, 0.5,
 		\octave, 5,
 		\scale, ~scale,
         \shapermin, 0.001,
         \shapermax, 0.008,
 ));
-Pdef(\pgn2, Pbindf(Pdef(\pgn1)));
-Pdef(\pgn3, Pbindf(Pdef(\pgn1)));
+//Pdef(\pgn2, Pbindf(Pdef(\pgn1)));
+//Pdef(\pgn3, Pbindf(Pdef(\pgn2)));
 //Pdef(\pgns, Ppar([Pdef(\pgn1), Pdef(\pgn2), Pdef(\pgn3)]));
 );
 
@@ -576,6 +624,7 @@ MIDIdef.cc(\pgn2stop, {
 }, 51, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\pgn3play, {
     if(Pdef(\pgn3).isPlaying.not) {
@@ -591,3 +640,4 @@ MIDIdef.cc(\pgn3stop, {
     }
 }, 67, argTemplate: 0);
 );
+*/
