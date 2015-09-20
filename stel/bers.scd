@@ -23,7 +23,7 @@ t = TempoClock(96/60);
 
 (
 ~prcfxbus = Bus.audio(s, 2);
-~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
+~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 1024/729, 3/2, 128/81, 12/7, 7/4, 512/243];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
@@ -64,18 +64,20 @@ SynthDef(\dynamix, { |inBus|
 // SIN
 
 (
-SynthDef(\sin, { |a = 1.4, fb = 0, freq = 440, gate = 1, hfreq = 1, level = 0.005|
+SynthDef(\sin, { |a = 1.4, fbmax = 0, freq = 440, gate = 1, level = 0.005|
     var env             =   Env.asr(sustainLevel: level, releaseTime: 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    //var fbmod           =   LFBrownNoise0.ar([13, 14]).range(0.0, 0.5);
-    var fbmod           =   HenonN.ar([13, 17], [a, a + 0.05]).range(0.0, 0.5);
-    var sin1            =   SinOscFB.ar(freq!2, fbmod, envgen);
-    //var sin2            =   SinOscFB.ar(freq!2, fb, envgen);
-    Out.ar(0, (sin1).round(0.001));
+    //var fbmod           =   LFBrownNoise2.ar([13, 14]).range(0.0, fbmax);
+	var fbmod           =   HenonC.ar(3, [a, a + 0.05]).range(0.0, fbmax);
+	var sin1			=	SinOsc.ar(freq!2, mul: envgen);
+    var sin2            =   SinOscFB.ar(freq!2, fbmod, envgen);
+	var lpf				=	BLowPass4.ar(sin1, freq);
+	var hpf				=	BHiPass4.ar(sin2, 4000);
+    Out.ar(0, (lpf + hpf));
 }).add;
 );
 
-Pdef(\sin, Pmono(\sin, \fb, 0.2, \scale, ~scale));
+Pdef(\sin, Pmono(\sin, \fbmax, 5, \scale, ~scale));
 
 /*
 Pdef(\sin).play(t, quant: 1);
@@ -243,15 +245,21 @@ Pdef(\pgn1,
 	Pbind(
 		\instrument, \penguin,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        \degree, Pshuf([[0, 2, 7, 10], [2, 7, 10, 12], [7, 10, 12, 14], [10, 12, 14, 19]], inf),
+        //\degree, Pshuf([[0, 2, 7, 10], [2, 7, 10, 12], [7, 10, 12, 14], [10, 12, 14, 19]]),
+		\degree, [2, 7, 10, 12],
 		//\dur, Pshuf([24, 32, 48, 64, 96], inf),
-        \dur, 47,
+        //\dur, 47,
+		\dur, Pshuf(Array.fill(3, { |i| (i + 12).nthPrime + 0.25 })),
 		\legato, 0.5,
 		\octave, 5,
 		\scale, ~scale,
         \shapermin, 0.001,
         \shapermax, 0.008,
 ));
+
+Pdef(\pgn2, Pbindf(Pdef(\pgn1), \octave, 4));
+
+Pdef(\pgns, Ptpar([0, Pdef(\pgn1), 23, Pdef(\pgn2)]));
 );
 
 /*
@@ -273,38 +281,38 @@ Pdef(\pgn3).stop;
 */
 
 (
-MIDIdef.cc(\pgn1play, {
-    if(Pdef(\pgn1).isPlaying.not) {
-        Pdef(\pgn1).play(t, quant: 1);
-        "pgn1 play".postln;
+MIDIdef.cc(\pgnsplay, {
+    if(Pdef(\pgns).isPlaying.not) {
+        Pdef(\pgns).play(t, quant: 1);
+        "pgns play".postln;
     }
-}, 35, argTemplate: { |x| x > 0 });
+}, 33, argTemplate: { |x| x > 0 });
 
-MIDIdef.cc(\pgn1stop, {
-    if(Pdef(\pgn1).isPlaying) {
-        Pdef(\pgn1).stop;
-        "pgn1 stop".postln;
+MIDIdef.cc(\pgnsstop, {
+    if(Pdef(\pgns).isPlaying) {
+        Pdef(\pgns).stop;
+        "pgns stop".postln;
     }
-}, 35, argTemplate: 0);
+}, 33, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\pgn2play, {
     if(Pdef(\pgn2).isPlaying.not) {
         Pdef(\pgn2).play(t, quant: 1);
         "pgn2 play".postln;
     }
-}, 51, argTemplate: { |x| x > 0 });
+}, 49, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pgn2stop, {
     if(Pdef(\pgn2).isPlaying) {
         Pdef(\pgn2).stop;
         "pgn2 stop".postln;
     }
-}, 51, argTemplate: 0);
+}, 49, argTemplate: 0);
 );
 
-/*
 (
 MIDIdef.cc(\pgn3play, {
     if(Pdef(\pgn3).isPlaying.not) {
@@ -349,7 +357,7 @@ Pdef(\prc1,
 		\instrument, \prc,
 		\a, Pshuf([1, 2, 3, 1.1, 2.1, 3.1, 1.2, 2.2, 3.2], inf),
         //\a, Pshuf((1..3) + 0.2, inf),
-        \curve, Pshuf([-64, -16, -4], inf),
+        \curve, -2,
         \dur, Pshuf([
             Pseq([0.125], 2), Pseq([0.25, 0.5]), Pseq([0.5, 0.75]), Pseq([0.75, 1]),
             Pseq([1, 1.25]), Pseq([1.25, 1.5]), Pseq([1.5, 1.75]), Pseq([1.75, 2]), Pseq([2, 2.25])
@@ -399,22 +407,39 @@ Pdef(\prc4,
         \instrument, \prc,
         \a, 3,
         \curve, -64,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
+		\degree, Pseq([0].stutter(23) ++ [Rest].stutter(31), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25].stutter(7), inf),
         \ffreq, Pshuf([10000, 20000], inf),
-        \freq, ~prcpatfrq2 * 2
+        //\freq, ~prcpatfrq2 * 2,
+		\octave, 9
 ));
+
+//
 
 Pdef(\prc5,
     Pbind(
         \instrument, \prc,
-        \a, Pshuf((9..11).stutter(3) / 10, inf),
-        \curve, -8,
-        \dur, Pshuf((1..5).stutter(3) * 0.25, inf),
+		\a, Pshuf([1.95, 2, 2.05], inf),
+        \curve, -4,
+        \dur, Pshuf((5..9) * 0.25, inf),
         \freq, Pseq([
             ~prcpatfrq1 * 4, ~prcpatfrq2 / 1.5,
             ~prcpatfrq1 * 4, ~prcpatfrq2 / 1.5, ~prcpatfrq2 / 1.5,
             ~prcpatfrq1 * 4, ~prcpatfrq2 / 1.5, ~prcpatfrq2 / 1.5, ~prcpatfrq2 / 1.5
         ], inf)
+));
+
+//
+
+Pdef(\prc6,
+	Pbind(
+		\instrument, \prc,
+		\a, Pwhite(0.99, 1.01, inf),
+		\curve, -64,
+		\dur, Pshuf([0.5, 0.75, 1, 1.25, 1.5].stutter(11), inf),
+		\degree, Pseq([0].stutter(24) ++ [Rest].stutter(48), inf),
+		\level, Pseq((0..12).mirror1 / 60, inf),
+		\octave, 10
 ));
 );
 
@@ -446,6 +471,12 @@ Pdef(\prc4).stop;
 Pdef(\prc5).play(t, quant: 1);
 Pdef(\prc5).isPlaying;
 Pdef(\prc5).stop;
+*/
+
+/*
+Pdef(\prc6).play(t, quant: 1);
+Pdef(\prc6).isPlaying;
+Pdef(\prc6).stop;
 */
 
 (
@@ -494,6 +525,54 @@ MIDIdef.cc(\prc1stop, {
         "prc1 stop".postln;
     }
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\prc4play, {
+	if(Pdef(\prc4).isPlaying.not) {
+		Pdef(\prc4).play(t, quant: 1);
+		"prc4 play".postln;
+	};
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\prc4stop, {
+    if(Pdef(\prc4).isPlaying) {
+        Pdef(\prc4).stop;
+        "prc4 stop".postln;
+    }
+}, 35, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\prc5play, {
+	if(Pdef(\prc5).isPlaying.not) {
+		Pdef(\prc5).play(t, quant: 1);
+		"prc5 play".postln;
+	};
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\prc5stop, {
+    if(Pdef(\prc5).isPlaying) {
+        Pdef(\prc5).stop;
+        "prc5 stop".postln;
+    }
+}, 51, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\prc6play, {
+	if(Pdef(\prc6).isPlaying.not) {
+		Pdef(\prc6).play(t, quant: 1);
+		"prc6 play".postln;
+	};
+}, 67, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\prc6stop, {
+    if(Pdef(\prc6).isPlaying) {
+        Pdef(\prc6).stop;
+        "prc6 stop".postln;
+    }
+}, 67, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 ////////////////////////////////////////////////////////////////
@@ -575,14 +654,14 @@ MIDIdef.cc(\pad2playktrl, {
 		Pdef(\pad2pat).play(t, quant: 1);
 		"pad2a play".postln;
 	};
-}, 33, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 36, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pad2stopktrl, {
     if(Pdef(\pad2pat).isPlaying) {
         Pdef(\pad2pat).stop;
         "pad2a stop".postln;
     }
-}, 33, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 36, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 (
@@ -591,14 +670,14 @@ MIDIdef.cc(\pad2bplayktrl, {
 		Pdef(\pad2pat2).play(t, quant: 1);
 		"pad2b play".postln;
 	};
-}, 49, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 52, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pad2bstopktrl, {
     if(Pdef(\pad2pat2).isPlaying) {
         Pdef(\pad2pat2).stop;
         "pad2b stop".postln;
     }
-}, 49, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 52, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 (
@@ -607,12 +686,12 @@ MIDIdef.cc(\pad2cplayktrl, {
 		Pdef(\pad2pat3).play(t, quant: 1);
 		"pad2c play".postln;
 	};
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 68, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pad2cstopktrl, {
     if(Pdef(\pad2pat3).isPlaying) {
         Pdef(\pad2pat3).stop;
         "pad2c stop".postln;
     }
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 68, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
