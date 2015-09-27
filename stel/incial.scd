@@ -552,7 +552,7 @@ MIDIdef.cc(\larrynoplay, {
 // SynthDef
 
 (
-SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level = 0.1|
+SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level = 0.05|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(1, 0.1, 1);
@@ -566,7 +566,7 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
 // Pattern
 
 (
-~bassnotes = [-2, -1, 0, 1, 2, 3];
+~bassnotes = [-5, -4, -3, -2, -1, 0, 1, 2, 3];
 ~bassdurations = [0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, Pseq([0.75], 3), 3, 4, 6, 8, 12, 16, 24];
 Pdef(\bass,
 	Pbind(
@@ -749,6 +749,8 @@ Pdef(\plunkpat4,
         \octave, [2, 3],
         \rq, 0.2
 ));
+
+Pdef(\plunkpat5, Pbindf(Pdef(\plunkpat4)));
 );
 
 
@@ -774,6 +776,12 @@ Pdef(\plunkpat3).stop;
 Pdef(\plunkpat4).play(t, quant: 0.5);
 Pdef(\plunkpat4).isPlaying;
 Pdef(\plunkpat4).stop;
+*/
+
+/*
+Pdef(\plunkpat5).play(t, quant: 0.5);
+Pdef(\plunkpat5).isPlaying;
+Pdef(\plunkpat5).stop;
 */
 
 // Midi Control
