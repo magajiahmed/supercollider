@@ -57,7 +57,7 @@ Pdef(\sinfbdrone1,
         \instrument, \sinfbdrone,
         \degree, 9,
         \dur, Pshuf([35, 37, 39], inf),
-        \legato, 0.25,
+        \legato, 1/3,
         \octave, 4,
         \scale, ~scale));
 );
@@ -467,7 +467,9 @@ Pdef(\hatpat0l,
 	Pbind(
 		\instrument, \hat,
         \dur, Pshuf([
-			0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([1/5], 5), 1, 1.5, 2, 3, 4, 6
+			0.25, 0.5, 0.75,
+			Pseq([1/5], 5), Pseq([1/6], 6), Pseq([1/7], 7),
+			1, 1.5, 2, 3, 4, 6
 		], inf),
 		\level, Prand([0.2, 1] * ~hatlvl, inf),
         \degree, [0, 7],
@@ -488,7 +490,7 @@ Pdef(\hatpar0).isPlaying;
 Pdef(\hatpar0).stop;
 */
 
-Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \octave, 8));
+Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \degree, [7, 10]));
 
 /*
 Pdef(\hatpar1).play(~tempo, quant: 1);
@@ -703,13 +705,13 @@ SynthDef(\pno, { | curve = -4, dur = 1, freq = 400, gate = 1, level = 0.003, pan
 Pdef(\pno0,
 	Pbind(
 		\instrument, \pno,
-		\degree, [-1, 0, 5, 7],
-        \dur, Pshuf([4, 5, 6] + 0.25, inf),
-		\octave, 7,
-		\pan, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
+		\degree, [5, 7, 9, 10],
+        \dur, Pshuf([4, 5, 6, 7, 8] + 0.25, inf),
+		\octave, 6,
+		\pan, Pshuf([-0.75, -0.5, -0.25, 0.25, 0.5, 0.75], inf),
 		\scale, ~scale,
 ));
-//Pdef(\pnos0, Ppar([Pdef(\pno0)].stutter(3), inf));
+Pdef(\pnos0, Ppar([Pdef(\pno0)].stutter(2), inf));
 //Pdef(\pno1, Pbindf(Pdef(\pnos0), \octave, 8));
 //Pdef(\pnos1, Ppar([Pdef(\pno1)].stutter(3), inf));
 );
@@ -721,9 +723,9 @@ Pdef(\pno0).stop;
 */
 
 /*
-Pdef(\pnopar0).play(~tempo, quant: 1);
-Pdef(\pnopar0).isPlaying;
-Pdef(\pnopar0).stop;
+Pdef(\pnos0).play(~tempo, quant: 1);
+Pdef(\pnos0).isPlaying;
+Pdef(\pnos0).stop;
 */
 
 /*
@@ -740,16 +742,16 @@ Pdef(\pnopar1).stop;
 
 (
 MIDIdef.cc(\pno0playktrl, {
-    if(Pdef(\pno0).isPlaying.not) {
-        Pdef(\pno0).play(~tempo, quant: 1);
-        "pno0 play".postln;
+    if(Pdef(\pnos0).isPlaying.not) {
+        Pdef(\pnos0).play(~tempo, quant: 1);
+        "pnos0 play".postln;
     }
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\pno0stopktrl, {
-    if(Pdef(\pno0).isPlaying) {
-        Pdef(\pno0).stop;
-        "pno0 stop".postln;
+    if(Pdef(\pnos0).isPlaying) {
+        Pdef(\pnos0).stop;
+        "pnos0 stop".postln;
     }
 }, 68, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
