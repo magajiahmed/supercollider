@@ -55,9 +55,9 @@ Pdef(\sinfbdrone0, Pmono(\sinfbdrone, \degree, [7, 10], \octave, 4, \scale, ~sca
 Pdef(\sinfbdrone1,
     Pbind(
         \instrument, \sinfbdrone,
-        \degree, Pseq([9, Rest], inf),
-        \dur, Pshuf([15, 17, 19], inf),
-        \legato, 1,
+        \degree, 9,
+        \dur, Pshuf([35, 37, 39], inf),
+        \legato, 0.25,
         \octave, 4,
         \scale, ~scale));
 );
@@ -605,7 +605,7 @@ Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([9, Rest], inf)));
 Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([10, Rest], inf)));
 Pdef(\crumblepar0, Ppar([Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3)], inf));
 
-Pdef(\crumble4, Pbindf(Pdef(\crumble0), \degree, [0, 7]));
+Pdef(\crumble4, Pbindf(Pdef(\crumble0), \degree, 0));
 );
 
 /*
@@ -761,15 +761,16 @@ MIDIdef.cc(\pno0stopktrl, {
 SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, freq = 400, level = 0.005, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var sin				=	SinOsc.ar(freq, mul: envgen);
+	var sin				=	SinOsc.ar(freq!2, mul: envgen);
 	var n				=	4;
 	var sinmix			=	Mix.fill(n, {
 		|i|
-        var freqmod         =   CuspN.ar(freq, [a, a - 0.01], [b, b - 0.01], mul: 0.001 * (i + 1), add: 1);
+		var freqmod         =   CuspN.ar(15, [a, a - 0.01], [b, b - 0.01], mul: 0.003 * (i * pi), add: 1);
         SinOscFB.ar([freq, freq + 0.1] * freqmod, fb, mul: envgen / n)
 	});
-    var lc              =   LinCongC.ar((freq!2 * 128), mul: envgen).fold2(level);
-    Out.ar(0, sin + sinmix + lc);
+    var lc              =   LinCongC.ar((freq!2 * 128), 1.2, mul: envgen).wrap2(level);
+	var rhpf			=	RHPF.ar(lc, 12000, 0.3);
+	Out.ar(0, sin + sinmix.round(0.001) + rhpf);
 }).add;
 );
 
@@ -783,7 +784,7 @@ Pdef(\pno2pat0,
         \b, Pwhite(1.8, 2.0, inf).round(0.1),
         \curve, -16,
 		\degree, 0,
-		\dur, Pshuf([13, 14, 15].nthPrime, inf),
+		\dur, Pshuf([11, 12, 13].nthPrime, inf),
         \level, 0.008,
 		\octave, 7,
 		\scale, ~scale,
@@ -798,7 +799,7 @@ Pdef(\pno2pat0).stop;
 
 (
 ~pno2pat1degrees = [[-3, 0], [-1, 0], [0, 1], [0, 2], [0, 3], [0, 5]].scramble.mirror1;
-~pno2pat1durs1 = [0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24].scramble.mirror1;
+~pno2pat1durs1 = [0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48].scramble.mirror1;
 Pdef(\pno2pat1,
 	Pbind(
 		\instrument, \pno2,
