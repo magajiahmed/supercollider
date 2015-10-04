@@ -20,6 +20,12 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 
 ~tempo = TempoClock(80/60);
 
+/*
+s.prepareForRecord;
+s.record;
+s.stopRecording;
+*/
+
 ////////////////////////////////////////////////////////////////
 
 (
@@ -44,8 +50,9 @@ SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.015, rhp
 ~shortdurs = ~durs.collect({ |i| Pseq([0.75], i) });
 ~mediumdurs = ~durs.collect({ |i| 1 * i });
 ~longdurs = ~durs.collect({ |i| 1.5 * i });
-~longerdurs = ~durs.collect({ |i| 4 * i });
-~bassdurs = ~shortestdurs ++ ~shorterdurs ++ ~shortdurs ++ ~mediumdurs ++ ~longdurs ++ ~longerdurs;
+~longerdurs = ~durs.collect({ |i| 2 * i });
+~longestdurs = ~durs.collect({ |i| 3 * i });
+~bassdurs = ~shortestdurs ++ ~shorterdurs ++ ~shortdurs ++ ~mediumdurs ++ ~longdurs ++ ~longerdurs ++ ~longestdurs;
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
@@ -382,7 +389,7 @@ Pdef(\prcpat1a,
 		\instrument, \prc,
 		\a, Pwhite(1.0, 2.0, inf).round(0.1),
 		\curve, -8,
-        \dur, Pshuf([0.25, 0.5, Pseq([0.375], 2), 1, 1.5, 2, 3, 4, 6], inf),
+		\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.375], 2), 1, 1.5, 2, 3, 4, 6], inf),
 		\foldfactor, Pwhite(1, 10, inf),
 		\level, Pshuf([0.2, 1, 1] * 0.1, inf),
 		\degree, Pshuf([Rest, 0, 0, 0], inf),
@@ -570,13 +577,14 @@ MIDIdef.cc(\banjostopktrl, {
 
 (
 SynthDef(\pno, { |a = 1, b = 3, curve = -8, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.1, pan = 0|
-    var env             =   Env.perc(releaseTime: dur, level: level, curve: curve);
+    var env             =   Env.perc(0.003, dur, level: level, curve: curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var lat             =   Latoocarfian2DC.kr(a: [a, a - 0.001], b: [b, b - 0.001], mul: 0.999, add: 1).clip(0, 1);
-    var ampmod          =   LFBrownNoise2.kr(15.dup, add: 1).clip(0.25, 1).round(0.75);
-    var sinfb           =   SinOscFB.ar(freq * lat, fb, envgen * ampmod);
+    var lat             =   Latoocarfian2DN.ar(a: [a, a - 0.002], b: [b, b - 0.002], mul: 0.1, add: 1).clip(0.5, 2);
+    var ampmod          =   LFBrownNoise0.kr(15!2, add: 1).clip(0.5, 1).round(0.5);
+	var sinfb           =   SinOscFB.ar(freq * lat, fb, envgen * ampmod);
+	var sin				=	SinOsc.ar(freq!2, pi /4, envgen);
     var rhpf            =   RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.05);
-    Out.ar(0, rhpf);
+    Out.ar(0, rhpf + sin);
 }).add;
 );
 
@@ -723,7 +731,7 @@ Pdef(\stringpat1,
 		\delaytime, ~stringpat1delayktrlbus.asMap,
 		\dur, Pshuf(Array.fill(4, { |i| (i + 7).nthPrime }), inf),
 		\legato, 1,
-		\degree, Pshuf(~chordsandrests, inf),
+		\degree, Pshuf(~chords, inf),
 		\octave, 5,
 		\root, ~root,
 		\scale, ~scale,
