@@ -26,7 +26,7 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 ~bassfxbus = Bus.audio(s, 2);
 ~prcfxbus = Bus.audio(s, 2);
 ~verbus = Bus.audio(s, 2);
-~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 128/81, 12/7, 7/4, 512/243];
+~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 1024/729, 3/2, 128/81, 12/7, 7/4, 512/243];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
@@ -88,11 +88,13 @@ Pdef(\dinglepat1,
 	Pbind(
 		\instrument, \dingle,
 		\a, 0.01,
-		\curve, -8,
+		\curve, -4,
     	\dur, Pshuf([
             Pseq([1.25], 7),
             Pseq([1.5], 7),
-            Pseq([1.75], 7)
+            Pseq([1.75], 7),
+            Pseq([2], 7),
+            Pseq([2.25], 7),
 		], inf),
 		\level, ~dinglelvl,
 		\octave, 5,
@@ -104,7 +106,6 @@ Pdef(\dinglepat2, Pbindf(Pdef(\dinglepat1), \octave, 7));
 Pdef(\dinglepat2a,
     Pbindf(
         Pdef(\dinglepat2),
-        \curve, -8,
         \level, ~dingleecholvl,
         \pan, -1
 ));
@@ -266,49 +267,47 @@ SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1, outbus = 0, r
     var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir / 2.5), 0.1);
     var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.2);
     var balance         =   Balance2.ar((rlpf + rhpf)[0], (rlpf + rhpf)[1], bal);
-    Out.ar(outbus, balance);
+    Out.ar(~prcfxbus, balance);
 }).add;
 );
 
 (
-~cnprclvl = 0.1;
+~cnprcfrqs = [100, 500, 1000, 100, 100, 500, 1000, 100, 100, 100, 500, 1000];
+~cnprclvl = 0.05;
 ~cnprcecholvl = ~cnprclvl / 4;
 Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
-        //\bal, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
-        \curve, Pshuf([-8, -4, -2], inf),
+        \bal, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
+        \curve, -8,
         \dur, Pshuf(Array.fill(11, { |d| (d + 1) * (0.25) }), inf),
-        //\freq, Pshuf(Array.fill(3, { |i| pi.pow(i + 1) * 50 }), inf),
-        \freq, Pseq([100, 2000, 100, 100, 2000, 100, 100, 100, 2000], inf),
+        \freq, Pseq(~cnprcfrqs, inf),
         \level, ~cnprclvl,
-        \offset, Pwhite(-0.01, 0.01, inf),
-        \outbus, [~prcfxbus, ~verbus],
         \releaseTime, Pshuf([0.05, 0.075, 0.1, 0.15], inf)
 ));
-Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \bal, -1, \level, ~cnprcecholvl));
-Pdef(\cnprc3, Pbindf(Pdef(\cnprc2), \bal, 1));
-Pdef(\cnprc4, Pbindf(Pdef(\cnprc1), \level, ~cnprcecholvl));
-Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2), Pdef(\cnprc3)], inf));
-//Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc4)], inf));
+Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \level, ~cnprcecholvl));
+Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2)], inf));
 );
 
-/*
-Pdef(\cnprc1).play(t, quant: 0.5);
-Pdef(\cnprc1).isPlaying;
-Pdef(\cnprc1).stop;
-*/
-
-/*
-Pdef(\cnprc4).play(t, quant: 0.5);
-Pdef(\cnprc4).isPlaying;
-Pdef(\cnprc4).stop;
-*/
+(
+Pdef(\cnprc3,
+    Pbindf(
+        Pdef(\cnprc1),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.25].stutter(11), inf),
+        \freq, Prand(~cnprcfrqs * 3, inf)
+));
+);
 
 /*
 Pdef(\cnprcpar).play(t, quant: 0.5);
 Pdef(\cnprcpar).isPlaying;
 Pdef(\cnprcpar).stop;
+*/
+
+/*
+Pdef(\cnprc3).play(t, quant: 0.5);
+Pdef(\cnprc3).isPlaying;
+Pdef(\cnprc3).stop;
 */
 
 (
@@ -327,26 +326,45 @@ MIDIdef.cc(\cnstopktrl, {
 }, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+(
+MIDIdef.cc(\cn3playktrl, {
+	if(Pdef(\cnprc3).isPlaying.not) {
+		Pdef(\cnprc3).play(t, quant: 0.5);
+		"cnprc3 play".postln;
+	};
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\cn3stopktrl, {
+	if(Pdef(\cnprc3).isPlaying) {
+		Pdef(\cnprc3).stop;
+		"cnprc3 stop".postln;
+	};
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
 ////////////////////////////////////////////////////////////////
 // VERB
 
+/*
 (
 SynthDef(\verb, { |gate = 1, inbus = 0, outbus = 0|
     var env             =   Env.asr(0.01, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inbus, 2);
-    var tmod            =   LFNoise2.kr(1!2).range(5, 15);
+    var grain           =   GrainIn.ar(2, Dust2.kr(30!2), LFNoise2.kr(2!2).range(0.003, 0.3), in);
+    var tmod            =   LFNoise2.kr(1!2).range(10, 15);
     var dampmod         =   LFNoise2.kr(1!2, 1, 1);
-    var sizemod         =   LFNoise0.kr(0.1!2).range(0.1, 1);
+    var sizemod         =   LFNoise0.kr(0.1!2).range(0.2, 2);
     var lowmod          =   LFNoise0.kr(0.13!2, 1, 1);
     var midmod          =   LFNoise0.kr(0.23!2, 1, 1);
     var himod           =   LFNoise0.kr(0.17!2, 1, 1);
-    var verb            =   JPverb.ar(in, tmod, dampmod, sizemod, low: lowmod, mid: midmod, high: himod, lowcut: 1000, highcut: 4000) * envgen;
-    Out.ar(outbus, verb);
+    var verb            =   JPverb.ar(grain, 15, dampmod, 5, low: lowmod, mid: 0, high: himod, lowcut: 1000, highcut: 8000) * envgen;
+    Out.ar(outbus, grain);
 }).add;
 );
 
 Pdef(\verb, Pmono(\verb, \inbus, ~verbus));
+*/
 
 /*
 Pdef(\verb).play(t, quant: 0.5);
@@ -354,6 +372,7 @@ Pdef(\verb).isPlaying;
 Pdef(\verb).stop;
 */
 
+/*
 (
 MIDIdef.cc(\verbplay, {
     if(Pdef(\verb).isPlaying.not) {
@@ -369,6 +388,7 @@ MIDIdef.cc(\verbstop, {
     };
 }, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // PAD
@@ -392,18 +412,18 @@ Pdef(\pad1,
     Pbind(
         \instrument, \pad,
         \bal, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
-        \dur, Pshuf(Array.fill(7, { |i| (i + 7).nthPrime + 0.25 }), inf),
+        \dur, Pshuf(Array.fill(7, { |i| (i + 17).nthPrime + 0.25 }), inf),
         \fb, Pshuf(Array.series(11, 0.1, 0.1), inf),
         \im, Pshuf(Array.series(17, 0.5, 0.2), inf),
-        \legato, 0.5,
-        \degree, Pseq([[-2, 0, 7], Rest], inf),
-        \octave, 6,
+        \legato, 0.25,
+        \degree, [7, 10, 12],
+        \octave, 5,
         \scale, ~scale,
 ));
-Pdef(\pad2, Pbindf(Pdef(\pad1), \degree, Pseq([Rest, [7, 10]], inf)));
-Pdef(\pad3, Pbindf(Pdef(\pad1), \degree, Pseq([[7, 12], Rest], inf)));
-Pdef(\pad4, Pbindf(Pdef(\pad1), \degree, Pseq([Rest, [7, 13]], inf)));
-Pdef(\pads, Ppar([Pdef(\pad1), Pdef(\pad2), Pdef(\pad3), Pdef(\pad4)]));
+Pdef(\pad2, Pbindf(Pdef(\pad1)));
+Pdef(\pad3, Pbindf(Pdef(\pad1)));
+Pdef(\pad4, Pbindf(Pdef(\pad1)));
+Pdef(\pads, Ptpar([0, Pdef(\pad1), 11.25, Pdef(\pad2), 13.25, Pdef(\pad3), 17.25, Pdef(\pad4)]));
 );
 
 /*
@@ -412,7 +432,7 @@ Pdef(\pads).isPlaying;
 Pdef(\pads).stop;
 */
 
-Pdef(\paddrone, Pmono(\pad, \degree, [0, 7], \scale, ~scale));
+Pdef(\paddrone, Pmono(\pad, \degree, [7, 12], \octave, 4, \scale, ~scale));
 
 /*
 Pdef(\paddrone).play(t, quant: 0.5);
@@ -648,7 +668,8 @@ b.plot;
 Pdef(\pbpat,
 	Pbind(
 		\instrument, \bufrd,
-		\dur, Prand([1, 1.5], inf),
+		//\dur, Prand([1, 1.5], inf),
+        \dur, 0.25,
 		\ffreq, 4000,
         \level, 1,
 		\pan, Prand([-0.5, 0, 0.5], inf)
@@ -736,21 +757,11 @@ Pdef(\plunkpat3,
 		Pdef(\plunkpat1),
 ));
 
-Pdef(\plunkpat4,
-    Pbindf(
-        Pdef(\plunkpat1),
-        \curve, -4,
-        \dur, Pseq([
-            0.5, 0.75,
-            0.5, 0.5, 0.75,
-            0.5, 0.5, 0.5, 0.75
-        ], inf),
-        \fb, Pwhite(0, 1.5, inf),
-        \octave, [2, 3],
-        \rq, 0.2
-));
+Pdef(\plunkpat4, Pbindf(Pdef(\plunkpat1), \octave, [4, 5]));
 
 Pdef(\plunkpat5, Pbindf(Pdef(\plunkpat4)));
+
+Pdef(\plunkpat6, Pbindf(Pdef(\plunkpat4)));
 );
 
 
@@ -782,6 +793,12 @@ Pdef(\plunkpat4).stop;
 Pdef(\plunkpat5).play(t, quant: 0.5);
 Pdef(\plunkpat5).isPlaying;
 Pdef(\plunkpat5).stop;
+*/
+
+/*
+Pdef(\plunkpat6).play(t, quant: 0.5);
+Pdef(\plunkpat6).isPlaying;
+Pdef(\plunkpat6).stop;
 */
 
 // Midi Control
@@ -848,4 +865,36 @@ MIDIdef.cc(\plunk4stopktrl, {
 		"plunk4 stop".postln;
 	};
 }, 37, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\plunk5playktrl, {
+	if(Pdef(\plunkpat5).isPlaying.not) {
+		Pdef(\plunkpat5).play(t, quant: 0.5);
+		"plunk5 play".postln;
+	};
+}, 53, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\plunk5stopktrl, {
+	if(Pdef(\plunkpat5).isPlaying) {
+		Pdef(\plunkpat5).stop;
+		"plunk5 stop".postln;
+	};
+}, 53, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
+(
+MIDIdef.cc(\plunk6playktrl, {
+	if(Pdef(\plunkpat6).isPlaying.not) {
+		Pdef(\plunkpat6).play(t, quant: 0.5);
+		"plunk6 play".postln;
+	};
+}, 69, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\plunk6stopktrl, {
+	if(Pdef(\plunkpat6).isPlaying) {
+		Pdef(\plunkpat6).stop;
+		"plunk6 stop".postln;
+	};
+}, 69, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
