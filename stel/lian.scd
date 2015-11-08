@@ -278,6 +278,8 @@ Pdef(\pulsepat2,
 Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat2), \degree, Pseq([Rest].stutter(41) ++ [[0, 7]].stutter(101), inf)));
 
 Pdef(\pulses, Ppar([Pdef(\pulsepat1), Pdef(\pulsepat2), Pdef(\pulsepat3)], inf));
+
+Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \degree, ~chord, \octave, 6));
 );
 
 /*
@@ -304,43 +306,46 @@ Pdef(\pulses).isPlaying;
 Pdef(\pulses).stop;
 */
 
+/*
+Pdef(\pulsepat4).play(t, quant: 1);
+Pdef(\pulsepat4).isPlaying;
+Pdef(\pulsepat4).stop;
+*/
+
 //
 
 (
-MIDIdef.cc(\pulsektrl1, {
-	if(Pdef(\pulsepat1).isPlaying.not) {
-		Pdef(\pulsepat1).play(t, quant: 1);
-		"pulse1 play".postln;
-	} {
-		Pdef(\pulsepat1).stop;
-		"pulse1 stop".postln;
-	};
-}, 33, srcID: ~nanoktrl2.uid);
+MIDIdef.cc(\pulsesplay, {
+    if(Pdef(\pulses).isPlaying.not) {
+        Pdef(\pulses).play(t, quant: 0.5);
+        "pulses play".postln
+    };
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pulsesstop, {
+    if(Pdef(\pulses).isPlaying) {
+        Pdef(\pulses).stop;
+        "pulses stop".postln;
+    };
+}, 33, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
 (
-MIDIdef.cc(\pulsektrl2, {
-    if(Pdef(\pulsepat2).isPlaying.not) {
-		Pdef(\pulsepat2).play(t, quant: 1);
-		"pulse2 play".postln;
-	} {
-		Pdef(\pulsepat2).stop;
-		"pulse2 stop".postln;
-	};
-}, 49, srcID: ~nanoktrl2.uid);
+MIDIdef.cc(\pulse4play, {
+    if(Pdef(\pulsepat4).isPlaying.not) {
+        Pdef(\pulsepat4).play(t, quant: 0.5);
+        "pulse4 play".postln
+    };
+}, 49, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pulse4stop, {
+    if(Pdef(\pulsepat4).isPlaying) {
+        Pdef(\pulsepat4).stop;
+        "pulse4 stop".postln;
+    };
+}, 49, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
-(
-MIDIdef.cc(\pulsektrl3, {
-	if(Pdef(\pulsepat3).isPlaying.not) {
-		Pdef(\pulsepat3).play(t, quant: 1);
-		"pulse3 play".postln;
-	} {
-		Pdef(\pulsepat3).stop;
-		"pulse3 stop".postln;
-	};
-}, 65, srcID: ~nanoktrl2.uid);
-);
 
 ////////////////////////////////////////////////////////////////
 // WUT
@@ -495,7 +500,7 @@ SynthDef(\pad, { | bits = 24, curve = -128, dur = 1, freq = 400, gate = 1, level
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var freqmod			=	LFNoise0.kr(15!2, 0.0001, 1);
     var xline			=	XLine.ar(1, 0.1, dur / 3);
-	var lfn				=	LFBrownNoise0.ar(freq!2).range(0.1, 5);
+	var lfn				=	LFBrownNoise0.ar(freq!2).range(0.1, 6);
 	var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn).softclip * (envgen / 2);
 	var sinfb2			=	SinOscFB.ar(freq, xline * lfn).softclip * (envgen / 2);
 	Out.ar(0, sinfb1 + sinfb2);
@@ -518,7 +523,7 @@ Pdef(\pad1,
         \instrument, \pad,
         \dur, Pshuf([43, 47, 53, 59, 61], inf),
         \degree, Pshuf(~chord, inf),
-        \legato, 0.5,
+        \legato, 0.75,
         \octave, 7,
         \release, 0.1,
         \scale, ~scale
@@ -527,7 +532,7 @@ Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(4), inf));
 
 Pdef(\pads2, Pbindf(Pdef(\pads1), \octave, 5));
 
-Pdef(\pad3, Pbindf(Pdef(\pad1), \octave, 4));
+Pdef(\pad3, Pbindf(Pdef(\pad1), \degree, [7, 10, 12], \octave, 4));
 );
 
 /*
