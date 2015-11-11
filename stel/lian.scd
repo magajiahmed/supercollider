@@ -99,7 +99,7 @@ Pdef(\basspat1,
         \ffstart, Pshuf([0.1, 0.25, 0.5, 0.75], inf),
         \ffend, Pshuf([2, 3, 4, 5, 7], inf),
 		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
-        \level, 0.015,
+        \level, 0.01,
         \degree, Pshuf([-2, 0, 3], inf),
         \octave, 3,
 		\scale, ~scale
@@ -240,7 +240,7 @@ MIDIdef.cc(\pbktrl, {
 // PULSE
 
 (
-SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.05, pan = 0 |
+SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.02, pan = 0 |
 	var env				=	Env.new([0, level, 0], [0.0005, dur]);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var xline			=	XLine.ar(1, 0.1, dur);
@@ -260,7 +260,7 @@ Pdef(\pulsepat1,
 		\bits, Pbrown(8, 16, 1, inf).round(1),
         \degree, 0!3,
         \dur, 0.25,
-        \level, 0.02,
+        \level, 0.01,
         \octave, 5,
         \pan, Prand([-0.25, 0.25], inf),
 		\scale, ~scale
@@ -279,7 +279,7 @@ Pdef(\pulsepat3, Pbindf(Pdef(\pulsepat2), \degree, Pseq([Rest].stutter(41) ++ [[
 
 Pdef(\pulses, Ppar([Pdef(\pulsepat1), Pdef(\pulsepat2), Pdef(\pulsepat3)], inf));
 
-Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \degree, ~chord, \octave, 6));
+Pdef(\pulsepat4, Pbindf(Pdef(\pulsepat1), \degree, Pseq([~chord].stutter(31) ++ [Rest].stutter(23), inf), \octave, 6));
 );
 
 /*
@@ -403,7 +403,7 @@ Pdef(\hiwut1,
         \foldfactor, 0.3,
         \k, Pwhite(1.0, 2.0, inf),
         \legato, 0.5,
-        \octave, 6,
+        \octave, 5,
         \release, 2,
         \scale, ~scale,
 ));
@@ -706,7 +706,7 @@ SynthDef(\clap, { | curve = 4, dur = 1, delaytime = 0.01, freq = 1000, level = 0
     0.75, 1, 1.25, 1.5
 		];
 //~clapchords = (0..~ratios.size).powerset.reject({ |i| i.size != 6 });
-~claplvl = 0.05;
+~claplvl = 0.2;
 ~clapecholvl = ~claplvl / 3;
 Pdef(\clappat1,
 	Pbind(
@@ -791,6 +791,37 @@ MIDIdef.cc(\prc1stop, {
     };
 }, 67, argTemplate: 0, srcID: ~nanoktrl2.uid);
 );
+
+////////////////////////////////////////////////////////////////
+// PRC2
+
+(
+SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, lfreq = 22050|
+    var env             =   Env.perc(0.005, length, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], add: 1);
+    var sin             =   SinOscFB.ar(freq * sinmod * XLine.kr(1, 0.1, length), fb, envgen);
+    Out.ar(0, sin);
+}).add;
+);
+
+(
+Pdef(\prc2,
+    Pbind(
+        \instrument, \prc2,
+        \dur, Pshuf([0.25, 0.5, Pseq([1/6], 3), 0.75, 1, 1.5].stutter(7), inf),
+        \fb, 2,
+        \freq, Pxrand(Array.fill(5, { |i| pi.pow(i + 4) * 2 }), inf),
+        \length, Pxrand([0.2, 0.8, 1.6, 2.4], inf),
+        \level, Prand([0.2, 1] * 0.1, inf),
+        \lfreq, Pshuf((2..15) * 1000, inf)
+));
+);
+
+/*
+Pdef(\prc2).play(t);
+Pdef(\prc2).stop;
+*/
 
 ////////////////////////////////////////////////////////////////
 // HEAVY PERC
