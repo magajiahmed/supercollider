@@ -20,7 +20,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 
 (
 s.meter;
-t = TempoClock(108/60);
+t = TempoClock(120/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
