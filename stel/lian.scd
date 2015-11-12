@@ -25,6 +25,10 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
+// Bus depot
+~bassfxbus = Bus.audio(s, 2);
+~prcfxbus = Bus.audio(s, 2);
+// Pitch logic
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 7/5, 3/2, 14/9, 12/7, 7/4, 243/128];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -46,8 +50,8 @@ s.stopRecording;
 // COMPANDER
 
 (
-SynthDef(\dynamix, {
-	var in	   		= 	In.ar(4, 2);
+SynthDef(\dynamix, { |inBus|
+	var in	   		= 	In.ar(inBus, 2);
 	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/2); // compressor
 	Out.ar(0, compressor);
 }).add;
@@ -56,7 +60,7 @@ SynthDef(\dynamix, {
 (
 ~startdynamix = {
 	s.sync;
-	~dynamix = Synth(\dynamix).register;
+    ~dynamix = Synth(\dynamix, [\inBus, ~prcfxbus]).register;
 }.fork;
 );
 
@@ -80,7 +84,7 @@ SynthDef(\bass, { | curve = -4, dur = 1, fb = 0, foldfactor = 3, ffend = 1, ffno
     var ffnoiz          =   LFNoise2.kr(freq!2).range(ffnoizamt.reciprocal, ffnoizamt);
     var ffmod           =   XLine.kr(ffstart, ffend, dur / 2);
     var sineshaper      =   SineShaper.ar(sinfb, foldfactor * ffmod * ffnoiz, envgen) * (foldfactor.abs + 0.01).reciprocal;
-    Out.ar([0, 1, 2, 3], sin + (sinfb * envgen) + sineshaper);
+    Out.ar([0, ~bassfxbus], sin + (sinfb * envgen) + sineshaper);
 }).add;
 );
 
@@ -99,7 +103,7 @@ Pdef(\basspat1,
         \ffstart, Pshuf([0.1, 0.25, 0.5, 0.75], inf),
         \ffend, Pshuf([2, 3, 4, 5, 7], inf),
 		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
-        \level, 0.01,
+        \level, 0.008,
         \degree, Pshuf([-2, 0, 3], inf),
         \octave, 3,
 		\scale, ~scale
@@ -178,6 +182,7 @@ Pdef(\rbpdef,
 	Pbind(
 		\instrument, \recbuf,
 		\dur, 6,
+        \inBus, ~bassfxbus
 ));
 );
 
@@ -247,7 +252,7 @@ SynthDef(\pulse, { | bits = 24, curve = -128, dur = 1, freq = 400, level = 0.02,
 	var lfn				=	LFBrownNoise0.ar(freq).range(1/3, 3);
 	var sinfb			=	SinOscFB.ar(freq, xline * lfn).softclip * envgen;
 	var pan2			=	Pan2.ar(sinfb, pan);
-	Out.ar(4, pan2);
+	Out.ar(~prcfxbus, pan2);
 }).add;
 );
 
@@ -259,7 +264,8 @@ Pdef(\pulsepat1,
 		\instrument, \pulse,
 		\bits, Pbrown(8, 16, 1, inf).round(1),
         \degree, 0!3,
-        \dur, 0.25,
+        //\dur, 0.25,
+        \dur, Pxrand([0.25, 0.5, 0.75], inf),
         \level, 0.01,
         \octave, 5,
         \pan, Prand([-0.25, 0.25], inf),
@@ -403,12 +409,10 @@ Pdef(\hiwut1,
         \foldfactor, 0.3,
         \k, Pwhite(1.0, 2.0, inf),
         \legato, 0.5,
-        \octave, 5,
+        \octave, [5, 6],
         \release, 2,
         \scale, ~scale,
 ));
-
-//Pdef(\hiwuts, Ppar([Pdef(\hiwut1)].stutter(3)));
 );
 
 /*
@@ -498,11 +502,12 @@ MIDIdef.cc(\calmwutsstop, {
 SynthDef(\pad, { | bits = 24, curve = -128, dur = 1, freq = 400, gate = 1, level = 0.01, release = 9 |
 	var env				=	Env.asr(9, level, release, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var freqmod			=	LFNoise0.kr(15!2, 0.0001, 1);
-    var xline			=	XLine.ar(1, 0.1, dur / 3);
-	var lfn				=	LFBrownNoise0.ar(freq!2).range(0.1, 6);
-	var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn).softclip * (envgen / 2);
-	var sinfb2			=	SinOscFB.ar(freq, xline * lfn).softclip * (envgen / 2);
+	var freqmod			=	LFNoise2.kr(0.1!2, 0.0001, 1);
+    var xline			=	XLine.ar(5, 0.05, dur);
+    //var lfn				=	LFNoise0.kr(11!2).range(0.01, 1.0).round(1);
+    var lfn             =   StandardN.ar([15, 14]).range(0, 1);
+    var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn, envgen / 2);
+	var sinfb2			=	SinOscFB.ar(freq, xline, envgen / 2);
 	Out.ar(0, sinfb1 + sinfb2);
 }).add;
 );
@@ -632,7 +637,7 @@ SynthDef(\pingle, { | a = 0.02, curve = -16, freq = 10000, level = 0.05, pan = 0
 	var envgen			=	EnvGen.ar(env, doneAction: 2);
 	var pn              =   PinkNoise.ar(envgen!2);
     var rhpf            =   RHPF.ar(pn, 12000, 0.03);
-    Out.ar(4, (rhpf).fold2(level));
+    Out.ar(~prcfxbus, (rhpf).fold2(level));
 }).add;
 );
 
@@ -695,7 +700,7 @@ SynthDef(\clap, { | curve = 4, dur = 1, delaytime = 0.01, freq = 1000, level = 0
     var delay           =   DelayC.ar(gbman, 0.01, delaytime.clip(0.0001, 0.01));
     var res             =   Resonz.ar(gbman + delay, freq.clip(50, SampleRate.ir / 2.5), 0.1);
     var pan2			= 	Pan2.ar(res, pan);
-	Out.ar(4, pan2);
+	Out.ar(~prcfxbus, pan2);
 }).add;
 );
 
@@ -706,7 +711,7 @@ SynthDef(\clap, { | curve = 4, dur = 1, delaytime = 0.01, freq = 1000, level = 0
     0.75, 1, 1.25, 1.5
 		];
 //~clapchords = (0..~ratios.size).powerset.reject({ |i| i.size != 6 });
-~claplvl = 0.2;
+~claplvl = 0.1;
 ~clapecholvl = ~claplvl / 3;
 Pdef(\clappat1,
 	Pbind(
@@ -756,7 +761,7 @@ SynthDef(\prc1, { |curve = -16, dur = 1, ffreq = 4000, freq = 1000, level = 0.2,
     var crackle         =   Crackle.ar(xaos!2, 1, 1);
     var ffreqmod        =   LFNoise0.kr((t.tempo * 6)!2).range(0.25, 1);
     var rhpf            =   RHPF.ar(noiz * crackle, (ffreq * ffreqmod).clip(50, SampleRate.ir / 2.5), 1, envgen);
-    Out.ar(4, rhpf.fold2(level / 8) * 2);
+    Out.ar(~prcfxbus, rhpf.fold2(level / 8) * 2);
 }).add;
 );
 
@@ -764,7 +769,7 @@ SynthDef(\prc1, { |curve = -16, dur = 1, ffreq = 4000, freq = 1000, level = 0.2,
 Pdef(\prc1,
     Pbind(
         \instrument, \prc1,
-        \dur, Pshuf([0.75, 1, 1.5].stutter(5), inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75].stutter(5), inf),
         \ffreq, Pshuf((1..23) * 100, inf),
         \freq, Pseq([500, 7500, 15000], inf),
         \xaos, Pshuf((12..19) / 10, inf)
@@ -773,6 +778,7 @@ Pdef(\prc1,
 
 /*
 Pdef(\prc1).play(t);
+Pdef(\prc1).isPlaying;
 Pdef(\prc1).stop;
 */
 
@@ -796,12 +802,12 @@ MIDIdef.cc(\prc1stop, {
 // PRC2
 
 (
-SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, lfreq = 22050|
+SynthDef(\prc2, { |b = 2.667, curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, lfreq = 22050, s = 10|
     var env             =   Env.perc(0.005, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], add: 1);
+    var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], [s, s - 0.1], add: 1);
     var sin             =   SinOscFB.ar(freq * sinmod * XLine.kr(1, 0.1, length), fb, envgen);
-    Out.ar(0, sin);
+    Out.ar(~prcfxbus, sin.fold2(level));
 }).add;
 );
 
@@ -809,17 +815,21 @@ SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, l
 Pdef(\prc2,
     Pbind(
         \instrument, \prc2,
-        \dur, Pshuf([0.25, 0.5, Pseq([1/6], 3), 0.75, 1, 1.5].stutter(7), inf),
-        \fb, 2,
-        \freq, Pxrand(Array.fill(5, { |i| pi.pow(i + 4) * 2 }), inf),
-        \length, Pxrand([0.2, 0.8, 1.6, 2.4], inf),
-        \level, Prand([0.2, 1] * 0.1, inf),
-        \lfreq, Pshuf((2..15) * 1000, inf)
+        \curve, Pshuf([-128, -32, -8], inf),
+        //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([1/6], 3), 0.75, 1, 1.5, 2, 3].stutter(7), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 1, 2].stutter(7), inf),
+        \fb, Pxrand((0..11) / 11, inf),
+        //\freq, Pxrand(Array.fill(5, { |i| pi.pow(i + 4) * 2 }), inf),
+        \freq, Pseq([125, 250, 500, 1000, 2000, 4000, 8000], inf),
+        \length, Pxrand([0.1, 0.2, 0.4, 0.8, 1.6], inf),
+        \lfreq, Pshuf((3..15) * 1000, inf),
+        \s, Pwhite(7.0, 12.0, inf).round(0.1)
 ));
 );
 
 /*
 Pdef(\prc2).play(t);
+Pdef(\prc2).isPlaying;
 Pdef(\prc2).stop;
 */
 
@@ -839,7 +849,7 @@ SynthDef(\heavy, { | brightness = 1000, curve = -8, dur = 1, freq = 440, level =
     var rlpf            =   RLPF.ar(rez, freq.clip(50, SampleRate.ir / 3));
     var rhpf            =   RHPF.ar(rez, (freq * 4).clip(50, SampleRate.ir / 3), 0.3);
     var pan2			=	Pan2.ar(rez, pan);
-	Out.ar(4, pan2);
+	Out.ar(~prcfxbus, pan2);
 }).add;
 );
 
@@ -952,7 +962,7 @@ SynthDef(\kik, { |a = 1.1, c = 0.13, curve = 0, freq = 22050, level = 0.1, pan =
 	var lc				=	LinCongC.ar(freq, a, c) * envgen;
 	var rhpf			=	RHPF.ar(lc, (freq * 4).clip(50, SampleRate.ir / 3), 0.1);
 	var pan2			=	Pan2.ar(lc + rhpf, pan);
-    Out.ar(4, pan2).fold2(level);
+    Out.ar(~prcfxbus, pan2).fold2(level);
 }).add;
 );
 
@@ -1026,7 +1036,7 @@ SynthDef(\murky, { | bwr = 1, curve = -64, dur = 1, ffreq = 4000, freq = 400, k 
 	var lfndelaymod		=	LFNoise0.kr(5).range(0.005, 0.05);
 	var delay			=	DelayC.ar(rlpf, 0.2, freq.reciprocal);
 	var pan2			=	Pan2.ar(rlpf + delay, pan);
-	Out.ar(4, pan2);
+	Out.ar(~prcfxbus, pan2);
 }).add;
 );
 
