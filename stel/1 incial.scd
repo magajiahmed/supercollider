@@ -259,31 +259,35 @@ MIDIdef.cc(\snapstopktrl, {
 // clip noise percussion
 
 (
-SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1, outbus = 0, releaseTime = 0.1|
+SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1, outbus = 0, releaseTime = 0.1, rhpf_cutoff_start = 1, rhpf_cutoff_end = 1|
     var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var blip            =   Blip.ar(0, mul: envgen);
     var clipnoiz        =   LFClipNoise.ar(freq!2, envgen);
     var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir / 2.5), 0.1);
-    var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.2);
+    //var rhpf            =   RHPF.ar(blip + clipnoiz, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.2);
+    var rhpf            =   RHPF.ar(blip + clipnoiz, (12000 * XLine.ar(rhpf_cutoff_start, rhpf_cutoff_end, releaseTime)).clip(50, SampleRate.ir / 2.5), 0.1);
     var balance         =   Balance2.ar((rlpf + rhpf)[0], (rlpf + rhpf)[1], bal);
     Out.ar(~prcfxbus, balance);
 }).add;
 );
 
 (
-~cnprcfrqs = [100, 500, 1000, 100, 100, 500, 1000, 100, 100, 100, 500, 1000];
-~cnprclvl = 0.05;
+//~cnprcfrqs = [100, 500, 1000, 100, 100, 500, 1000, 100, 100, 100, 500, 1000];
+~cnprcfrqs = Array.fill(5, { |i| pi.pow(i) * 100});
+~cnprclvl = 0.08;
 ~cnprcecholvl = ~cnprclvl / 4;
 Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
-        \bal, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
-        \curve, -8,
-        \dur, Pshuf(Array.fill(11, { |d| (d + 1) * (0.25) }), inf),
-        \freq, Pseq(~cnprcfrqs, inf),
+        \bal, Pshuf([-1, -0.5, -0.25, 0, 0.25, 0.5, 1], inf),
+        \curve, Pshuf([-16, -12, -8, -4], inf),
+        \dur, Pshuf(Array.fill(7, { |d| (d + 1) * (0.25) }), inf),
+        \freq, Pshuf(~cnprcfrqs.stutter(3), inf),
         \level, ~cnprclvl,
-        \releaseTime, Pshuf([0.05, 0.075, 0.1, 0.15], inf)
+        \releaseTime, Pshuf([0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23], inf),
+        //\rhpf_cutoff_start, Pshuf([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], inf),
+        \rhpf_cutoff_end, Pshuf([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7], inf)
 ));
 Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \level, ~cnprcecholvl));
 Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2)], inf));
