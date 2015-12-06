@@ -767,12 +767,12 @@ SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, freq = 400, le
 	var n				=	4;
 	var sinmix			=	Mix.fill(n, {
 		|i|
-		var freqmod         =   CuspN.ar(15, [a, a - 0.01], [b, b - 0.01], mul: 0.003 * (i * pi), add: 1);
+		var freqmod         =   CuspN.ar(15, [a, a - 0.01], [b, b - 0.01], mul: 0.001 * (i * 100), add: 1);
         SinOscFB.ar([freq, freq + 0.1] * freqmod, fb, mul: envgen / n)
 	});
     var lc              =   LinCongC.ar((freq!2 * 128), 1.2, mul: envgen).wrap2(level);
 	var rhpf			=	RHPF.ar(lc, 12000, 0.3);
-	Out.ar(0, sin + sinmix.round(0.001) + rhpf);
+	Out.ar(0, sin + sinmix);
 }).add;
 );
 
