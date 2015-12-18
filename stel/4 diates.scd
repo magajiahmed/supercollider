@@ -56,9 +56,13 @@ SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.015, rhp
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-		\dur, Pshuf(~bassdurs, inf),
+        \curve, -12,
+		//\dur, Pshuf(~bassdurs, inf),
+        \dur, Pshuf((1..11).stutter(3) * 0.25, inf),
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], inf),
 		\fb, Pwhite(2.0, 3.0, inf),
-		\degree, Pshuf(((-2..6) ++ [Rest].stutter(3)).stutter(3), inf),
+        \degree, Pseq([Pshuf((-2..6).stutter(4)), Pseq([Rest], 9)], inf),
+        //\degree, Pseq([Pshuf([-2, 0, 0, 1, 2].stutter(3)), Pseq([Rest], 15)], inf),
 		\octave, 2,
 		\rhpffrq, 8000,
 		\root, ~root,
@@ -72,7 +76,7 @@ Pdef(\basspat1).isPlaying;
 Pdef(\basspat1).stop;
 */
 
-Pdef(\basspat2, Pbindf(Pdef(\basspat1), \curve, -8, \degree, Prand([0, 7, 12], inf)));
+Pdef(\basspat2, Pbindf(Pdef(\basspat1), \degree, Pseq([Pshuf([0, 7, 12].stutter(18)), Pseq([Rest], 9)], inf)));
 
 /*
 Pdef(\basspat2).play(~tempo, quant: 1);
@@ -138,7 +142,7 @@ SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.03|
 Pdef(\hatpat1,
 	Pbind(
 		\instrument, \hat,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 6].stutter(3), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
 		\level, 0.05,
 		\degree, 0,
@@ -174,8 +178,9 @@ Pdef(\hatpar).stop;
 Pdef(\pulsepat1a,
 	Pbind(
 		\instrument, \hat,
-		\curve, -4,
-        \dur, Pshuf([0.5, 0.75, 1.25, 0.5, 0.5, 0.75, 1.5].stutter(5), inf),
+		\curve, -8,
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(11), inf),
+        \dur, Pshuf((1..11).stutter(3) * 0.25, inf),
 		\fb, Pwhite(2.7, 3.2, inf),
 		\level, ~pulselvl,
 		\degree, 0,
@@ -194,7 +199,7 @@ Pdef(\pulsepar1).stop;
 */
 
 (
-Pdef(\pulsepat2a, Pbindf(Pdef(\pulsepat1a), \degree, [-2, 7]));
+Pdef(\pulsepat2a, Pbindf(Pdef(\pulsepat1a), \degree, [0, 7, 10, 12, 14], \dur, Pshuf((1..13).mirror1 * 0.25, inf)));
 Pdef(\pulsepat2b, Pbindf(Pdef(\pulsepat2a), \level, ~pulseecholvl));
 Pdef(\pulsepar2, Ppar([Pdef(\pulsepat2a), Pdef(\pulsepat2b), Pdef(\pulsepat2b)]));
 );
@@ -206,7 +211,7 @@ Pdef(\pulsepar2).stop;
 */
 
 (
-Pdef(\pulsepat3a, Pbindf(Pdef(\pulsepat1a), \degree, [7, 12, 14]));
+Pdef(\pulsepat3a, Pbindf(Pdef(\pulsepat2a), \dur, Pshuf((1..11).mirror1 * 0.25, inf), \octave, 4));
 Pdef(\pulsepat3b, Pbindf(Pdef(\pulsepat3a), \level, ~pulseecholvl));
 Pdef(\pulsepar3, Ppar([Pdef(\pulsepat3a), Pdef(\pulsepat3b), Pdef(\pulsepat3b)]));
 );
@@ -389,7 +394,7 @@ Pdef(\prcpat1a,
 		\instrument, \prc,
 		\a, Pwhite(1.0, 2.0, inf).round(0.1),
 		\curve, -8,
-		\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.375], 2), 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.375], 2), Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6], inf),
 		\foldfactor, Pwhite(1, 10, inf),
 		\level, Pshuf([0.2, 1, 1] * 0.1, inf),
 		\degree, Pshuf([Rest, 0, 0, 0], inf),
@@ -579,9 +584,9 @@ MIDIdef.cc(\banjostopktrl, {
 SynthDef(\pno, { |a = 1, b = 3, curve = -8, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.1, pan = 0|
     var env             =   Env.perc(0.003, dur, level: level, curve: curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var lat             =   Latoocarfian2DN.ar(a: [a, a - 0.002], b: [b, b - 0.002], mul: 0.1, add: 1).clip(0.5, 2);
-    var ampmod          =   LFBrownNoise0.kr(15!2, add: 1).clip(0.5, 1).round(0.5);
-	var sinfb           =   SinOscFB.ar(freq * lat, fb, envgen * ampmod);
+    var lat             =   Latoocarfian2DN.kr(a: [a, a - 0.002], b: [b, b - 0.002], mul: 1, add: 1).round(0.25);
+    //var ampmod          =   LFBrownNoise0.kr(15!2, add: 1).round(0.5);
+	var sinfb           =   SinOscFB.ar(freq, fb, envgen * lat);
 	var sin				=	SinOsc.ar(freq!2, pi /4, envgen);
     var rhpf            =   RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.05);
     Out.ar(0, rhpf + sin);
@@ -596,9 +601,9 @@ Pdef(\pnopat,
         \b, Pwhite(-3.0, 3.0, inf),
         \dur, Pshuf([13, 17, 19] + 0.25, inf),
         \fb, 2,
-        \level, 0.005,
-        \degree, [-5, -2, 0, 2],
-        \octave, [5, 8],
+        \level, 0.003,
+        \degree, [2, 7, 10, 12],
+        \octave, [4, 5, 7],
         \root, ~root,
         \scale, ~scale,
 ));
