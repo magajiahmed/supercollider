@@ -124,11 +124,11 @@ Pdef(\dinglepat1,
 		\a, 0.01,
 		\curve, -4,
     	\dur, Pshuf([
-            Pseq([1.25], 7),
-            Pseq([1.5], 7),
-            Pseq([1.75], 7),
-            Pseq([2], 7),
-            Pseq([2.25], 7),
+            Pseq([1.25], 3),
+            Pseq([1.5], 3),
+            Pseq([1.75], 3),
+            Pseq([2], 3),
+            Pseq([2.25], 3),
 		], inf),
 		\level, ~dinglelvl,
 		\octave, 5,
@@ -161,10 +161,10 @@ Pdef(\single1,
     Pbind(
         \instrument, \dingle,
         \a, Pwhite(0.01, 0.02, inf),
-        \curve, -512,
+        \curve, -64,
         \degree, 7,
         \dur, Pshuf(Array.fill(5, { |d| (d + 1) * 0.25 }).stutter(5), inf),
-        \level, Pshuf([0.25, 0.5, 1].stutter(3) * 0.2, inf),
+        \level, Pshuf([0.2, 1].stutter(5) * 0.2, inf),
         \octave, 7,
         \pan, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
         \scale, ~scale
@@ -414,14 +414,13 @@ Pdef(\cnprc1,
     Pbind(
         \instrument, \cnprc,
         \bal, Pshuf([-1, -0.5, -0.25, 0, 0.25, 0.5, 1], inf),
-        //\curve, Pshuf([-16, -12, -8, -4], inf),
         \curve, -2,
         \dur, Pshuf(Array.fill(11, { |d| (d + 1) * (0.25) }), inf),
         \freq, Pshuf(~cnprcfrqs.stutter(3), inf),
         \level, ~cnprclvl,
         \releaseTime, Pshuf([0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23], inf),
-        //\rhpf_cutoff_start, Pshuf([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], inf),
-        \rhpf_cutoff_end, Pshuf([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7], inf)
+        \rhpf_cutoff_start, Pshuf([0.2, 1.0].stutter(3), inf),
+        \rhpf_cutoff_end, Pshuf([0.2, 1].stutter(5), inf)
 ));
 Pdef(\cnprc2, Pbindf(Pdef(\cnprc1), \level, ~cnprcecholvl));
 Pdef(\cnprcpar, Ppar([Pdef(\cnprc1), Pdef(\cnprc2)], inf));
@@ -432,7 +431,7 @@ Pdef(\cnprc3,
     Pbindf(
         Pdef(\cnprc1),
         \curve, -16,
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1].stutter(11), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1].stutter(11), inf),
         \freq, Prand(~cnprcfrqs * 4, inf)
 ));
 );
@@ -501,9 +500,7 @@ Pdef(\lori,
         \instrument, \lori,
         \balance, Pshuf([-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75], inf),
         \curve, Pshuf([-64, -32, -16].stutter(7), inf),
-        \dur, Pshuf([
-            Pseq([0.125], 2), 0.25, Pseq([1/6], 3), Pseq([0.125], 4), 0.5, 1, 2, 4
-        ].stutter(9), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(9), inf),
         \freq, Pshuf([64, 8192].stutter(3), inf),
         \length, Pshuf([0.5, 0.75, 1].stutter(11), inf),
         \lorimul, Pshuf([0.5, 1, 2, 4].stutter(17), inf),
@@ -556,10 +553,10 @@ Pdef(\pad1,
     Pbind(
         \instrument, \pad,
         \bal, Pshuf([-0.5, 0, 0.5].stutter(13), inf),
-        \dur, Pshuf(Array.fill(7, { |i| (i + 17).nthPrime + 0.25 }), inf),
+        \dur, Pshuf(Array.fill(7, { |i| (i + 17).nthPrime }), inf),
         \legato, 0.25,
-        \degree, [7, 10, 12],
-        \octave, 5,
+        \degree, Pshuf([[0, 7, 10], [7, 10, 12], [10, 12, 19]], inf),
+        \octave, [5, 7],
         \scale, ~scale,
 ));
 Pdef(\pad2, Pbindf(Pdef(\pad1)));
@@ -719,8 +716,8 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(1, 0.1, 1);
     var sinfb           =   SinOscFB.ar([freq, freq + 0.05], fb * xline).round(0.4) * envgen;
-    var rlpf_freq_mod   =   LFNoise2.kr(1!2).range(0.1, 10);
-    var rlpf            =   BLowPass4.ar(sinfb, (freq * rlpf_freq_mod * XLine.kr(pi.squared, pi.sqrt, 0.05)).clip(30, SampleRate.ir / 3), 0.5);
+    //var rlpf_freq_mod   =   LFNoise2.kr(1!2).range(1, 8);
+    var rlpf            =   BLowPass4.ar(sinfb, (freq * XLine.kr(pi.squared, pi.sqrt, 0.1)).clip(30, SampleRate.ir / 3), 0.5);
     var rhpf            =   BHiPass4.ar(sinfb, (ffreq).clip(50, SampleRate.ir / 3), 0.3);
     Out.ar([0, ~bassfxbus], rlpf + rhpf);
 }).add;
@@ -729,20 +726,21 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
 // Pattern
 
 (
-~bassnotes = [-5, -4, -3, -2, -1, 0, 1, 2, 3];
+//~bassnotes = [-5, -4, -3, -2, -1, 0, 1, 2, 3];
+~bassnotes = [-5, -2, 1, 2, 3];
 ~bassdurations = [0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, Pseq([0.75], 3), 3, 4, 6, 8, 12, 16, 24];
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \degree, Pseq([Pshuf(~bassnotes, 2), Pseq([Rest], ~bassnotes.size)], inf),
+        \degree, Pseq([Pshuf(~bassnotes, 4), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf([0.25, 0.5, 1, 2].stutter(5), inf),
         \ffreq, 4000,
-		\octave, 3,
+        \octave, 3,
 		\scale, ~scale,
 ));
 
-Pdef(\bass2, Pbindf(Pdef(\bass), \degree, 0, \octave, [2, 3]));
+Pdef(\bass2, Pbindf(Pdef(\bass), \degree, 0, \octave, 3));
 );
 
 /*
@@ -911,6 +909,7 @@ Pdef(\plunkpat3,
 		Pdef(\plunkpat1),
 ));
 
+/*
 Pdef(\plunkpat4,
     Pbindf(
         Pdef(\plunkpat1),
@@ -928,7 +927,7 @@ Pdef(\plunkpat5, Pbindf(Pdef(\plunkpat4), \shapelimit, 0.005));
 
 Pdef(\plunkpat6, Pbindf(Pdef(\plunkpat5)));
 );
-
+*/
 
 /*
 Pdef(\plunkpat1).play(t, quant: 0.5);
@@ -1016,6 +1015,7 @@ MIDIdef.cc(\plunk3stopktrl, {
 }, 69, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+/*
 (
 MIDIdef.cc(\plunk4playktrl, {
 	if(Pdef(\plunkpat4).isPlaying.not) {
@@ -1063,3 +1063,4 @@ MIDIdef.cc(\plunk6stopktrl, {
 	};
 }, 70, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
