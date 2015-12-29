@@ -20,7 +20,7 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 
 (
 s.meter;
-t = TempoClock(108/60);
+t = TempoClock(132/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
@@ -97,15 +97,15 @@ Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
         \curve, -16,
-        \dur, Pshuf(([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(3)), inf),
-        \fb, Pshuf((1..13) / 3, inf),
+        \dur, Pshuf(([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3)), inf),
+        \fb, Pshuf((0..2), inf),
         \ffnoizamt, Pshuf([1, 2, 3, 4], inf),
         \ffstart, Pshuf([0.1, 0.25, 0.5, 0.75], inf),
         \ffend, Pshuf([2, 3, 4, 5, 7], inf),
-		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
+		//\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
         \level, 0.015,
         \degree, Pshuf([-2, 0, 3], inf),
-        \octave, 3,
+        \octave, [2, 3],
 		\scale, ~scale
 ));
 Pdef(\basspat2,
@@ -280,8 +280,9 @@ Pdef(\pnopulse,
         \instrument, \pno,
         \balance, Prand([-1, 1], inf),
         \curve, -4,
-        \degree, Pseq([Pseq([~chord], 151), Pseq([Rest], 53)], inf),
-        \dur, 0.25,
+        //\degree, Pseq([Pseq([~chord], 151), Pseq([Rest], 53)], inf),
+        \degree, Pshuf(Array.fill(~chords.size, { |n| Pseq([~chords[n]], (n + 19).nthPrime) }), inf),
+        \dur, Prand([0.25, 0.5], inf),
         \fb, Pwhite(0.0, 1.5, inf),
         \k, Pwhite(0.5, 4, inf),
         //\level, Prand([0.2, 0.2, 1] * 0.005, inf),
@@ -293,6 +294,7 @@ Pdef(\pnopulse,
 ));
 
 Pdef(\pnopulses, Ppar([Pdef(\pnopulse)].stutter(3), inf));
+Pdef(\pnopulses2, Pbindf(Pdef(\pnopulses), \octave, [5,6]));
 );
 
 /*
@@ -317,6 +319,12 @@ Pdef(\pnopulse).stop;
 Pdef(\pnopulses).play(t);
 Pdef(\pnopulses).isPlaying;
 Pdef(\pnopulses).stop;
+*/
+
+/*
+Pdef(\pnopulses2).play(t);
+Pdef(\pnopulses2).isPlaying;
+Pdef(\pnopulses2).stop;
 */
 
 (
@@ -351,6 +359,22 @@ MIDIdef.cc(\pnopulsesstop, {
 }, 49, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+(
+MIDIdef.cc(\pnopulses2play, {
+    if(Pdef(\pnopulses2).isPlaying.not) {
+        Pdef(\pnopulses2).play(t);
+        "pnopulses2 play".postln;
+    }
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\pnopulses2stop, {
+    if(Pdef(\pnopulses2).isPlaying) {
+        Pdef(\pnopulses2).stop;
+        "pnopulses2 stop".postln;
+    }
+}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
+
 ////////////////////////////////////////////////////////////////
 // WUT
 
@@ -369,10 +393,10 @@ Pdef(\wut,
         \instrument, \wut,
         \degree, Pshuf(~chords, inf),
         \dur, 43,
-        \fb, 2,
+        \fb, 1.5,
         \k, Pwhite(1.0, 2.0, inf),
         \legato, 0.5,
-        \octave, 6,
+        \octave, 5,
         \scale, ~scale
 ));
 );
@@ -383,12 +407,20 @@ Pdef(\wut).isPlaying;
 Pdef(\wut).stop;
 */
 
-Pdef(\wat, Pbind(\instrument, \wut, \degree, [7, 10, 12], \dur, 53, \fb, 0, \legato, 0.5, \octave, 4, \scale, ~scale));
+Pdef(\wat, Pbind(\instrument, \wut, \degree, [7, 10, 12], \dur, 53, \fb, 0.8, \legato, 0.5, \octave, 4, \scale, ~scale));
 
 /*
 Pdef(\wat).play(t, quant: 1);
 Pdef(\wat).isPlaying;
 Pdef(\wat).stop;
+*/
+
+Pdef(\wet, Pmono(\wut, \degree, [-5, 0], \fb, 0.3, \scale, ~scale));
+
+/*
+Pdef(\wet).play(t, quant: 1);
+Pdef(\wet).isPlaying;
+Pdef(\wet).stop;
 */
 
 (
@@ -425,6 +457,23 @@ MIDIdef.cc(\watstop, {
 }, 50, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
 
+//
+
+(
+MIDIdef.cc(\wetplay, {
+    if(Pdef(\wet).isPlaying.not) {
+        Pdef(\wet).play(t, quant: 1);
+        "wet".postln;
+    }
+}, 66, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+
+MIDIdef.cc(\wetstop, {
+    if(Pdef(\wet).isPlaying) {
+        Pdef(\wet).stop;
+        "no wet".postln;
+    }
+}, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
+);
 
 ////////////////////////////////////////////////////////////////
 // PINGLE
@@ -584,26 +633,43 @@ Pdef(\prc1).stop;
 */
 
 (
+Pdef(\prc1b,
+    Pbind(
+        \instrument, \prc1,
+        \dur, Pshuf([0.5, 0.75, 1].stutter(11), inf),
+        \ffreq, Pseq([100, 2000, 100, 2000, 100, 100, 2000, 2000], inf),
+        \ffreqmodrate, 16,
+        \xaos, 1.9
+));
+);
+
+/*
+Pdef(\prc1b).play(t);
+Pdef(\prc1b).isPlaying;
+Pdef(\prc1b).stop;
+*/
+
+(
 MIDIdef.cc(\prc1play, {
     if(Pdef(\prc1).isPlaying.not) {
         Pdef(\prc1).play(t);
         "prc1 play".postln;
     };
-}, 67, argTemplate: { |x| x > 0 }, srcID: ~nanoktrl2.uid);
+}, 36, argTemplate: { |x| x > 0 }, srcID: ~nanoktrl2.uid);
 
 MIDIdef.cc(\prc1stop, {
     if(Pdef(\prc1).isPlaying) {
         Pdef(\prc1).stop;
         "prc1 stop".postln;
     };
-}, 67, argTemplate: 0, srcID: ~nanoktrl2.uid);
+}, 36, argTemplate: 0, srcID: ~nanoktrl2.uid);
 );
 
 ////////////////////////////////////////////////////////////////
 // PRC2
 
 (
-SynthDef(\prc2, { |b = 2.667, curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, lfreq = 22050, s = 10|
+SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, lfreq = 22050, s = 10|
     var env             =   Env.perc(0.005, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], [s, s - 0.1], add: 1);
@@ -613,12 +679,31 @@ SynthDef(\prc2, { |b = 2.667, curve = -16, fb = 0, freq = 440, length = 0.1, lev
 );
 
 (
-Pdef(\prc2,
+Pdef(\prc2a,
+    Pbind(
+        \instrument, \prc2,
+        \curve, -64,
+        \dur, Pshuf([0.25, 1].stutter(13), inf),
+        \fb, Pshuf(Array.series(11, 2.5, 0.1), inf),
+        \freq, Pseq([40, 800, 40, 40, 800, 40, 40, 40, 800], inf),
+        \length, 0.2,
+        \s, Pshuf([9, 12].stutter(5), inf)
+));
+);
+
+/*
+Pdef(\prc2a).play(t);
+Pdef(\prc2a).isPlaying;
+Pdef(\prc2a).stop;
+*/
+
+(
+Pdef(\prc2b,
     Pbind(
         \instrument, \prc2,
         \curve, -16,
         //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([1/6], 3), 0.75, 1, 1.5, 2, 3].stutter(7), inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1].stutter(7), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(7), inf),
         \fb, Pxrand((1..5), inf),
         //\freq, Pxrand(Array.fill(5, { |i| pi.pow(i + 4) * 2 }), inf),
         \freq, Pshuf([125, 250, 500, 1000, 2000, 4000, 8000].stutter(3), inf),
@@ -629,23 +714,39 @@ Pdef(\prc2,
 );
 
 /*
-Pdef(\prc2).play(t);
-Pdef(\prc2).isPlaying;
-Pdef(\prc2).stop;
+Pdef(\prc2b).play(t);
+Pdef(\prc2b).isPlaying;
+Pdef(\prc2b).stop;
 */
 
 (
-MIDIdef.cc(\prc2play, {
-    if(Pdef(\prc2).isPlaying.not) {
-        Pdef(\prc2).play(t);
-        "prc2 play".postln;
+MIDIdef.cc(\prc2aplay, {
+    if(Pdef(\prc2a).isPlaying.not) {
+        Pdef(\prc2a).play(t);
+        "prc2a play".postln;
+    };
+}, 67, argTemplate: { |x| x > 0 }, srcID: ~nanoktrl2.uid);
+
+MIDIdef.cc(\prc2astop, {
+    if(Pdef(\prc2a).isPlaying) {
+        Pdef(\prc2a).stop;
+        "prc2a stop".postln;
+    };
+}, 67, argTemplate: 0, srcID: ~nanoktrl2.uid);
+);
+
+(
+MIDIdef.cc(\prc2bplay, {
+    if(Pdef(\prc2b).isPlaying.not) {
+        Pdef(\prc2b).play(t);
+        "prc2b play".postln;
     };
 }, 68, argTemplate: { |x| x > 0 }, srcID: ~nanoktrl2.uid);
 
-MIDIdef.cc(\prc2stop, {
-    if(Pdef(\prc2).isPlaying) {
-        Pdef(\prc2).stop;
-        "prc2 stop".postln;
+MIDIdef.cc(\prc2bstop, {
+    if(Pdef(\prc2b).isPlaying) {
+        Pdef(\prc2b).stop;
+        "prc2b stop".postln;
     };
 }, 68, argTemplate: 0, srcID: ~nanoktrl2.uid);
 );
@@ -681,10 +782,7 @@ Pdef(\heavypat1,
 		\brightness, Pshuf([1000, 4000, 8000].stutter(7), inf),
 		\curve, Pshuf([-16, -4, 0, 2, 4], inf),
         \degree, Pseq([Pseq([[0, 7, 10]], 29), Pseq([Rest], 17)], inf),
-        \dur, Pshuf([
-            Pseq([1/3], 3), Pseq([2/5], 5), Pseq([2/7], 7),
-            2, 3, 4, 6, 8, 12
-        ], inf),
+        \dur, Pshuf([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.25], 7), 2, 3, 4, 6, 8, 12, 16, 24], inf),
         \level, ~heavypatlvl,
 		\octave, 5,
 		\pan, Prand([-0.5, 0, 0.5], inf),
@@ -699,9 +797,7 @@ Pdef(\heavypat2,
         //\brightness, 15000,
         \curve, Pshuf([-64, -32, -16, -8], inf),
         \degree, [-5, -2, 0],
-        \dur, Pshuf([
-            Pseq([0.125], 2), 0.25, Pseq([0.125], 4), 0.5, Pseq([1/6], 3), 0.75, 1, 1.5, 2, 3
-        ].stutter(3), inf),
+        \dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3].stutter(3), inf),
         \level, ~heavypatlvl,
         \octave, Pshuf((2..7), inf),
         \scale, ~scale,

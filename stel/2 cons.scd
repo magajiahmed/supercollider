@@ -490,12 +490,13 @@ Pdef(\hatpar0).isPlaying;
 Pdef(\hatpar0).stop;
 */
 
-Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \degree, [7, 10]));
+//Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \degree, [7, 10]));
+Pdef(\hatpat1, Pbindf(Pdef(\hatpat0l), \degree, [7, 10], \dur, 0.25, \pan, Pshuf([-1, -0.5, 0.5, 1].stutter(29), inf)));
 
 /*
-Pdef(\hatpar1).play(~tempo, quant: 1);
-Pdef(\hatpar1).isPlaying;
-Pdef(\hatpar1).stop;
+Pdef(\hatpat1).play(~tempo);
+Pdef(\hatpat1).isPlaying;
+Pdef(\hatpat1).stop;
 */
 
 (
@@ -503,9 +504,9 @@ Pdef(\hatpulse,
     Pbind(
         \instrument, \hat,
         \dur, 0.25,
-        \level, 0.02,
+        \level, ~hatlvl,
         \octave, 9,
-        \pan, Pshuf([-0.5, 0.5].stutter(31), inf),
+        \pan, Pshuf([-1, -0.5, 0.5, 1].stutter(31), inf),
 ));
 );
 
@@ -534,16 +535,16 @@ MIDIdef.cc(\hat0stopktrl, {
 );
 
 (
-MIDIdef.cc(\hatpar1playktrl, {
-    if(Pdef(\hatpar1).isPlaying.not) {
-        Pdef(\hatpar1).play(~tempo, quant: 1);
+MIDIdef.cc(\hatpat1playktrl, {
+    if(Pdef(\hatpat1).isPlaying.not) {
+        Pdef(\hatpat1).play(~tempo, quant: 1);
         "hat1 play".postln;
     }
 }, 51, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
 
-MIDIdef.cc(\hatpar1stopktrl, {
-    if(Pdef(\hatpar1).isPlaying) {
-        Pdef(\hatpar1).stop;
+MIDIdef.cc(\hatpat1stopktrl, {
+    if(Pdef(\hatpat1).isPlaying) {
+        Pdef(\hatpat1).stop;
         "hat1 stop".postln;
     }
 }, 51, srcID: ~nanoktrl2.uid, argTemplate: 0);
@@ -684,21 +685,13 @@ MIDIdef.cc(\crumble4stopktrl, {
 // PNO2 ////////////////////////////////////////////////////////
 
 (
-SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, freqmod_freq = 50, freqmod_mul = 0, freq = 400, level = 0.005, pan = 0 |
+SynthDef(\pno2, { | a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, fbmod_freq = 50, fbmod_mul = 0, freq = 400, level = 0.005, pan = 0 |
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var sin				=	SinOscFB.ar(freq!2, fb, envgen / 2);
-	//var n				=	8;
-	/*
-    var sinmix			=	Mix.fill(n, {
-		|i|
-		var freqmod         =   CuspL.ar(15, [a, a - 0.01], [b, b - 0.01], mul: 0.00001 * (i * 100), add: 1);
-        SinOscFB.ar([freq, freq + 0.1] * freqmod, fb, mul: envgen / n)
-	});
-    */
-    var freqmod         =   CuspN.ar(freqmod_freq, [a, a - 0.1], [b, b - 0.1], mul: freqmod_mul, add: 1).round(freqmod_mul);
-    var sinmod          =   SinOscFB.ar(freq!2 * freqmod, fb, mul: envgen / 2);
-	Out.ar(0, sin + sinmod);
+    var fbmod           =   CuspL.ar(fbmod_freq, [a, a - 0.1], [b, b - 0.1]).range(1, fbmod_mul).round(fbmod_mul);
+	var sin				=	SinOscFB.ar(freq!2, fb * fbmod, envgen);
+    //var sinmod          =   SinOscFB.ar(freq!2 * freqmod, fb, mul: envgen / 2);
+	Out.ar(0, sin);
 }).add;
 );
 
@@ -711,10 +704,10 @@ Pdef(\pno2pat0,
         \a, Pwhite(1.0, 1.99, inf).round(0.1),
         \b, Pwhite(1.8, 2.0, inf).round(0.1),
         \curve, -16,
-		\degree, 0,
-        \fb, 0.2,
-        \freqmod_freq, 1000,
-        \freqmod_mul, 0.02,
+        \degree, 0,
+        \fb, 0,
+        \fbmod_freq, 0,
+        \fbmod_mul, 0,
 		\dur, Pshuf([11, 12, 13].nthPrime, inf),
         \level, 0.008,
         \octave, 7,
@@ -739,8 +732,8 @@ Pdef(\pno2pat1,
         \degree, [7, 9, 10],
 		\dur, Pseq(~pno2pat1durs1, inf),
         \fb, 2.5,
-        \freqmod_mul, 0.01,
-		\octave, 6,
+        \fb_mul, 0.1,
+		\octave, 5,
 		\scale, ~scale,
 ));
 );
