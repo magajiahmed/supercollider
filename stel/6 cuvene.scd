@@ -94,6 +94,7 @@ Pdef(\paddrone,
 ));
 */
 
+(
 Pdef(\pad1,
     Pbind(
         \instrument, \pad,
@@ -337,7 +338,7 @@ SynthDef(\klk, { |curve = -16, freq = 440, level = 0.1, numharm = 100, pan = 0|
 Pdef(\klk,
     Pbind(
         \instrument, \klk,
-        \dur, Pshuf([0.25, 0.5, 0.75].stutter(5), inf),
+        \dur, Pshuf([0.25, 0.5, Pseq([0.25], 2), 0.75, Pseq([0.25], 3), 1, 1.25, 1.5].stutter(5), inf),
         \level, 0.02,
         \numharm, Pshuf((1..5).stutter(4), inf),
         \octave, [8, 9],
@@ -391,7 +392,7 @@ Pdef(\prcpat1,
         \c, Pshuf([0.05, 0.07, 0.09, 0.11, 0.13, 0.15], inf),
 		\curve, -64,
         //\dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(3), inf),
-        \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75, 2, 2.25], inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75], inf),
 		\level, ~prcpatlevel1,
 		\degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
         \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
@@ -412,7 +413,7 @@ Pdef(\prcpat2,
 		\octave, 5,
 		\releaseTime, 1
 ));
-Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
+Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
 Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
 Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat2)], inf));
 );
@@ -440,6 +441,7 @@ MIDIdef.cc(\prcparstop, {
 );
 
 ////////////////////////////////////
+// MURKY
 
 (
 SynthDef(\murky, { | bwr = 1, curve = -64, dur = 1, ffreq = 4000, freq = 400, k = 1.4, level = 0.1, pan = 0 |
