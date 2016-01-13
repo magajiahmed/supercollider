@@ -14,6 +14,8 @@ c = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
 ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
 if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+~midiout =  MIDIOut(0);
+~midiout.connect(~nanoktrl2.uid);
 );
 
 (
@@ -190,6 +192,7 @@ Pdef(\single2).stop;
 (
 MIDIdef.cc(\dingleparplayktrl, {
 	if(Pdef(\dinglepar2).isPlaying.not) {
+        ~midiout.control(0, 32, 127);
 		Pdef(\dinglepar2).play(t, quant: 0.5);
 		"dingle play".postln;
 	};
@@ -197,6 +200,7 @@ MIDIdef.cc(\dingleparplayktrl, {
 
 MIDIdef.cc(\dinglestopktrl, {
     if(Pdef(\dinglepar2).isPlaying) {
+        ~midiout.control(0, 32, 0);
         Pdef(\dinglepar2).stop;
         "dingle stop".postln;
     }
@@ -206,6 +210,7 @@ MIDIdef.cc(\dinglestopktrl, {
 (
 MIDIdef.cc(\single1play, {
     if(Pdef(\single1).isPlaying.not) {
+        ~midiout.control(0, 33, 127);
         Pdef(\single1).play(t, quant: 0.5);
         "single1 play".postln
     };
@@ -213,6 +218,7 @@ MIDIdef.cc(\single1play, {
 
 MIDIdef.cc(\single1stop, {
     if(Pdef(\single1).isPlaying) {
+        ~midiout.control(0, 33, 0);
         Pdef(\single1).stop;
         "single1 stop".postln;
     }
@@ -222,6 +228,7 @@ MIDIdef.cc(\single1stop, {
 (
 MIDIdef.cc(\single2play, {
     if(Pdef(\single2).isPlaying.not) {
+        ~midiout.control(0, 49, 127);
         Pdef(\single2).play(t, quant: 0.5);
         "single2 play".postln
     };
@@ -229,6 +236,7 @@ MIDIdef.cc(\single2play, {
 
 MIDIdef.cc(\single2stop, {
     if(Pdef(\single2).isPlaying) {
+        ~midiout.control(0, 49, 0);
         Pdef(\single2).stop;
         "single2 stop".postln;
     }
@@ -276,6 +284,7 @@ Pdef(\snappat).stop;
 (
 MIDIdef.cc(\snapplayktrl, {
 	if(Pdef(\snappat).isPlaying.not) {
+        ~midiout.control(0, 48, 127);
 		Pdef(\snappat).play(t, quant: 0.5);
 		"snap play".postln;
 	};
@@ -283,6 +292,7 @@ MIDIdef.cc(\snapplayktrl, {
 
 MIDIdef.cc(\snapstopktrl, {
 	if(Pdef(\snappat).isPlaying) {
+        ~midiout.control(0, 48, 0);
 		Pdef(\snappat).stop;
 		"snap stop".postln;
 	};
@@ -325,6 +335,7 @@ Pdef(\xaos).stop;
 (
 MIDIdef.cc(\xaosplay, {
     if(Pdef(\xaos).isPlaying.not) {
+        ~midiout.control(0, 64, 127);
         Pdef(\xaos).play(t);
         "xaos".postln;
     }
@@ -332,6 +343,7 @@ MIDIdef.cc(\xaosplay, {
 
 MIDIdef.cc(\xaosstop, {
     if(Pdef(\xaos).isPlaying) {
+        ~midiout.control(0, 64, 0);
         Pdef(\xaos).stop;
         "xaos stop".postln;
     }
@@ -375,6 +387,7 @@ Pdef(\sinprc).stop;
 (
 MIDIdef.cc(\sinprcplay, {
     if(Pdef(\sinprc).isPlaying.not) {
+        ~midiout.control(0, 65, 127);
         Pdef(\sinprc).play(t);
         "sinprc play".postln;
     }
@@ -382,6 +395,7 @@ MIDIdef.cc(\sinprcplay, {
 
 MIDIdef.cc(\sinprcstop, {
     if(Pdef(\sinprc).isPlaying) {
+        ~midiout.control(0, 65, 0);
         Pdef(\sinprc).stop;
         "sinprc stop".postln;
     }
@@ -451,6 +465,7 @@ Pdef(\cnprc3).stop;
 (
 MIDIdef.cc(\cnplayktrl, {
 	if(Pdef(\cnprcpar).isPlaying.not) {
+        ~midiout.control(0, 34, 127);
 		Pdef(\cnprcpar).play(t, quant: 0.5);
 		"cnprc play".postln;
 	};
@@ -458,6 +473,7 @@ MIDIdef.cc(\cnplayktrl, {
 
 MIDIdef.cc(\cnstopktrl, {
 	if(Pdef(\cnprcpar).isPlaying) {
+        ~midiout.control(0, 34, 0);
 		Pdef(\cnprcpar).stop;
 		"cnprc stop".postln;
 	};
@@ -467,6 +483,7 @@ MIDIdef.cc(\cnstopktrl, {
 (
 MIDIdef.cc(\cn3playktrl, {
 	if(Pdef(\cnprc3).isPlaying.not) {
+        ~midiout.control(0, 50, 127);
 		Pdef(\cnprc3).play(t, quant: 0.5);
 		"cnprc3 play".postln;
 	};
@@ -474,6 +491,7 @@ MIDIdef.cc(\cn3playktrl, {
 
 MIDIdef.cc(\cn3stopktrl, {
 	if(Pdef(\cnprc3).isPlaying) {
+        ~midiout.control(0, 50, 0);
 		Pdef(\cnprc3).stop;
 		"cnprc3 stop".postln;
 	};
@@ -520,6 +538,7 @@ Pdef(\lori).stop;
 (
 MIDIdef.cc(\loriplay, {
     if(Pdef(\lori).isPlaying.not) {
+        ~midiout.control(0, 66, 127);
         Pdef(\lori).play(t);
         "lori play".postln;
     }
@@ -527,6 +546,7 @@ MIDIdef.cc(\loriplay, {
 
 MIDIdef.cc(\loristop, {
     if(Pdef(\lori).isPlaying) {
+        ~midiout.control(0, 66, 0);
         Pdef(\lori).stop;
         "lori stop".postln;
     }
@@ -585,6 +605,7 @@ Pdef(\paddrone).stop;
 (
 MIDIdef.cc(\padsplayktrl, {
     if(Pdef(\pads).isPlaying.not) {
+        ~midiout.control(0, 35, 127);
 		Pdef(\pads).play(t, quant: 0.5);
 		"pads play".postln;
 	}
@@ -592,6 +613,7 @@ MIDIdef.cc(\padsplayktrl, {
 
 MIDIdef.cc(\padsstopktrl, {
     if(Pdef(\pads).isPlaying) {
+        ~midiout.control(0, 35, 0);
 		Pdef(\pads).stop;
 		"pads stop".postln;
 	}
@@ -601,6 +623,7 @@ MIDIdef.cc(\padsstopktrl, {
 (
 MIDIdef.cc(\paddroneplayktrl, {
     if(Pdef(\paddrone).isPlaying.not) {
+        ~midiout.control(0, 51, 127);
 		Pdef(\paddrone).play(t, quant: 0.5);
 		"pad drone play".postln;
 	}
@@ -608,6 +631,7 @@ MIDIdef.cc(\paddroneplayktrl, {
 
 MIDIdef.cc(\paddronestopktrl, {
     if(Pdef(\paddrone).isPlaying) {
+        ~midiout.control(0, 51, 0);
 		Pdef(\paddrone).stop;
 		"pads stop".postln;
 	}
@@ -694,6 +718,7 @@ Pdef(\larrys).stop;
 (
 MIDIdef.cc(\larryplay, {
     if(Pdef(\larrys).isPlaying.not) {
+        ~midiout.control(0, 67, 127);
         Pdef(\larrys).play(t, quant: 0.5);
         "Hi Larry".postln;
     }
@@ -701,6 +726,7 @@ MIDIdef.cc(\larryplay, {
 
 MIDIdef.cc(\larrynoplay, {
     if(Pdef(\larrys).isPlaying) {
+        ~midiout.control(0, 67, 0);
         Pdef(\larrys).stop;
         "Bye Larry".postln;
     }
@@ -771,6 +797,7 @@ Pdef(\bass2).stop;
 (
 MIDIdef.cc(\bassplayktrl, {
     if(Pdef(\bass).isPlaying.not) {
+        ~midiout.control(0, 36, 127);
         Pdef(\bass).play(t, quant: 0.5);
         "bass play".postln;
     };
@@ -778,8 +805,9 @@ MIDIdef.cc(\bassplayktrl, {
 
 MIDIdef.cc(\basspause, {
     if(Pdef(\bass).isPlaying) {
+        ~midiout.control(0, 36, 0);
         Pdef(\bass).stop;
-        "bass pause".postln;
+        "bass stop".postln;
     };
 }, 36, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
@@ -787,6 +815,7 @@ MIDIdef.cc(\basspause, {
 (
 MIDIdef.cc(\bass2play, {
     if(Pdef(\bass2).isPlaying.not) {
+        ~midiout.control(0, 68, 127);
         Pdef(\bass2).play(t, quant: 0.5);
         "bass2 play".postln;
     };
@@ -794,6 +823,7 @@ MIDIdef.cc(\bass2play, {
 
 MIDIdef.cc(\bass2stop, {
     if(Pdef(\bass2).isPlaying) {
+        ~midiout.control(0, 68, 0);
         Pdef(\bass2).stop;
         "bass2 pause".postln;
     };
@@ -865,6 +895,7 @@ Pdef(\buffpat, Ppar([Pdef(\rbpdef), Pdef(\pbpat)], inf));
 (
 MIDIdef.cc(\buffpatplay, {
     if(Pdef(\buffpat).isPlaying.not) {
+        ~midiout.control(0, 52, 127);
         Pdef(\buffpat).play(t);
         "buffpat play".postln;
     }
@@ -872,6 +903,7 @@ MIDIdef.cc(\buffpatplay, {
 
 MIDIdef.cc(\buffpatstop, {
     if(Pdef(\buffpat).isPlaying) {
+        ~midiout.control(0, 52, 0);
         Pdef(\buffpat).stop;
         "buffpat stop".postln;
     }
@@ -981,6 +1013,7 @@ Pdef(\plunkpat6).stop;
 (
 MIDIdef.cc(\plunk1playktrl, {
 	if(Pdef(\plunkpat1).isPlaying.not) {
+        ~midiout.control(0, 37, 127);
 		Pdef(\plunkpat1).play(t, quant: 0.5);
 		"plunk1 play".postln;
 	};
@@ -988,6 +1021,7 @@ MIDIdef.cc(\plunk1playktrl, {
 
 MIDIdef.cc(\plunk1stopktrl, {
 	if(Pdef(\plunkpat1).isPlaying) {
+        ~midiout.control(0, 37, 0);
 		Pdef(\plunkpat1).stop;
 		"plunk1 stop".postln;
 	};
@@ -997,6 +1031,7 @@ MIDIdef.cc(\plunk1stopktrl, {
 (
 MIDIdef.cc(\plunk2playktrl, {
 	if(Pdef(\plunkpat2).isPlaying.not) {
+        ~midiout.control(0, 53, 127);
 		Pdef(\plunkpat2).play(t, quant: 0.5);
 		"plunk2 play".postln;
 	};
@@ -1004,6 +1039,7 @@ MIDIdef.cc(\plunk2playktrl, {
 
 MIDIdef.cc(\plunk2stopktrl, {
 	if(Pdef(\plunkpat2).isPlaying) {
+        ~midiout.control(0, 53, 0);
 		Pdef(\plunkpat2).stop;
 		"plunk2 stop".postln;
 	};
@@ -1013,6 +1049,7 @@ MIDIdef.cc(\plunk2stopktrl, {
 (
 MIDIdef.cc(\plunk3playktrl, {
 	if(Pdef(\plunkpat3).isPlaying.not) {
+        ~midiout.control(0, 69, 127);
 		Pdef(\plunkpat3).play(t, quant: 0.5);
 		"plunk3 play".postln;
 	};
@@ -1020,6 +1057,7 @@ MIDIdef.cc(\plunk3playktrl, {
 
 MIDIdef.cc(\plunk3stopktrl, {
 	if(Pdef(\plunkpat3).isPlaying) {
+        ~midiout.control(0, 69, 0);
 		Pdef(\plunkpat3).stop;
 		"plunk3 stop".postln;
 	};
