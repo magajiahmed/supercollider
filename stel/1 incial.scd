@@ -844,10 +844,12 @@ MIDIdef.cc(\larrynoplay, {
 SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var ampmod          =   SinOsc.ar(freq * pi.squared, mul: 0.05, add: 1);
-    var sin1            =   SinOscFB.ar(freq * SinOsc.kr(0.05!2, mul: 0.005, add: 1), fb, envgen * ampmod * 0.5);
-    var sin2            =   SinOscFB.ar(freq, fb, envgen * 0.5);
-    Out.ar(0, (sin1 + sin2).fold2(level));
+    //var ampmod          =   SinOscFB.ar(freq * LFNoise2.ar(300!2, 0.1, 1), fb, 1, 1);
+    var xline           =   XLine.kr(0.5, 1, 0.01);
+    var sin1            =   SinOscFB.ar(freq * xline * LFNoise2.kr(1!2, 0.0005, 1), fb);
+    //var sin2            =   SinOscFB.ar(freq * SinOsc.kr(0.05!2, mul: 0.005, add: 1), fb).wrap2(0.3) * envgen;
+    var sin3            =   SinOscFB.ar([freq - 0.1, freq + 0.1] * xline, fb);
+    Out.ar(0, ((sin1 + sin3).fold2(0.2) * 5 * envgen * 0.5) + ((sin1 + sin3) * envgen * 0.5));
 }).add;
 );
 
@@ -856,15 +858,15 @@ Pdef(\pno1,
     Pbind(
         \instrument, \pno,
         \curve, -4,
-        \degree, Pshuf([0, [0, 7]].stutter(47), inf),
+        \degree, 0,
         \dur, Prand([0.75, 1.25, 2.25, 3.25, 5], inf),
         \fb, 0,
-        \level, Prand([0.2, 1] * 0.01, inf),
+        \level, Prand([0.2, 1] * 0.005, inf),
         \octave, 5,
         \scale, ~scale
 ));
 
-Pdef(\pno2, Pbindf(Pdef(\pno1), \fb, 0.5, \octave, 9));
+Pdef(\pno2, Pbindf(Pdef(\pno1), \fb, 0, \octave, 9));
 
 Pdef(\pnos, Ppar([Pdef(\pno1), Pdef(\pno2)].stutter(2), inf));
 );
@@ -906,12 +908,13 @@ MIDIdef.cc(\pnostop, {
 SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level = 0.02|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    //var tri             =   SinOsc.ar(freq!2).fold2(0.9) * envgen * 0.5;
-    var fbmod           =   LFNoise2.kr(dur.reciprocal.dup).range(0.1, 1.0) * LFNoise2.kr(11!2, 1, 1);
-    var sinfb           =   SinOscFB.ar(freq * LFNoise2.kr(0.2!2, 0.005, 1), fb * fbmod).round(0.5);
-    var rlpf            =   RLPF.ar(sinfb, (freq * XLine.kr(pi.squared, pi, 0.1)).clip(30, SampleRate.ir / 3), 1, envgen);
-    var rhpf            =   RHPF.ar(sinfb, (ffreq * XLine.kr(1, 0.25, dur * 0.5)).clip(50, SampleRate.ir / 3), 0.3).round(0.25) * envgen;
-    Out.ar([0, ~bassfxbus], rlpf + rhpf);
+    var sin             =   SinOscFB.ar(freq!2, 0.5, envgen);
+    var freqmod         =   LFNoise2.kr(1!2, 0.03, 1);
+    var fbmod           =   LFNoise2.kr(1!2, 1, 1);
+    var sinfb           =   SinOscFB.ar(freq * freqmod, fb * fbmod).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5);
+    var rlpf            =   RLPF.ar(sinfb, (freq * 4).clip(30, SampleRate.ir / 3), 1, envgen);
+    var rhpf            =   RHPF.ar(sinfb, (ffreq).clip(50, SampleRate.ir / 3)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
+    Out.ar([0, ~bassfxbus], sin + rhpf);
 }).add;
 );
 
@@ -919,15 +922,16 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
 
 (
 //~bassnotes = [-5, -4, -3, -2, -1, 0, 1, 2, 3];
-~bassnotes = [-5, -2, -1, 1];
-~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 2, Pseq([0.75], 3), 3, 4, 6, 24];
+~bassnotes = (-2..-1) ++ (1..3);
+~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24];
+//~bassdurations = [0.25, 0.5, 0.75, 1, 1.5].stutter(17);
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
         \degree, Pseq([Pshuf(~bassnotes.stutter(4)), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
-        \fb, Pshuf([0.25, 0.5, 1, 2].stutter(5), inf),
-        \ffreq, Pshuf([4000, 6000, 8000, 10000, 12000].stutter(7), inf),
+        \fb, Pshuf([0, 0.125, 0.25, 0.5, 1].stutter(5), inf),
+        \ffreq, Pshuf((11..13).stutter(11) * 1000, inf),
         \octave, 3,
 		\scale, ~scale,
 ));
