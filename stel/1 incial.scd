@@ -909,11 +909,10 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, ffreq = 4000, freq = 440, level
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, 0.5, envgen);
-    var freqmod         =   LFNoise2.kr(1!2, 0.03, 1);
     var fbmod           =   LFNoise2.kr(1!2, 1, 1);
-    var sinfb           =   SinOscFB.ar(freq * freqmod, fb * fbmod).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5);
-    var rlpf            =   RLPF.ar(sinfb, (freq * 4).clip(30, SampleRate.ir / 3), 1, envgen);
-    var rhpf            =   RHPF.ar(sinfb, (ffreq).clip(50, SampleRate.ir / 3)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
+    var sinfb           =   SinOscFB.ar(freq!2, fb * fbmod).round(0.5);
+    //var rlpf            =   RLPF.ar(sinfb, (freq * 4).clip(30, SampleRate.ir / 3), 1, envgen);
+    var rhpf            =   RHPF.ar(sinfb, (freq * 64 * XLine.kr(1, 0.5, 0.5)).clip(50, SampleRate.ir / 3)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
     Out.ar([0, ~bassfxbus], sin + rhpf);
 }).add;
 );
@@ -930,7 +929,8 @@ Pdef(\bass,
         \instrument, \abass,
         \degree, Pseq([Pshuf(~bassnotes.stutter(4)), Pseq([Rest], ~bassnotes.size)], inf),
 		\dur, Pshuf(~bassdurations, inf),
-        \fb, Pshuf([0, 0.125, 0.25, 0.5, 1].stutter(5), inf),
+        //\fb, Pshuf([0, 0.125, 0.25, 0.5, 1].stutter(5), inf),
+        \fb, 2.5,
         \ffreq, Pshuf((11..13).stutter(11) * 1000, inf),
         \octave, 3,
 		\scale, ~scale,

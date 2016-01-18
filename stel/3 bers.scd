@@ -17,6 +17,29 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 );
 
 (
+~midiout = MIDIOut(0);
+~midiout.connect(~nanoktrl2.uid);
+);
+
+(
+~midiktrl = { |pdef, chan, clock, controller|
+    MIDIdef.cc(pdef, {
+        if(Pdef(pdef).isPlaying.not) {
+            ~midiout.control(0, chan, 127);
+            Pdef(pdef).play(clock);
+            pdef.post;
+            " play".postln;
+        } {
+            ~midiout.control(0, chan, 0);
+            Pdef(pdef).stop;
+            pdef.post;
+            " stop".postln;
+        }
+    }, chan, srcID: controller.uid);
+}
+);
+
+(
 s.meter;
 t = TempoClock(96/60);
 );
