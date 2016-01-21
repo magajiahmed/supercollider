@@ -11,12 +11,32 @@ c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 //~nanoktrl2 = 1572864;
 ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+~midiout = MIDIOut(0);
+~midiout.connect(~nanoktrl2.uid);
 );
 
 (
 s.meter;
 t = TempoClock(120/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
+);
+
+(
+~midiktrl = { |pdef, chan|
+    MIDIdef.cc(pdef, {
+        if(Pdef(pdef).isPlaying.not) {
+            ~midiout.control(0, chan, 127);
+            Pdef(pdef).play(t);
+            pdef.post;
+            " play".postln;
+        } {
+            ~midiout.control(0, chan, 0);
+            Pdef(pdef).stop;
+            pdef.post;
+            " stop".postln;
+        }
+    }, chan, srcID: ~nanoktrl2.uid);
+}
 );
 
 (
@@ -71,11 +91,11 @@ SynthDef(\pad, { | curve = -128, dur = 1, freq = 400, gate = 1, k = 1, level = 0
 	var env				=	Env.asr(0.03, level, release, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var freqmod			=	LFNoise2.kr(0.1!2, 0.0005, 1);
-    var xline			=	Line.ar(1, 0.02, dur / 4);
+    var xline			=	Line.ar(1, 0.1, dur / 4);
     //var lfn				=	LFNoise0.kr(freq!2).range(0.1, 1.0);
-    var lfn             =   StandardN.ar([47,53], [k, k - 0.01]).range(0, 4);
-    var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn, envgen / 2);
-	var sinfb2			=	SinOscFB.ar(freq, xline, envgen / 2);
+    var lfn             =   StandardN.ar([47,53], [k, k - 0.01]).range(0, 2.5);
+    var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn, envgen * 0.5);
+	var sinfb2			=	SinOscFB.ar(freq, xline, envgen * 0.5);
 	Out.ar(0, sinfb1 + sinfb2);
 }).add;
 );
@@ -151,6 +171,11 @@ MIDIdef.cc(\paddronestop, {
 
 //
 
+~midiktrl.value(\pad1, 33);
+~midiktrl.value(\pad2, 49);
+~midiktrl.value(\pad3, 65);
+
+/*
 (
 MIDIdef.cc(\pad1play, {
     if(Pdef(\pad1).isPlaying.not) {
@@ -202,6 +227,7 @@ MIDIdef.cc(\pad3stop, {
     };
 }, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // SIN
@@ -210,9 +236,9 @@ MIDIdef.cc(\pad3stop, {
 SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.005|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var sin1            =   SinOscFB.ar(freq * LFNoise2.kr(0.2!2, 0.0003, 1), fb, envgen);
-    var sin2            =   SinOscFB.ar([freq - 0.01, freq + 0.01], fb, envgen);
-    Out.ar(0, sin1 + sin2);
+    var sin             =   SinOscFB.ar(freq!2, fb, envgen);
+    var lor             =   SinOsc.ar(freq * 32 * LorenzL.ar(freq * 32, [10, 9.99], mul: 0.1, add: 1), mul: envgen * 0.05);
+    Out.ar(0, sin + lor);
 }).add;
 );
 
@@ -221,8 +247,8 @@ Pdef(\sindrone,
     Pmono(
         \sin,
         \dur, 11,
-        \degree, [0, -5],
-        \fb, 0.1,
+        \degree, [-5, 0],
+        \fb, 0.2,
         \octave, 5,
         \release, 0.1,
         \scale, ~scale
@@ -241,7 +267,7 @@ Pdef(\sin,
         \instrument, \sin,
         \degree, ~chord,
         \dur, 53,
-        \fb, 0.05,
+        \fb, 0.2,
         \legato, 0.5,
         \octave, 5,
         \scale, ~scale
@@ -260,7 +286,7 @@ Pdef(\sinlo,
         \instrument, \sin,
         \dur, 73,
         \degree, 2,
-        \fb, 0.3,
+        \fb, 0.5,
         \legato, 0.5,
         \octave, [3, 4],
         \scale, ~scale
@@ -273,6 +299,11 @@ Pdef(\sinlo).isPlaying;
 Pdef(\sinlo).stop;
 */
 
+~midiktrl.value(\sindrone, 32);
+~midiktrl.value(\sin, 48);
+~midiktrl.value(\sinlo, 64);
+
+/*
 (
 MIDIdef.cc(\sindroneplay, {
 	if(Pdef(\sindrone).isPlaying.not) {
@@ -320,6 +351,7 @@ MIDIdef.cc(\sinlostop, {
     }
 }, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // KLK
@@ -351,6 +383,9 @@ Pdef(\klk,
 Pdef(\klk).play(t);
 */
 
+~midiktrl.value(\klk, 34);
+
+/*
 (
 MIDIdef.cc(\klkplay, {
     if(Pdef(\klk).isPlaying.not) {
@@ -366,6 +401,7 @@ MIDIdef.cc(\klkstop, {
     }
 }, 34, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // KIK
@@ -396,6 +432,7 @@ Pdef(\prcpat1,
 		\level, ~prcpatlevel1,
 		\degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
         \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
+        //\octave, 14,
 		\scale, ~scale,
 		\releaseTime, 0.5
 ));
@@ -424,6 +461,9 @@ Pdef(\prcpar).isPlaying;
 Pdef(\prcpar).stop;
 */
 
+~midiktrl.value(\prcpar, 50);
+
+/*
 (
 MIDIdef.cc(\prcparplay, {
 	if(Pdef(\prcpar).isPlaying.not) {
@@ -439,6 +479,7 @@ MIDIdef.cc(\prcparstop, {
     };
 }, 50, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////
 // MURKY
@@ -496,6 +537,9 @@ Pdef(\murkys).isPlaying;
 Pdef(\murkys).stop;
 */
 
+~midiktrl.value(\murkys, 66);
+
+/*
 (
 MIDIdef.cc(\murkyplay, {
     if(Pdef(\murkys).isPlaying.not) {
@@ -511,3 +555,4 @@ MIDIdef.cc(\murkystop, {
     }
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
+*/
