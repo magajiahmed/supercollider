@@ -9,13 +9,13 @@ Pdef.removeAll;
 MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
-c.free;
-c = MIDIdef.noteOn(\ccpostln, { |...args| args.postln; });
+MIDIdef.cc(\ccpostln, { |...args| args.postln; });
+MIDIdef.noteOn(\noteonpostln, { |...args| args.postln; });
 //~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
 ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad Mini") };
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
 //if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
-if(~lpm.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 ~midiout =  MIDIOut(0);
 ~midiout.connect(~lpm.uid);
 );
@@ -1283,3 +1283,33 @@ MIDIdef.cc(\plunk3stopktrl, {
     s.sync;
     Pdef(\verbs).play(t);
 }.fork;
+
+////////////////////////////////////////////////////////////////
+// SCENES
+
+(
+~scenetoggle = { |scene, light, patterns, patternlights|
+    var scenestatus;
+    MIDIdef.cc(scene, {
+        if(scenestatus.isNil) {
+            ~midiout.control(0, light, 127);
+            patternlights.do({ |l| ~midiout.noteOn(0, l, 127) });
+            patterns.do({ |s| Pdef(s).play(t) });
+            scenestatus = "playing";
+        } {
+            ~midiout.control(0, light, 0);
+            patterns.do({ |s| Pdef(s).stop });
+            patternlights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = nil;
+        }
+    }, light, srcID: ~lpm.uid, argTemplate: { |a| a > 0 });
+}
+);
+
+~scene1 = [\dinglepar2, \snappat, \xaos, \paddrones, \bass, \buffpat];
+~scene1lights = [32, 48, 64, 51, 37, 53];
+~scenetoggle.value(\scene1, 104, ~scene1, ~scene1lights);
+
+~scene2 = [\single1, \sinprc, \pnos, \pnochord];
+~scene2lights = [33, 65, 36, 52];
+~scenetoggle.value(\scene2, 105, ~scene2, ~scene2lights);
