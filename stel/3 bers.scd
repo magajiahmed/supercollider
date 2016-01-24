@@ -5,39 +5,7 @@
 
 Pdef.removeAll;
 
-( //midi
-MIDIdef.freeAll;
-MIDIClient.init;
-MIDIIn.connectAll;
-c.free;
-c = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
-~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
-// Fallback if MIDI controller not actually attached, but still want to play stuff.
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
-);
-
-(
-~midiout = MIDIOut(0);
-~midiout.connect(~nanoktrl2.uid);
-);
-
-(
-~midiktrl = { |pdef, chan, clock, controller|
-    MIDIdef.cc(pdef, {
-        if(Pdef(pdef).isPlaying.not) {
-            ~midiout.control(0, chan, 127);
-            Pdef(pdef).play(clock);
-            pdef.post;
-            " play".postln;
-        } {
-            ~midiout.control(0, chan, 0);
-            Pdef(pdef).stop;
-            pdef.post;
-            " stop".postln;
-        }
-    }, chan, srcID: controller.uid);
-}
-);
+// init
 
 (
 s.meter;
@@ -53,6 +21,42 @@ t = TempoClock(96/60);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 );
+
+// midi
+(
+MIDIdef.freeAll;
+MIDIClient.init;
+MIDIIn.connectAll;
+c.free;
+c = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
+~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad") };
+// Fallback if MIDI controller not actually attached, but still want to play stuff.
+if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+);
+
+(
+~midiout = MIDIOut(0);
+~midiout.connect(~lpm.uid);
+);
+
+(
+~midiktrl = { |pdef, note|
+    MIDIdef.noteOn(pdef, {
+        if(Pdef(pdef).isPlaying.not) {
+            ~midiout.noteOn(0, note, 127);
+            Pdef(pdef).play(t);
+            pdef.post;
+            " play".postln;
+        } {
+            ~midiout.noteOn(0, note, 0);
+            Pdef(pdef).stop;
+            pdef.post;
+            " stop".postln;
+        }
+    }, note, srcID: ~lpm.uid);
+}
+);
+
 
 ////////////////////////////////////////////////////////
 // RECORDING
@@ -248,6 +252,11 @@ Pdef(\pnobass1).isPlaying;
 Pdef(\pnobass1).stop;
 */
 
+~midiktrl.value(\pnopulse1, 32);
+~midiktrl.value(\pnopulse2, 48);
+~midiktrl.value(\pnobass1, 64);
+
+/*
 (
 MIDIdef.cc(\pnopulseplay, {
     if(Pdef(\pnopulse1).isPlaying.not) {
@@ -295,6 +304,7 @@ MIDIdef.cc(\pnobassstop, {
 	}
 }, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // prc
@@ -480,6 +490,14 @@ Pdef(\prc8).isPlaying;
 Pdef(\prc8).stop;
 */
 
+~midiktrl.value(\prc3, 33);
+~midiktrl.value(\prc2, 49);
+~midiktrl.value(\prc1, 65);
+~midiktrl.value(\prc4, 34);
+~midiktrl.value(\prc5, 50);
+~midiktrl.value(\prc8, 66);
+
+/*
 (
 MIDIdef.cc(\prc3play, {
 	if(Pdef(\prc3).isPlaying.not) {
@@ -575,6 +593,7 @@ MIDIdef.cc(\prc8stop, {
     }
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/
 
 ////////////////////////////////////////////////////////////////
 // PAD2
@@ -649,6 +668,11 @@ Pdef(\pad2pat3).stop;
 
 // Midi Control
 
+~midiktrl.value(\pad2pat, 35);
+~midiktrl.value(\pad2pat2, 51);
+~midiktrl.value(\pad2pat3, 67);
+
+/*
 (
 MIDIdef.cc(\pad2playktrl, {
 	if(Pdef(\pad2pat).isPlaying.not) {
@@ -696,3 +720,4 @@ MIDIdef.cc(\pad2cstopktrl, {
     }
 }, 67, srcID: ~nanoktrl2.uid, argTemplate: 0);
 );
+*/

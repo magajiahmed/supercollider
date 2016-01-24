@@ -1,35 +1,6 @@
+// init
+
 Pdef.removeAll;
-
-(
-//midi
-MIDIdef.freeAll;
-MIDIClient.init;
-MIDIIn.connectAll;
-MIDIdef.cc(\midiccpostln, { |...args| args.postln });
-~nanoktrl2 = MIDIClient.sources.detect{ |s| s.name.contains("nanoKONTROL2")};
-// Fallback if MIDI controller not actually attached, but still want to play stuff.
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |s| s.name.contains("out0") } };
-~midiout = MIDIOut(0);
-~midiout.connect(~nanoktrl2.uid);
-);
-
-(
-~midiktrl = { |pdef, chan, clock, controller|
-    MIDIdef.cc(pdef, {
-        if(Pdef(pdef).isPlaying.not) {
-            ~midiout.control(0, chan, 127);
-            Pdef(pdef).play(clock);
-            pdef.post;
-            " play".postln;
-        } {
-            ~midiout.control(0, chan, 0);
-            Pdef(pdef).stop;
-            pdef.post;
-            " stop".postln;
-        }
-    }, chan, srcID: controller.uid);
-}
-);
 
 (
 s.meter;
@@ -39,6 +10,41 @@ s.meter;
 ~bassfxbus = Bus.audio(s, 2);
 );
 
+// midi
+
+(
+MIDIdef.freeAll;
+MIDIClient.init;
+MIDIIn.connectAll;
+MIDIdef.cc(\midiccpostln, { |...args| args.postln });
+MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
+~lpm = MIDIClient.sources.detect{ |s| s.name.contains("Launchpad") };
+// Fallback if MIDI controller not actually attached, but still want to play stuff.
+if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |s| s.name.contains("out0") } };
+~midiout = MIDIOut(0);
+~midiout.connect(~lpm.uid);
+);
+
+(
+~midiktrl = { |pdef, chan|
+    MIDIdef.noteOn(pdef, {
+        if(Pdef(pdef).isPlaying.not) {
+            ~midiout.noteOn(0, chan, 127);
+            Pdef(pdef).play(~tempo);
+            pdef.post;
+            " play".postln;
+        } {
+            ~midiout.noteOn(0, chan, 0);
+            Pdef(pdef).stop;
+            pdef.post;
+            " stop".postln;
+        }
+    }, chan, srcID: ~lpm.uid);
+}
+);
+
+// pitch logic
+
 (
 ~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 1024/729, 3/2, 14/9, 7/4];
 ~tuning = Tuning.new(~ratios.ratiomidi);
@@ -46,6 +52,8 @@ s.meter;
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 );
+
+// record
 
 /*
 s.prepareForRecord;
@@ -87,9 +95,9 @@ Pdef(\sinfbdrone2, Pmono(\sinfbdrone, \degree, [0, 7, 10, 17], \octave, 4, \scal
 
 // midi
 
-~midiktrl.value(\sinfbdrone0, 33, ~tempo, ~nanoktrl2);
-~midiktrl.value(\sinfbdrone1, 49, ~tempo, ~nanoktrl2);
-~midiktrl.value(\sinfbdrone2, 65, ~tempo, ~nanoktrl2);
+~midiktrl.value(\sinfbdrone0, 33);
+~midiktrl.value(\sinfbdrone1, 49);
+~midiktrl.value(\sinfbdrone2, 65);
 
 /*
 Pdef(\sinfbdrone0).play(~tempo, quant: 1);
@@ -361,7 +369,7 @@ Pdef(\basswithstutter, Ppar([Pdef(\basspat), Pdef(\rbpdef), Pdef(\pbpar)], inf))
 
 // midi
 
-~midiktrl.value(\basswithstutter, 32, ~tempo, ~nanoktrl2);
+~midiktrl.value(\basswithstutter, 32);
 
 /*
 (
@@ -464,7 +472,7 @@ Pdef(\snrs, Ppar([Pdef(\snrpar0), Pdef(\snrpar2), Pdef(\snrpar2)]));
 
 // Midi Control
 
-~midiktrl.value(\snrs, 34, ~tempo, ~nanoktrl2);
+~midiktrl.value(\snrs, 34);
 
 /*
 (
@@ -580,9 +588,9 @@ Pdef(\hatpulse).stop
 
 // Midi Control
 
-~midiktrl.value(\hatpar0, 35, ~tempo, ~nanoktrl2);
-~midiktrl.value(\hatpat1, 51, ~tempo, ~nanoktrl2);
-~midiktrl.value(\hatpulse, 67, ~tempo, ~nanoktrl2);
+~midiktrl.value(\hatpar0, 35);
+~midiktrl.value(\hatpat1, 51);
+~midiktrl.value(\hatpulse, 67);
 
 /*
 (
@@ -744,8 +752,8 @@ Pdef(\crumble4).stop;
 
 // Midi Control
 
-~midiktrl.value(\crumblepar0, 36, ~tempo, ~nanoktrl2);
-~midiktrl.value(\crumble4, 52, ~tempo, ~nanoktrl2);
+~midiktrl.value(\crumblepar0, 36);
+~midiktrl.value(\crumble4, 52);
 
 /*
 (
@@ -851,8 +859,8 @@ Pdef(\pno2pat1).stop;
 
 // Midi Control
 
-~midiktrl.value(\pno2pat0, 37, ~tempo, ~nanoktrl2);
-~midiktrl.value(\pno2pat1, 53, ~tempo, ~nanoktrl2);
+~midiktrl.value(\pno2pat0, 37);
+~midiktrl.value(\pno2pat1, 53);
 
 /*
 (
@@ -954,8 +962,8 @@ Pdef(\paddrone).stop;
 
 // Midi Control
 
-~midiktrl.value(\padpat0, 38, ~tempo, ~nanoktrl2);
-~midiktrl.value(\paddrone, 54, ~tempo, ~nanoktrl2);
+~midiktrl.value(\padpat0, 38);
+~midiktrl.value(\paddrone, 54);
 
 /*
 (
@@ -1004,18 +1012,20 @@ MIDIdef.cc(\paddronestopktrl, {
 ~scene2 = [Pdef(\sinfbdrone2), Pdef(\basswithstutter), Pdef(\hatpat1), Pdef(\hatpulse), Pdef(\snrs), Pdef(\crumblepar0), Pdef(\crumble4)];
 ~scene2lights = [65, 32, 51, 67, 34, 36, 52];
 MIDIdef.cc(\scene1, {
-    ~midiout.control(0, 45, 0);
-    ~scene1lights.do({ |m| ~midiout.control(0, m, 127) });
+    ~midiout.control(0, 105, 0);
+    ~midiout.control(0, 104, 127);
+    ~scene1lights.do({ |m| ~midiout.noteOn(0, m, 127) });
     ~scene1.do({ |p| p.play(~tempo) });
-    ~scene2lights.do({ |m| ~midiout.control(0, m, 0) });
+    ~scene2lights.do({ |m| ~midiout.noteOn(0, m, 0) });
     ~scene2.do({ |p| p.stop });
-}, 45, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
+}, 104, srcID: ~lpm.uid, argTemplate: { |x| x > 0 });
 
 MIDIdef.cc(\scene2, {
-    ~midiout.control(0, 45, 127);
-    ~scene2lights.do({ |m| ~midiout.control(0, m, 127) });
+    ~midiout.control(0, 104, 0);
+    ~midiout.control(0, 105, 127);
+    ~scene2lights.do({ |m| ~midiout.noteOn(0, m, 127) });
     ~scene2.do({ |p| p.play(~tempo) });
     ~scene1lights.do({ |m| ~midiout.control(0, m, 0) });
     ~scene1.do({ |p| p.stop });
-}, 45, srcID: ~nanoktrl2.uid, argTemplate: 0);
+}, 105, srcID: ~lpm.uid, argTemplate: { |x| x > 0 });
 );

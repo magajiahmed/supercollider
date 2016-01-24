@@ -1,16 +1,6 @@
 Pdef.removeAll;
 
-//midi
-//
-MIDIClient.init;
-MIDIIn.connectAll;
-MIDIdef.freeAll;
-MIDIdef.cc(\midiccpostln, { |...args| args.postln });
-~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
-// Fallback if MIDI controller not actually attached, but still want to play stuff.
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
-
-
+// pitch logic
 (
 ~root = 0;
 ~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 12/7, 7/4, 15/8];
@@ -19,31 +9,45 @@ if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contai
 ~scale = Scale.new((0..11), 12, ~tuning);
 );
 
+// time
 ~tempo = TempoClock(90/60);
 
+//midi
 (
-~midiout = MIDIOut(0);
-~midiout.connect(~nanoktrl2.uid);
+MIDIClient.init;
+MIDIIn.connectAll;
+MIDIdef.freeAll;
+MIDIdef.cc(\midiccpostln, { |...args| args.postln });
+MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
+~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad") };
+// Fallback if MIDI controller not actually attached, but still want to play stuff.
+if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 );
 
 (
-~midiktrl = { |pdef, chan|
-    MIDIdef.cc(pdef, {
+~midiout = MIDIOut(0);
+~midiout.connect(~lpm.uid);
+);
+
+(
+~midiktrl = { |pdef, note|
+    MIDIdef.noteOn(pdef, {
         if(Pdef(pdef).isPlaying.not) {
-            ~midiout.control(0, chan, 127);
+            ~midiout.noteOn(0, note, 127);
             Pdef(pdef).play(~tempo);
             pdef.post;
             " play".postln;
         } {
-            ~midiout.control(0, chan, 0);
+            ~midiout.noteOn(0, note, 0);
             Pdef(pdef).stop;
             pdef.post;
             " stop".postln;
         }
-    }, chan, srcID: ~nanoktrl2.uid);
+    }, note, srcID: ~lpm.uid);
 }
 );
 
+// record
 /*
 s.prepareForRecord;
 s.record;
@@ -723,7 +727,7 @@ SynthDef(\string, { |delaytime = 0.03, dur = 1, fb = 0, freq = 440, gate = 1, le
 */
 
 (
-SynthDef(\string, { |dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.1, xlinestart = 1|
+SynthDef(\string, { |dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.02, xlinestart = 1|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var xline           =   XLine.kr(xlinestart, 1, dur / 2);

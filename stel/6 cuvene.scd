@@ -4,15 +4,12 @@ Pdef.removeAll;
 MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
-c.free;
-c = MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
-//~nanoktrl2 = 1310720;
-//~nanoktrl2 = 1835008;
-//~nanoktrl2 = 1572864;
-~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
+MIDIdef.noteOn(\noteonpostln, { arg ...args; args.postln; });
+~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad") };
+if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 ~midiout = MIDIOut(0);
-~midiout.connect(~nanoktrl2.uid);
+~midiout.connect(~lpm.uid);
 );
 
 (
@@ -22,20 +19,20 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
-~midiktrl = { |pdef, chan|
-    MIDIdef.cc(pdef, {
+~midiktrl = { |pdef, note|
+    MIDIdef.noteOn(pdef, {
         if(Pdef(pdef).isPlaying.not) {
-            ~midiout.control(0, chan, 127);
+            ~midiout.noteOn(0, note, 127);
             Pdef(pdef).play(t);
             pdef.post;
             " play".postln;
         } {
-            ~midiout.control(0, chan, 0);
+            ~midiout.noteOn(0, note, 0);
             Pdef(pdef).stop;
             pdef.post;
             " stop".postln;
         }
-    }, chan, srcID: ~nanoktrl2.uid);
+    }, note, srcID: ~lpm.uid);
 }
 );
 

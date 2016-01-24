@@ -10,12 +10,14 @@ MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
 c.free;
-c = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
-~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
+c = MIDIdef.noteOn(\ccpostln, { |...args| args.postln; });
+//~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("nanoKONTROL2")};
+~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad Mini") };
 // Fallback if MIDI controller not actually attached, but still want to play stuff.
-if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+//if(~nanoktrl2.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+if(~lpm.isNil) { ~nanoktrl2 = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 ~midiout =  MIDIOut(0);
-~midiout.connect(~nanoktrl2.uid);
+~midiout.connect(~lpm.uid);
 );
 
 
@@ -26,20 +28,20 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
-~midiktrl = { |pdef, chan|
-    MIDIdef.cc(pdef, {
+~midiktrl = { |pdef, note|
+    MIDIdef.noteOn(pdef, {
         if(Pdef(pdef).isPlaying.not) {
-            ~midiout.control(0, chan, 127);
+            ~midiout.noteOn(0, note, 127);
             Pdef(pdef).play(t);
             pdef.post;
             " play".postln;
         } {
-            ~midiout.control(0, chan, 0);
+            ~midiout.noteOn(0, note, 0);
             Pdef(pdef).stop;
             pdef.post;
             " stop".postln;
         }
-    }, chan, srcID: ~nanoktrl2.uid);
+    }, note, srcID: ~lpm.uid);
 }
 );
 
@@ -885,6 +887,7 @@ Pdef(\pnochord,
         \dur, Pshuf([13, 17, 19], inf),
         \fb, Pshuf([0, 0.125, 0.25, 0.5, 1], inf),
         \level, 0.003,
+        \octave, 6,
         \scale, ~scale
 ));
 );
@@ -924,12 +927,13 @@ MIDIdef.cc(\pnostop, {
 // SynthDef
 
 (
-SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
+SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sin             =   SinOscFB.ar([freq - 0.03, freq + 0.03], 0.8, envgen);
     var fbmod           =   LFNoise2.kr(3!2, 1, 1) * LFNoise2.kr(11!2, 1, 1);
-    var sinfb           =   SinOscFB.ar([freq + 0.03, freq - 0.03], fb * fbmod).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
+    var sinfreqmod      =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.2), 0, carrier_amp * XLine.kr(1, 0.1, 0.2), 1);
+    var sin             =   SinOscFB.ar(freq!2 * sinfreqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
+    var sinfb           =   SinOscFB.ar(freq, fb * fbmod) * envgen;
     Out.ar([0, ~bassfxbus], sin + sinfb);
 }).add;
 );
@@ -939,14 +943,17 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
 (
 //~bassnotes = [-5, -4, -3, -2, -1, 0, 1, 2, 3];
 ~bassnotes = (-5..3);
-~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12];
-//~bassdurations = [0.25, 0.5, 0.75, 1, 1.5].stutter(17);
+//~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12];
+~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 8, 12];
+//~bassdurations = Array.fill(23, { |d| (d + 1) * 0.25 });
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \degree, Pseq([Pshuf(~bassnotes.stutter(4)), Pseq([Rest], ~bassnotes.size)], inf),
-		\dur, Pshuf(~bassdurations, inf),
-        \fb, Pshuf([0, 0.125, 0.25, 0.5, 1].stutter(5), inf),
+        \carrier_amp, Pshuf([10, 20, 30, 40, 50, 60, 70].stutter(3), inf),
+        \carrier_ratio, 4,
+        \degree, Pseq([Pshuf(~bassnotes, 4), Pseq([Rest], ~bassnotes.size)], inf),
+        \dur, Pshuf(~bassdurations.stutter(3), inf),
+        \fb, Pshuf([0.25, 0.5, 0.75].stutter(5), inf),
         \octave, 3,
 		\scale, ~scale,
 ));
@@ -954,6 +961,8 @@ Pdef(\bass,
 Pdef(\bass2,
     Pbind(
         \instrument, \abass,
+        \carrier_amp, 8,
+        \carrier_ratio, 4,
         \degree, 0,
         \dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf([0.25, 0.5, 1].stutter(7), inf),
@@ -1035,7 +1044,7 @@ SynthDef(\bufrd, { | dur = 1, ffreq = 3000, gate = 1, level = 1, pan = 0 |
 	var env				=	Env.asr(0.003, level, 0.1);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
 	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
-	var rhpf			=	RHPF.ar(bufrd, ffreq, 0.3, envgen * 2);
+    var rhpf			=	RHPF.ar(bufrd, ffreq.clip(50, SampleRate.ir / 2.5), 0.3, envgen * 2);
 	var pan2			=	Pan2.ar(rhpf, pan);
 	Out.ar(0, pan2);
 }).add;
