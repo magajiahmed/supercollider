@@ -190,13 +190,13 @@ Pdef(\single1,
         \curve, -64,
         \degree, 7,
         \dur, Pshuf(Array.fill(5, { |d| (d + 1) * 0.25 }).stutter(5), inf),
-        \level, Pshuf([0.2, 1].stutter(5) * 0.2, inf),
+        \level, Pshuf([0.2, 1].stutter(5) * 0.3, inf),
         \octave, 7,
         \pan, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
         \scale, ~scale
 ));
 
-Pdef(\single2, Pbindf(Pdef(\single1), \dur, 0.25, \level, 0.04));
+Pdef(\single2, Pbindf(Pdef(\single1), \dur, 0.25, \level, 0.06));
 );
 
 /*
@@ -863,7 +863,7 @@ Pdef(\pno1,
         \degree, 0,
         \dur, Prand([0.75, 1.25, 2.25, 3.25, 5], inf),
         \fb, 0,
-        \level, Prand([0.2, 1] * 0.005, inf),
+        \level, Prand([0.2, 1] * 0.02, inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -927,14 +927,15 @@ MIDIdef.cc(\pnostop, {
 // SynthDef
 
 (
-SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.01|
+SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.02|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var fbmod           =   LFNoise2.kr(3!2, 1, 1) * LFNoise2.kr(11!2, 1, 1);
-    var sinfreqmod      =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.2), 0, carrier_amp * XLine.kr(1, 0.1, 0.2), 1);
-    var sin             =   SinOscFB.ar(freq!2 * sinfreqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
-    var sinfb           =   SinOscFB.ar(freq, fb * fbmod) * envgen;
-    Out.ar([0, ~bassfxbus], sin + sinfb);
+    var sinfb1freqmod   =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.2), 0, carrier_amp * XLine.kr(1, 0.1, 0.2), 1);
+    var sinfb1          =   SinOscFB.ar(freq!2 * sinfb1freqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
+    var sinfb2          =   SinOscFB.ar(freq, fb * fbmod) * envgen;
+    var tri             =   LFTri.ar(freq!2, mul: envgen);
+    Out.ar([0, ~bassfxbus], sinfb1 + sinfb2 + tri);
 }).add;
 );
 
@@ -961,7 +962,7 @@ Pdef(\bass,
 Pdef(\bass2,
     Pbind(
         \instrument, \abass,
-        \carrier_amp, 8,
+        \carrier_amp, Pshuf([4, 8, 16, 32], inf),
         \carrier_ratio, 4,
         \degree, 0,
         \dur, Pshuf(~bassdurations, inf),
@@ -1306,10 +1307,26 @@ MIDIdef.cc(\plunk3stopktrl, {
 }
 );
 
-~scene1 = [\dinglepar2, \snappat, \xaos, \paddrones, \bass, \buffpat];
-~scene1lights = [32, 48, 64, 51, 37, 53];
+(
+~scene1 = [\xaos, \pads, \paddrones, \bass, \buffpat];
+~scene1lights = [64, 35, 51, 37, 53];
 ~scenetoggle.value(\scene1, 104, ~scene1, ~scene1lights);
+);
 
+(
 ~scene2 = [\single1, \sinprc, \pnos, \pnochord];
 ~scene2lights = [33, 65, 36, 52];
 ~scenetoggle.value(\scene2, 105, ~scene2, ~scene2lights);
+);
+
+(
+~scene3 = [\cnprcpar, \cnprc3, \paddrones, \bass, \buffpat];
+~scene3lights = [34, 50, 51, 37, 53];
+~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
+);
+
+(
+~scene4 = [\dinglepar, \snappat, \xaos, \single1, \single2, \sinprc, \cnprcpar, \cnprc3, \lori, \larrys, \pnochord, \buffpat, \bass2, \plunkpat1, \plunkpat2, \plunkpat3];
+~scene4lights = [32, 48, 64, 33, 49, 65, 34, 50, 66, 67, 52, 53, 69, 38, 54, 70];
+~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
+);
