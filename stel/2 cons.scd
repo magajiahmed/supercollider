@@ -539,7 +539,7 @@ Pdef(\hatpat0l,
         \dur, Pshuf([
 			0.25, 0.5, 0.75,
 			Pseq([1/5], 5), Pseq([1/6], 6), Pseq([1/7], 7),
-			1, 1.5, 2, 3, 4, 6
+			1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24
 		], inf),
 		\level, Prand([0.2, 1] * ~hatlvl, inf),
         \degree, [0, 7],
@@ -673,22 +673,43 @@ MIDIdef.cc(\hatpulsestopktrl, {
 // CRUMBLE /////////////////////////////////////////////////////
 
 (
-SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -32, dur = 1, freq = 100, gate = 0.1, level = 1, outbus = 0, pan = 0 |
-    var env             =   Env.asr(0.01, level, 0.1, curve);
+SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -4, dur = 1, freq = 100, gate = 0.1, level = 0.1, outbus = 0, pan = 0 |
+    var env             =   Env.asr(0.1, level, 0.1, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	5;
 	var mix				=	Mix.fill(n, {
 		|i|
 		var clipn			=	LFClipNoise.kr(50!2).range(0.5, 1);
-		var cusp			=	CuspL.ar(a: a, b: b, mul: (envgen * clipn) / n);
+		var cusp			=	CuspL.ar(a: a, b: b, mul: clipn / n);
 		BPF.ar(cusp, (freq * (((3/2)) ** i)).clip(50, SampleRate.ir / 3), bwr, (100 / (i + 1)));
 	});
-    var flt				=	RLPF.ar(mix, freq * 12, 0.1) * LFBrownNoise0.kr(50!2).range(0.5, 1).round(0.5);
-	Out.ar(outbus, flt);
+    var flt				=	RLPF.ar(mix, (freq * 12).clip(50, SampleRate.ir / 2.5), 0.1, envgen) * LFBrownNoise0.kr(50!2).range(0.5, 1).round(0.5);
+    Out.ar(outbus, flt.fold2(level));
 }).add;
 );
 
 // Patterns
+
+(
+Pdef(\crumblechord,
+    Pbind(
+        \instrument, \crumble,
+        \a, 0.1,
+        \bwr, 0.003,
+        \curve, 0,
+        \degree, [7, 10],
+        \dur, Pshuf([53, 59, 61], inf),
+        \legato, 0.5,
+        \level, 0.05,
+        \octave, 5,
+        \scale, ~scale
+));
+);
+
+/*
+Pdef(\crumblechord).play(t);
+Pdef(\crumblechord).stop;
+*/
 
 (
 Pdef(\crumble0,
@@ -752,8 +773,9 @@ Pdef(\crumble4).stop;
 
 // Midi Control
 
-~midiktrl.value(\crumblepar0, 36);
-~midiktrl.value(\crumble4, 52);
+~midiktrl.value(\crumblechord, 36);
+~midiktrl.value(\crumblepar0, 52);
+~midiktrl.value(\crumble4, 68);
 
 /*
 (
@@ -1010,7 +1032,7 @@ MIDIdef.cc(\paddronestopktrl, {
 ~scene1 = [Pdef(\sinfbdrone1), Pdef(\hatpar0)];
 ~scene1lights = [49, 35];
 ~scene2 = [Pdef(\sinfbdrone2), Pdef(\basswithstutter), Pdef(\hatpat1), Pdef(\hatpulse), Pdef(\snrs), Pdef(\crumblepar0), Pdef(\crumble4)];
-~scene2lights = [65, 32, 51, 67, 34, 36, 52];
+~scene2lights = [65, 32, 51, 67, 34, 52, 68];
 MIDIdef.cc(\scene1, {
     ~midiout.control(0, 105, 0);
     ~midiout.control(0, 104, 127);
@@ -1025,7 +1047,7 @@ MIDIdef.cc(\scene2, {
     ~midiout.control(0, 105, 127);
     ~scene2lights.do({ |m| ~midiout.noteOn(0, m, 127) });
     ~scene2.do({ |p| p.play(~tempo) });
-    ~scene1lights.do({ |m| ~midiout.control(0, m, 0) });
+    ~scene1lights.do({ |m| ~midiout.noteOn(0, m, 0) });
     ~scene1.do({ |p| p.stop });
 }, 105, srcID: ~lpm.uid, argTemplate: { |x| x > 0 });
 );
