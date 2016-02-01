@@ -761,8 +761,8 @@ Pdef(\larry1,
         \curve, -32,
         \dur, Pshuf(Array.fill(5, { |i| (i + 9).nthPrime }) + 0.25, inf),
         \fb, 0,
-        \legato, 0.5,
-        \degree, Pseq([[7, 12], Rest], inf),
+        \legato, 1,
+        \degree, Pseq([[7, 10, 12, 13], Rest], inf),
         \octave, 5,
         \s, Pwhite(8.0, 12.0, inf),
         \scale, ~scale
@@ -781,9 +781,10 @@ Pdef(\larry3,
         \degree, Pshuf([[7, 12, 13], Rest], inf)
 ));
 
-Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pshuf([0, Rest], inf), \octave, 4));
+Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pseq([0, Rest], inf), \legato, 1, \octave, [2, 3, 4]));
 
-Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
+//Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
+Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry4)], inf));
 );
 
 /*
@@ -861,9 +862,9 @@ Pdef(\pno1,
         \instrument, \pno,
         \curve, -4,
         \degree, 0,
-        \dur, Prand([0.75, 1.25, 2.25, 3.25, 5], inf),
+        \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25], inf),
         \fb, 0,
-        \level, Prand([0.2, 1] * 0.02, inf),
+        \level, Prand([0.2, 1] * 0.005, inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -964,7 +965,7 @@ Pdef(\bass2,
         \instrument, \abass,
         \carrier_amp, Pshuf([4, 8, 16, 32], inf),
         \carrier_ratio, 4,
-        \degree, 0,
+        \degree, Pseq([Pseq([0], 3), 1, Pseq([0], 5), 1, Pseq([0], 7), 1], inf),
         \dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf([0.25, 0.5, 1].stutter(7), inf),
         \octave, 3,
@@ -1139,7 +1140,7 @@ Pdef(\plunkpat1,
 		\instrument, \plunk,
         \a, Pshuf((5..10) / 5, inf),
         \curve, -16,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24, 32, 48, 64, 96], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 16, 24, 32, 48], inf),
         \degree, 0,
         \fb, Pshuf(([0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]), inf),
         \octave, 6,
@@ -1308,25 +1309,31 @@ MIDIdef.cc(\plunk3stopktrl, {
 );
 
 (
-~scene1 = [\xaos, \pads, \paddrones, \bass, \buffpat];
-~scene1lights = [64, 35, 51, 37, 53];
+~scene1 = [\dinglepar2, \snappat, \xaos, \pads, \paddrones, \bass, \buffpat];
+~scene1lights = [32, 48, 64, 35, 51, 37, 53];
 ~scenetoggle.value(\scene1, 104, ~scene1, ~scene1lights);
 );
 
 (
-~scene2 = [\single1, \sinprc, \pnos, \pnochord];
-~scene2lights = [33, 65, 36, 52];
+~scene2 = [\single1, \sinprc, \larrys, \pnos, \pnochord];
+~scene2lights = [33, 65, 67, 36, 52];
 ~scenetoggle.value(\scene2, 105, ~scene2, ~scene2lights);
 );
 
 (
-~scene3 = [\cnprcpar, \cnprc3, \paddrones, \bass, \buffpat];
-~scene3lights = [34, 50, 51, 37, 53];
+~scene3 = [\cnprcpar, \cnprc3, \pads, \paddrones, \bass, \buffpat];
+~scene3lights = [34, 50, 35, 51, 37, 53];
 ~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
 );
 
 (
-~scene4 = [\dinglepar, \snappat, \xaos, \single1, \single2, \sinprc, \cnprcpar, \cnprc3, \lori, \larrys, \pnochord, \buffpat, \bass2, \plunkpat1, \plunkpat2, \plunkpat3];
-~scene4lights = [32, 48, 64, 33, 49, 65, 34, 50, 66, 67, 52, 53, 69, 38, 54, 70];
+~scene4 = [\single1, \sinprc, \lori, \larrys, \pnos, \pnochord, \plunkpat1, \plunkpat2, \plunkpat3];
+~scene4lights = [33, 65, 66, 67 ,36, 52, 38, 54, 70];
 ~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
+);
+
+(
+~scene5 = [\dinglepar2, \snappat, \xaos, \single1, \single2, \sinprc, \cnprcpar, \cnprc3, \lori, \larrys, \pnos, \pnochord, \buffpat, \bass2, \plunkpat1, \plunkpat2, \plunkpat3];
+~scene5lights = [32, 48, 64, 33, 49, 65, 34, 50, 66, 67, 36, 52, 53, 69, 38, 54, 70];
+~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights);
 );

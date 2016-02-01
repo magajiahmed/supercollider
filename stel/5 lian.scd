@@ -115,7 +115,8 @@ Pdef(\basspat1,
 		\instrument, \bass,
         \curve, -8,
         \degree, 0,
-        \dur, Pshuf([Pseq([4]), Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(13))], inf),
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(13), inf),
+        \dur, Pshuf(Array.fill(11, { |d| (d + 1) * 0.25 }), inf),
         \fb, Pshuf([0, 0.25, 0.5, 1].stutter(7), inf),
         //\ffnoizamt, Pshuf([1, 2, 3, 4], inf),
         //\ffstart, Pshuf([0.1, 0.25, 0.5, 0.75], inf),
@@ -162,7 +163,7 @@ Pdef(\basspar).stop;
 Pdef(\basstwo,
     Pbind(
         \instrument, \bass,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(2), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(2), inf),
         \foldfactor, Pshuf((1..23) * 0.01, inf),
         \octave, Pshuf([3, 4, [3, 4]], inf),
         \scale, ~scale,
@@ -592,20 +593,23 @@ MIDIdef.cc(\wetstop, {
 // PINGLE
 
 (
-SynthDef(\pingle, { | a = 0.02, curve = -16, freq = 10000, level = 0.05, pan = 0 |
-	var env				=	Env.perc(releaseTime: 0.003, level: level, curve: curve);
+SynthDef(\pingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.05, pan = 0|
+	var env				=	Env.perc(releaseTime: 0.05, level: level, curve: curve);
 	var envgen			=	EnvGen.ar(env, doneAction: 2);
-	var pn              =   PinkNoise.ar(envgen!2);
-    var rhpf            =   RHPF.ar(pn, 12000, 0.03);
-    Out.ar(~prcfxbus, (rhpf).fold2(level));
+	//var pn              =   PinkNoise.ar(envgen!2);
+    var pn              =   WhiteNoise.ar(envgen);
+    //var rhpf            =   RHPF.ar(pn, freq.clip(50, SampleRate.ir / 2.5), 0.1);
+    var rhpf            =   Resonz.ar(pn, freq.clip(50, SampleRate.ir / 2.5), 0.003, 10);
+    var pan2            =   Pan2.ar(rhpf, pan);
+    Out.ar(~prcfxbus, (pan2).fold2(level));
 }).add;
 );
 
 // Pattern
 
 (
-~pinglelevel = 0.08;
-~pingleecholevel = ~pinglelevel / 5;
+~pinglelevel = 0.05;
+//~pingleecholevel = ~pinglelevel / 2;
 Pdef(\pinglepat,
 	Pbind(
 		\instrument, \pingle,
@@ -616,13 +620,15 @@ Pdef(\pinglepat,
 			Pxrand([0.75, 1, 1.25], 31)
 		], inf),
         */
-        \dur, Pshuf(Array.fill(9, { |d| Pseq([(d + 1) * 0.25], 3) }).stutter(3), inf),
+        \dur, Pshuf([8, 12, 16].collect({ |d| Pseq([d.reciprocal], d) }) ++ Array.fill(5, { |d| Pseq([(d + 1) * 0.25], 2) }) ++ Array.fill(5, { |d| Pseq([0.25], d) }), inf),
         \level, Pshuf([0.25, 1].stutter(11) * ~pinglelevel, inf),
-		\pan, Pwhite(-1.0, 1.0, inf),
-		\degree, 0,
-        \octave, 10,
+		//\pan, Pwhite(-1.0, 1.0, inf),
+        \degree, 0,
+        \pan, Pseq([-1, -0.5, 0, 0.5, 1].mirror1, inf),
+        \octave, [9, 10],
 		\scale, ~scale
 ));
+
 //Pdef(\pinglepatt, Pbindf(Pdef(\pinglepat), \level, ~pingleecholevel));
 //Pdef(\pingleparf, Ppar([Pdef(\pinglepat), Pdef(\pinglepatt)], inf));
 );

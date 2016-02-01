@@ -88,7 +88,7 @@ SynthDef(\pad, { | curve = -128, dur = 1, freq = 400, gate = 1, k = 1, level = 0
 	var env				=	Env.asr(0.03, level, release, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var freqmod			=	LFNoise2.kr(0.1!2, 0.0005, 1);
-    var xline			=	Line.ar(1, 0.1, dur / 4);
+    var xline			=	Line.ar(1, 0.1, dur / 3);
     //var lfn				=	LFNoise0.kr(freq!2).range(0.1, 1.0);
     var lfn             =   StandardN.ar([47,53], [k, k - 0.01]).range(0, 2.5);
     var sinfb1			=	SinOscFB.ar(freq * freqmod, xline * lfn, envgen * 0.5);
@@ -123,6 +123,7 @@ Pdef(\pad1,
         \release, 0.1,
         \scale, ~scale
 ));
+
 //Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(4), inf));
 
 Pdef(\pad2, Pbindf(Pdef(\pad1), \octave, 5));
@@ -234,7 +235,7 @@ SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.005|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, fb, envgen);
-    var lor             =   SinOsc.ar(freq * 32 * LorenzL.ar(freq * 32, [10, 9.99], mul: 0.1, add: 1), mul: envgen * 0.05);
+    var lor             =   SinOsc.ar(freq * 16 * LorenzL.ar(freq * 32, [10, 9.99], mul: 0.1, add: 1), mul: envgen * 0.1);
     Out.ar(0, sin + lor);
 }).add;
 );
@@ -354,7 +355,7 @@ MIDIdef.cc(\sinlostop, {
 // KLK
 
 (
-SynthDef(\klk, { |curve = -16, freq = 440, level = 0.1, numharm = 100, pan = 0|
+SynthDef(\klk, { |freq = 440, level = 0.1, numharm = 100, pan = 0|
     var env             =   Env.new([0, level, level / 25, 0], [0.005, 0.005, 0.01], );
     var envgen          =   EnvGen.ar(env, doneAction: 2);
     var blip            =   Blip.ar(freq, numharm, envgen);
@@ -370,7 +371,7 @@ Pdef(\klk,
         \dur, Pshuf([0.25, 0.5, Pseq([0.25], 2), 0.75, Pseq([0.25], 3), 1, 1.25, 1.5].stutter(5), inf),
         \level, 0.02,
         \numharm, Pshuf((1..5).stutter(4), inf),
-        \octave, [8, 9],
+        \octave, 10,
         \pan, Pseq([-1, 0, 1].mirror, inf),
         \scale, ~scale
 ));
@@ -415,6 +416,25 @@ SynthDef(\kik, { |a = 1.1, c = 0.13, curve = 0, freq = 22050, level = 0.1, pan =
 );
 
 (
+Pdef(\snr,
+    Pbind(
+        \instrument, \kik,
+        \curve, -64,
+        \degree, 0,
+        \dur, Pxrand([0.25, 0.5, 0.75, 1, 1.25], inf),
+        \level, 0.05,
+        \octave, Pseq([5, Pshuf([5, [7, 8, 9]].stutter(17), inf)]),
+        \releaseTime, 0.3
+));
+);
+
+/*
+Pdef(\snr).play(t);
+Pdef(\snr).isPlaying;
+Pdef(\snr).stop;
+*/
+
+(
 ~kiklevel = 0.25;
 ~prcpatlevel1 = 0.15;
 ~prcpatlevel2 = ~prcpatlevel1 / 5;
@@ -427,9 +447,8 @@ Pdef(\prcpat1,
         //\dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(3), inf),
         \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75], inf),
 		\level, ~prcpatlevel1,
-		\degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
+        \degree, Pseq([Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], 5), Pseq([Rest], 31)], inf),
         \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
-        //\octave, 14,
 		\scale, ~scale,
 		\releaseTime, 0.5
 ));
@@ -443,7 +462,7 @@ Pdef(\prcpat2,
 		\curve, -16,
         \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
         \level, ~kiklevel,
-		\degree, 0!2,
+        \degree, Pseq([Pseq(0!2, 53), Pseq([Rest], 31)], inf),
 		\octave, 5,
 		\releaseTime, 1
 ));
@@ -458,7 +477,8 @@ Pdef(\prcpar).isPlaying;
 Pdef(\prcpar).stop;
 */
 
-~midiktrl.value(\prcpar, 50);
+~midiktrl.value(\snr, 50);
+~midiktrl.value(\prcpar, 66);
 
 /*
 (
@@ -534,7 +554,7 @@ Pdef(\murkys).isPlaying;
 Pdef(\murkys).stop;
 */
 
-~midiktrl.value(\murkys, 66);
+~midiktrl.value(\murkys, 35);
 
 /*
 (
@@ -553,3 +573,70 @@ MIDIdef.cc(\murkystop, {
 }, 66, srcID: ~nanoktrl2.uid, argTemplate: 0)
 );
 */
+
+(
+~scenetoggle = { |scene, light, patterns, patternlights, patternstostop, stoplights|
+    var scenestatus;
+    MIDIdef.cc(scene, {
+        if(scenestatus.isNil) {
+            ~midiout.control(0, light, 127);
+            patternlights.do({ |l| ~midiout.noteOn(0, l, 127) });
+            patterns.do({ |s| Pdef(s).play(t) });
+            patternstostop.do({ |p| Pdef(p).stop });
+            stoplights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = "playing";
+        } {
+            ~midiout.control(0, light, 0);
+            patterns.do({ |s| Pdef(s).stop });
+            patternlights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = nil;
+        }
+    }, light, srcID: ~lpm.uid, argTemplate: { |a| a > 0 });
+}
+);
+
+(
+~scene1 = [\sindrone, \sin, \sinlo];
+~scene1lights = [32, 48, 64];
+~scenetoggle.value(\scene1, 104, ~scene1, ~scene1lights);
+);
+
+(
+~scene2 = [\klk];
+~scene2lights = [34];
+~scenetoggle.value(\scene2, 105, ~scene2, ~scene2lights);
+);
+
+(
+~scene3 = [\snr];
+~scene3lights = [50];
+~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
+);
+
+(
+~scene4 = [\pad1, \pad2, \pad3, \prcpar];
+~scene4lights = [33, 49, 65, 66];
+~scene4patternstostop = [\snr];
+~scene4stoplights = [50];
+~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights, ~scene4patternstostop, ~scene4stoplights);
+);
+
+(
+~scene5 = [\murkys];
+~scene5lights = [35];
+~scene5patternstostop = [\klk];
+~scene5stoplights = [34];
+~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights, ~scene5patternstostop, ~scene5stoplights);
+);
+
+(
+~scene6patternstostop = [\sindrone, \sin, \pad1, \pad2];
+~scene6stoplights = [32, 48, 33, 49];
+~scenetoggle.value(\scene6, 109, patternstostop: ~scene6patternstostop, stoplights: ~scene6stoplights);
+);
+
+(
+~scene7patternstostop = [\pad3];
+~scene7stoplights = [65];
+~scenetoggle.value(\scene7, 110, patternstostop: ~scene7patternstostop, stoplights: ~scene7stoplights);
+);
