@@ -518,10 +518,10 @@ MIDIdef.cc(\snrs, {
 // SynthDef
 
 (
-SynthDef(\hat, { | freq = 1000, level = 0.1, outbus = 0, pan = 0 |
-	var env				=	Env.perc(0.004, 0.4, level, -64);
+SynthDef(\hat, { | curve = -64, freq = 1000, level = 0.1, numharm = 14, outbus = 0, pan = 0, releaseTime = 0.4 |
+	var env				=	Env.perc(0.004, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var imp				=	Blip.ar(freq, 14, envgen);
+	var imp				=	Blip.ar(freq, numharm, envgen);
 	var rlpf			=	RLPF.ar(imp, 8000, 0.03);
 	var pan2			=	Pan2.ar(rlpf, pan);
 	Out.ar(outbus, pan2);
@@ -531,27 +531,47 @@ SynthDef(\hat, { | freq = 1000, level = 0.1, outbus = 0, pan = 0 |
 // Pattern
 
 (
-~hatlvl = 0.03;
-~hatecholvl = ~hatlvl / 5;
+~hat0shortdurs = (8..3).collect({ |d| Pseq([d.reciprocal], d) });
+~hat0longdurs = [0.5, 1, 1.5, 2, 3, 4, 6];
+//~hat0durs = ~hat0shortdurs ++ ~hat0longdurs;
+~hat0durs = ~hat0shortdurs;
+~hatlvl = 0.002;
+~hatecholvl = ~hatlvl / 4;
 Pdef(\hatpat0l,
 	Pbind(
 		\instrument, \hat,
-        \dur, Pshuf([
-			0.25, 0.5, 0.75,
-			Pseq([1/5], 5), Pseq([1/6], 6), Pseq([1/7], 7),
-			1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24
-		], inf),
-		\level, Prand([0.2, 1] * ~hatlvl, inf),
-        \degree, [0, 7],
+        //\curve, Pshuf([-4, -16, -64].stutter(17), inf),
+        \curve, Pbrown(-64, -8, -4, inf),
+        //\dur, Pshuf(~hat0durs, inf),
+        //\dur, Pwalk(~hat0durs, Prand([-1, 1], inf), 1, ~hat0durs.size - 1),
+        //\dur, Pseq(~hat0durs, inf),
+        \dur, Pbrown(0.01, 0.1, 0.01, inf),
+		\level, ~hatlvl,
+        //\degree, Pseq([Pshuf([[-1, 0, 7], [0, 7, 9], [7, 9, 10]].stutter(101)), Pseq([Rest], 211)], inf),
+        \degree, Pseq([Pseq([[7, 9, 10]], 401), Pseq([Rest], 601)], inf),
+        \numharm, Pseq((1..3).stutter(53).mirror, inf),
         \octave, 7,
-		\pan, -0.5,
+        \pan, Prand([-1, 0, 1], inf),
+		//\pan, -1,
+        //\pan, 0,
+        //\releaseTime, Pshuf([0.2, 0.4, 0.6, 0.8, 1.0].stutter(11), inf),
+        \releaseTime, Pbrown(0.1, 1.0, 0.1, inf),
         \scale, ~scale,
 ));
 
-Pdef(\hatpat0r, Pbindf(Pdef(\hatpat0l), \pan, 0.5));
-Pdef(\hatecho0l, Pbindf(Pdef(\hatpat0l), \level, ~hatecholvl));
-Pdef(\hatecho0r, Pbindf(Pdef(\hatecho0l), \pan, 0.5));
-Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatpat0r), Pdef(\hatecho0l), Pdef(\hatecho0r)], inf));
+Pdef(\hatpat0r, Pbindf(Pdef(\hatpat0l), \pan, 1));
+
+Pdef(\hatecho0l,
+    Pbindf(
+        Pdef(\hatpat0l),
+        //\dur, Pwalk(~hat0durs, Prand([-1, 1], inf), 1, 0),
+        \level, ~hatecholvl,
+        \pan, Prand([-1, 1], inf)
+));
+
+Pdef(\hatecho0r, Pbindf(Pdef(\hatecho0l), \pan, 1));
+//Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatpat0r), Pdef(\hatecho0l), Pdef(\hatecho0r)], inf));
+Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatecho0l)].stutter(4), inf));
 );
 
 /*
@@ -561,7 +581,7 @@ Pdef(\hatpar0).stop;
 */
 
 //Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \degree, [7, 10]));
-Pdef(\hatpat1, Pbindf(Pdef(\hatpat0l), \degree, [7, 10], \dur, 0.25, \pan, Pshuf([-1, -0.5, 0.5, 1].stutter(29), inf)));
+Pdef(\hatpat1, Pbindf(Pdef(\hatpat0l), \degree, Pseq([Pseq([[7, 10]], 71), Pseq([Rest], 71)], inf), \dur, 0.25, \pan, Pshuf([-1, -0.5, 0.5, 1].stutter(29), inf)));
 
 /*
 Pdef(\hatpat1).play(~tempo);
@@ -573,6 +593,7 @@ Pdef(\hatpat1).stop;
 Pdef(\hatpulse,
     Pbind(
         \instrument, \hat,
+        \degree, Pseq([Pseq([0], 101), Pseq([Rest], 101)], inf),
         \dur, 0.25,
         \level, ~hatlvl,
         \octave, 9,
@@ -697,7 +718,7 @@ Pdef(\crumblechord,
         \a, 0.1,
         \bwr, 0.003,
         \curve, 0,
-        \degree, [7, 10],
+        \degree, Pseq([[-1, 0, 7], [0, 7, 9], [7, 9, 10]], inf),
         \dur, Pshuf([53, 59, 61], inf),
         \legato, 0.5,
         \level, 0.05,
