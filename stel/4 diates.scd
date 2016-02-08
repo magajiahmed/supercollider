@@ -57,45 +57,32 @@ s.stopRecording;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 2.0, freq = 440, level = 0.1, rq = 1|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, level = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
-	var imp				=	Impulse.ar(0!2, mul: level);
-    var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 2, 3);
+	var imp				=	Impulse.ar(0!2);
+    var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 3);
     var leakdc          =   LeakDC.ar(comb);
-    var rlpf1           =   RLPF.ar(leakdc, LFNoise2.kr((dur).reciprocal).range(1000, 12000).clip(50, SampleRate.ir / 2.5), rq);
-    var sinfb			=	SinOscFB.ar(freq * LFNoise2.kr(17!2, 0.003, 1), fb, mul: env * 0.25);
-    var rlpf2           =   RLPF.ar(sinfb, (freq * 128).clip(50, SampleRate.ir / 2.5), 0.3);
-    var tri             =   LFTri.ar(freq * LFNoise2.kr(0.2!2, 0.001, 1) * 0.5).round(0.02) * env;
-	//Out.ar(0, leakdc.fold2(level));
-    Out.ar(0, tri + (rlpf1 + rlpf2).wrap2(level));
+    var sinfb			=	SinOscFB.ar(freq * LFNoise2.kr(17!2, 0.001, 1), fb).round(0.05) * (env * 0.8);
+    var tri             =   LFTri.ar(freq * LFNoise2.kr(0.2!2, 0.001, 1) * 0.5).round(0.01) * (env * 0.1);
+    Out.ar(0, leakdc + sinfb + tri);
 }).add;
 );
 
 (
-/*
-~durs = (1..3);
-~shortestdurs = ~durs.collect({ |i| Pseq([0.25], i) });
-~shorterdurs = ~durs.collect({ |i| Pseq([0.5], i) });
-~shortdurs = ~durs.collect({ |i| Pseq([0.75], i) });
-~mediumdurs = ~durs.collect({ |i| 1 * i });
-~longdurs = ~durs.collect({ |i| 1.5 * i });
-~longerdurs = ~durs.collect({ |i| 2 * i });
-~longestdurs = ~durs.collect({ |i| 3 * i });
-~bassdurs = ~shortestdurs ++ ~shorterdurs ++ ~shortdurs ++ ~mediumdurs ++ ~longdurs ++ ~longerdurs ++ ~longestdurs;
-*/
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-        \curve, -4,
-        //\dur, Pshuf([Pseq([1/3], 3)] ++ ((1..47).stutter(3) * 0.25), inf),
-        \dur, Pshuf([Pseq([1/3], 3), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
-        \fb, Pshuf((1..13) / 10, inf),
+        \curve, -2,
         //\degree, Pseq([Pshuf([-2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2), Pseq([Rest], 11)], inf),
-        \degree, Pseq([Pshuf([1, 2, 3].stutter(7) ++ [7]), Pseq([Rest], 7)], inf),
+        //\degree, Pseq([Pshuf([-2, -1, 1, 2, 3].stutter(7) ++ [7]), Pseq([Rest], 7)], inf),
+        \degree, Pseq([Pshuf([-1, 1, 2, 3].stutter(8)), Pseq([Rest], 8)], inf),
+        \dur, Pseq([Pseq([1/3], 3), Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3].stutter(3))], inf),
+        \fb, Prand([0, 0.25, 0.5, 0.75], inf),
+        \ffreq, Pshuf([1000, 2000, 3000, 4000, 5000], inf),
         \octave, 3,
 		\root, ~root,
         \rq, Pshuf([0.125, 0.25, 0.5, 1].stutter(5), inf),
-		\scale, ~scale
+		\scale, ~scale,
 ));
 );
 
@@ -107,14 +94,14 @@ Pdef(\basspat1).stop;
 
 (
 Pdef(\basspat2,
-    Pbindf(
-        Pdef(\basspat1),
-        //\degree, Pseq([Pshuf([0, 7].stutter(11)), Pseq([Rest], 11)], inf)
-        //\degree, 0
+    Pbind(
+        \instrument, \bass,
+        \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
+        \dur, Pseq([5, 1, 4, 3, 1, 4, 3, 2, 1] + 0.25, inf),
+        \level, 0.05,
+        \octave, 3,
 ));
 );
-
-//Pdef(\basspat2, Pbindf(Pdef(\basspat1)));
 
 /*
 Pdef(\basspat2).play(~tempo);
@@ -122,51 +109,8 @@ Pdef(\basspat2).isPlaying;
 Pdef(\basspat2).stop;
 */
 
-//Pdef(\basspar, Ppar([Pdef(\basspat1), Pdef(\basspat2)], inf));
-//Pdef(\basspar, Ppar([Pdef(\basspat1), Pdef(\basspat2)], inf));
-Pdef(\basspar, Ppar([Pdef(\basspat1)], inf));
-
-/*
-~basspar.play(~tempo);
-~basspar.isPlaying;
-~basspar.stop;
-*/
-
-~midiktrl.value(\basspar, 49);
-
-/*
-(
-MIDIdef.cc(\bassplayktrl, {
-    if(Pdef(\basspar).isPlaying.not) {
-        Pdef(\basspar).play(~tempo, quant: 1);
-        "bass play".postln;
-    }
-}, 49, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\bassstopktrl, {
-    if(Pdef(\basspar).isPlaying) {
-        Pdef(\basspar).stop;
-        "bass stop".postln;
-    }
-}, 49, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-
-(
-MIDIdef.cc(\bass2playktrl, {
-    if(Pdef(\basspat2).isPlaying.not) {
-        Pdef(\basspat2).play(~tempo, quant: 1);
-        "bass2 play".postln;
-    }
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\bass2stopktrl, {
-    if(Pdef(\basspat2).isPlaying) {
-        Pdef(\basspat2).stop;
-        "bass2 stop".postln;
-    }
-}, 65, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-*/
+~midiktrl.value(\basspat1, 49);
+~midiktrl.value(\basspat2, 65);
 
 ////////////////////////////////////////////////////////////////
 
@@ -475,7 +419,7 @@ Pdef(\prcpat1a,
         //\a, Pshuf([1.0, 1.25, 1.5, 1.75].stutter(13), inf).trace,
         \curve, -4,
         //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 1, 1.5, 2, 3, 4], inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(2), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3].stutter(2), inf),
         //\foldfactor, Pshuf((11..23), inf),
         \foldfactor, Pshuf(Array.fill(7, { |f| (f + 10).nthPrime }), inf),
 		\level, Pshuf([0.2, 1, 1] * 0.1, inf),
@@ -576,7 +520,7 @@ Pdef(\prcpar).stop;
 */
 
 ~midiktrl.value(\prcpar, 50);
-/~midiktrl.value(\prcpar2, 51);
+~midiktrl.value(\prcpar2, 51);
 
 /*
 (
@@ -1178,21 +1122,23 @@ Pdef(\stringpat9).stop;
 ~midiktrl.value(\stringpat8, 39);
 ~midiktrl.value(\stringpat9, 55);
 
-//{
-    //s.sync;
 (
-    Pdef(\stringpat0setdelaytime).play(~tempo);
-    Pdef(\stringpat1setdelaytime).play(~tempo);
-    Pdef(\stringpat2setdelaytime).play(~tempo);
-    Pdef(\stringpat3setdelaytime).play(~tempo);
-    Pdef(\stringpat4setdelaytime).play(~tempo);
-    Pdef(\stringpat5setdelaytime).play(~tempo);
-    Pdef(\stringpat6setdelaytime).play(~tempo);
-    Pdef(\stringpat7setdelaytime).play(~tempo);
-    Pdef(\stringpat8setdelaytime).play(~tempo);
-    Pdef(\stringpat9setdelaytime).play(~tempo);
+{
+    s.sync;
+    (
+        Pdef(\stringpat0setdelaytime).play(~tempo);
+        Pdef(\stringpat1setdelaytime).play(~tempo);
+        Pdef(\stringpat2setdelaytime).play(~tempo);
+        Pdef(\stringpat3setdelaytime).play(~tempo);
+        Pdef(\stringpat4setdelaytime).play(~tempo);
+        Pdef(\stringpat5setdelaytime).play(~tempo);
+        Pdef(\stringpat6setdelaytime).play(~tempo);
+        Pdef(\stringpat7setdelaytime).play(~tempo);
+        Pdef(\stringpat8setdelaytime).play(~tempo);
+        Pdef(\stringpat9setdelaytime).play(~tempo);
+)   ;
+};
 );
-//};
 
 /*
 Pdef(\stringpat0setdelaytime).isPlaying;
@@ -1404,7 +1350,7 @@ MIDIdef.cc(\string9stopktrl, {
 );
 
 (
-~scene1 = [\basspar, \prcpar];
+~scene1 = [\basspat1, \prcpar];
 ~scene1lights = [49, 50];
 ~scenetoggle.value(\scene1, 104, ~scene1, starterlights: ~scene1lights);
 );
@@ -1434,15 +1380,23 @@ MIDIdef.cc(\string9stopktrl, {
 );
 
 (
-~scene6 = [\pingpat, \stringpat0];
-~scene6lights = [67, 52];
-~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \basspar, \hatpar, \banjopar];
-~scene6stopperlights = [32, 48, 64, 49, 34, 66];
+~scene6 = [\pingpat, \stringpat0, \basspat2];
+~scene6lights = [67, 52, 65];
+~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \hatpar, \prcpar, \banjopar];
+~scene6stopperlights = [32, 48, 64, 34, 50, 66];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
 );
 
-/*
 (
-~scene7stoppers = [\prcpar];
+~scene7 = [\stringpat1];
+~scene7lights = [68];
+~scene7stoppers = [\basspat1];
+~scene7stopperlights = [49];
+~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
-*/
+
+(
+~scene8stoppers = [\pingpat, \stringpat1, \stringpat2, \stringpat3, \stringpat4, \stringpat5, \stringpat6, \stringpat7, \stringpat8, \stringpat9];
+~scene8stopperlights = [67, 68, 37, 53, 69, 38, 54, 70, 39, 55];
+~scenetoggle.value(\scene8, 111, stoppers: ~scene8stoppers, stopperlights: ~scene8stopperlights);
+);
