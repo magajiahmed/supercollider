@@ -91,7 +91,7 @@ Pdef(\basspat1,
         \dur, Pshuf([Pseq([1/3], 3), 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \fb, Pshuf((1..13) / 10, inf),
         //\degree, Pseq([Pshuf([-2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2), Pseq([Rest], 11)], inf),
-        \degree, Pseq([Pshuf([1, 2, 3].stutter(7) ++ [7]), Pseq([Rest], 13)], inf),
+        \degree, Pseq([Pshuf([1, 2, 3].stutter(7) ++ [7]), Pseq([Rest], 7)], inf),
         \octave, 3,
 		\root, ~root,
         \rq, Pshuf([0.125, 0.25, 0.5, 1].stutter(5), inf),
@@ -186,6 +186,7 @@ SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.03|
 Pdef(\hatpat1,
 	Pbind(
 		\instrument, \hat,
+        \curve, -32,
         //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
         \dur, Pshuf(Array.fill(17, { |i| (i + 1) * 0.25 }), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
@@ -575,7 +576,7 @@ Pdef(\prcpar).stop;
 */
 
 ~midiktrl.value(\prcpar, 50);
-//~midiktrl.value(\prcpar2, 51);
+/~midiktrl.value(\prcpar2, 51);
 
 /*
 (
@@ -636,7 +637,7 @@ Pdef(\prc2,
         \scale,  ~scale
 ));
 
-Pdef(\prc2echo, Pbindf(Pdef(\prc2), \level, 0.02));
+Pdef(\prc2echo, Pbindf(Pdef(\prc2), \dur, Prand([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], inf), \level, 0.02));
 
 Pdef(\prcpar2, Ppar([Pdef(\prc2), Pdef(\prc2echo)], inf));
 );
@@ -646,6 +647,8 @@ Pdef(\prcpar2).play(~tempo);
 Pdef(\prcpar2).isPlaying;
 Pdef(\prcpar2).stop;
 */
+
+~midiktrl.value(\prcpar2, 51);
 
 ////////////////////////////////////////////////////////////////
 
