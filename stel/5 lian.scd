@@ -101,7 +101,8 @@ SynthDef(\bass, { | curve = -4, dur = 1, fb = 0, foldfactor = 1, freq = 100, lev
     var sinfb1          =   SinOscFB.ar(freq!2 * fenv, fb);
     var sinfb2     		=	SinOscFB.ar([freq + 0.03, freq + 0.03] * fenv, fb);
     var sinfb3          =   SinOscFB.ar(freq!2, fb * 0.1, envgen);
-    Out.ar([0, ~bassfxbus], ((sinfb1 + sinfb2).fold2(foldfactor) * (foldfactor.reciprocal + 0.001) * envgen) + sinfb3);
+    var lowtri          =   LFTri.ar(freq!2 * 0.5, mul: envgen);
+    Out.ar([0, ~bassfxbus], ((sinfb1 + sinfb2).fold2(foldfactor) * (foldfactor.reciprocal + 0.001) * envgen) + sinfb3 + lowtri);
 }).add;
 );
 
@@ -594,7 +595,7 @@ MIDIdef.cc(\wetstop, {
 
 (
 SynthDef(\pingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.05, pan = 0|
-	var env				=	Env.perc(releaseTime: 0.05, level: level, curve: curve);
+	var env				=	Env.perc(releaseTime: 0.01, level: level, curve: curve);
 	var envgen			=	EnvGen.ar(env, doneAction: 2);
 	//var pn              =   PinkNoise.ar(envgen!2);
     var pn              =   WhiteNoise.ar(envgen);
@@ -620,7 +621,7 @@ Pdef(\pinglepat,
 			Pxrand([0.75, 1, 1.25], 31)
 		], inf),
         */
-        \dur, Pshuf([8, 12, 16].collect({ |d| Pseq([d.reciprocal], d) }) ++ Array.fill(5, { |d| Pseq([(d + 1) * 0.25], 2) }) ++ Array.fill(5, { |d| Pseq([0.25], d) }), inf),
+        \dur, Pshuf([8, 16].collect({ |d| Pseq([d.reciprocal], d) }) ++ Array.fill(5, { |d| Pseq([(d + 1) * 0.25], 2) }) ++ Array.fill(5, { |d| Pseq([0.25], d) }), inf),
         \level, Pshuf([0.25, 1].stutter(11) * ~pinglelevel, inf),
 		//\pan, Pwhite(-1.0, 1.0, inf),
         \degree, 0,
@@ -755,8 +756,9 @@ Pdef(\prc1,
         \instrument, \prc1,
         \a, Pshuf([1.0, 1.1, 1.2].stutter(17), inf),
         \c, Pshuf([0.1, 0.15, 0.2].stutter(3), inf),
-        \curve, Pshuf([-32, -16, -8].stutter(5), inf),
+        //\curve, Pshuf([-32, -16, -8].stutter(5), inf),
         //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(5), inf),
+        \curve, -32,
         \dur, Pshuf(Array.fill(7, { |d| (d + 1) * 0.25 }), inf),
         \fb, 0,
         \freq, Pshuf([100, 1000].stutter(13), inf),
@@ -799,8 +801,9 @@ SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.1, l
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], [s, s - 0.1], mul: 5, add: 1);
     var sin             =   SinOscFB.ar(freq * sinmod * XLine.kr(1, 0.1, length), fb, envgen);
-    var rlpf            =   RLPF.ar(sin, (freq * 32).clip(50, SampleRate.ir / 2.5), 0.1);
-    Out.ar(~prcfxbus, rlpf.fold2(level));
+    var rlpf            =   RLPF.ar(sin, (freq * 16).clip(50, SampleRate.ir / 2.5));
+    var rhpf            =   RHPF.ar(sin, 4000, 0.1);
+    Out.ar(~prcfxbus, (rlpf + rhpf).fold2(level));
 }).add;
 );
 
@@ -1003,4 +1006,92 @@ MIDIdef.cc(\heavyktrl, {
 );
 */
 
+////////////////////////////////////////////////////////////////
+
 Pdef(\bassstutter).play(t);
+
+////////////////////////////////////////////////////////////////
+// MAKING A SCENE
+
+(
+~scenetoggle = { |scene, light, starters, stoppers, starterlights, stopperlights|
+    var scenestatus;
+    MIDIdef.cc(scene, {
+        if(scenestatus.isNil) {
+            ~midiout.control(0, light, 127);
+            starterlights.do({ |l| ~midiout.noteOn(0, l, 127) });
+            starters.do({ |s| Pdef(s).play(t) });
+            stopperlights.do({ |l| ~midiout.noteOff(0, l) });
+            stoppers.do({ |s| Pdef(s).stop });
+            scenestatus = "playing";
+        } {
+            ~midiout.control(0, light, 0);
+            starters.do({ |s| Pdef(s).stop });
+            starterlights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = nil;
+        }
+    }, light, srcID: ~lpm.uid, argTemplate: { |a| a > 0 });
+}
+);
+
+(
+~scene1 = [\basspar, \pno1, \pinglepat, \clappar, \prc2a];
+~scene1lights = [32, 33, 35, 51, 67];
+~scenetoggle.value(\scene1, 104, ~scene1, starterlights: ~scene1lights);
+);
+
+(
+~scene2 = [\basstwo, \bassthree, \clappar, \wut, \prc1];
+~scene2lights = [48, 64, 51, 34, 36];
+~scene2stoppers = [\basspar, \pno1, \pinglepat, \prc2a];
+~scene2stopperlights = [32, 33, 35, 67];
+~scenetoggle.value(\scene2, 105, ~scene2, ~scene2stoppers, ~scene2lights, ~scene2stopperlights);
+);
+
+(
+~scene3 = [\basspar, \pnopulse, \pinglepat, \clappar, \prc2a];
+~scene3lights = [32, 49, 35, 51, 67];
+~scene3stoppers = [\basstwo, \bassthree, \wut, \prc1];
+~scene3stopperlights = [48, 64, 34, 36];
+~scenetoggle.value(\scene3, 106, ~scene3, ~scene3stoppers, ~scene3lights, ~scene3stopperlights);
+);
+
+(
+~scene4 = [\bassthree, \pnopulse2, \wat, \wet, \clappar, \prc1, \prc2b];
+~scene4lights = [64, 65, 50, 66, 51, 36, 68];
+~scene4stoppers = [\basspar, \pnopulse, \pinglepat, \prc2a];
+~scene4stopperlights = [32, 49, 35, 67];
+~scenetoggle.value(\scene4, 107, ~scene4, ~scene4stoppers, ~scene4lights, ~scene4stopperlights);
+);
+
+(
+~scene5 = [\prc1, \heavypat1, \prc2b];
+~scene5lights = [36, 52, 68];
+~scene5stoppers = [\bassthree, \pnopulse2, \wat, \clappar];
+~scene5stopperlights = [64, 65, 50, 51];
+~scenetoggle.value(\scene5, 108, ~scene5, ~scene5stoppers, ~scene5lights, ~scene5stopperlights);
+);
+
+(
+~scene6 = [\basspar, \basstwo, \bassthree, \pno1, \pnopulse, \pnopulse2, \wut, \wat, \wet, \pinglepat, \clappar, \prc1];
+~scene6lights = [32, 48, 64, 33, 49, 65, 34, 50, 66, 35, 51, 36];
+~scene6stoppers = [\heavypat1, \prc2b];
+~scene6stopperlights = [52, 68];
+~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
+);
+
+(
+~scene7 = [\basspar, \basstwo, \bassthree, \wut, \wat, \wet, \clappar, \prc2a, \prc1];
+~scene7lights = [32, 48, 64, 34, 50, 66, 51, 67, 36];
+~scene7stoppers = [\pno1, \pnopulse, \pnopulse2, \pinglepat];
+~scene7stopperlights = [33, 49, 65, 35];
+~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
+);
+
+(
+~scene8 = [\basspar, \basstwo, \bassthree, \wut, \wet];
+~scene8lights = [32, 48, 64, 34, 66];
+~scene8stoppers = [\wat, \pinglepat, \clappar, \prc2a, \prc1];
+~scene8stopperlights = [50, 35, 51, 67, 36];
+~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);
+);
