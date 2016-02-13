@@ -238,7 +238,7 @@ SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, fxBus = 4, level = 0.05, widt
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	//var klfn0			=	LFNoise1.ar(18000!2, 0.999, 1);
-    var saw 			=	VarSaw.ar(freq + Line.kr([-0.05, 0.05], [-1, 1], dur), width: width).round(0.03) * envgen;
+    var saw 			=	VarSaw.ar(freq + XLine.kr([-0.01, 0.01], [-1, 1], dur), width: width).round(0.03) * envgen;
 	//var saw1			=	VarSaw.ar(freq * klfn0, width: width, mul: envgen / 2);
     var sin				=	SinOsc.ar(freq!2).round(0.05) * envgen;
 	//var mix             =	saw0 + saw1 + sin;
@@ -249,6 +249,7 @@ SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, fxBus = 4, level = 0.05, widt
 
 // Pattern
 
+/*
 (
 Pdef(\thump,
     Pbind(
@@ -260,6 +261,7 @@ Pdef(\thump,
         \scale, ~scale
 ));
 );
+*/
 
 /*
 Pdef(\thump).play(t);
@@ -296,7 +298,7 @@ Pdef(\basspat).stop;
 
 // Midi Control
 
-~midiktrl.value(\thump, 32);
+//~midiktrl.value(\thump, 127);
 
 /*
 (
@@ -386,7 +388,7 @@ Pdef(\basswithstutter, Ppar([Pdef(\basspat), Pdef(\rbpdef), Pdef(\pbpar)], inf))
 
 // midi
 
-~midiktrl.value(\basswithstutter, 48);
+~midiktrl.value(\basswithstutter, 32);
 
 /*
 (
@@ -558,49 +560,53 @@ Pdef(\hatgrains,
 	Pbind(
 		\instrument, \hat,
         //\curve, Pshuf([-4, -16, -64].stutter(17), inf),
-        \curve, Pbrown(-64, -8, -4, inf),
+        \curve, Pbrown(-64, -8, -1, inf),
         //\dur, Pshuf(~hat0durs, inf),
         //\dur, Pwalk(~hat0durs, Prand([-1, 1], inf), 1, ~hat0durs.size - 1),
         //\dur, Pseq(~hat0durs, inf),
-        \dur, Pbrown(0.01, 0.1, 0.01, inf),
+        //\dur, Pbrown(0.01, 0.1, 0.01, inf),
+        \dur, 16.reciprocal,
 		//\level, ~hatlvl,
         //\degree, Pseq([Pshuf([[-1, 0, 7], [0, 7, 9], [7, 9, 10]].stutter(101)), Pseq([Rest], 211)], inf),
         \degree, Pseq([Pseq([[7, 9, 10]], 601), Pseq([Rest], 601)], inf),
         \level, 0.01,
-        \numharm, Pseq((1..3).stutter(53).mirror, inf),
+        \numharm, Pshuf([Pseq([1], 100.rand.round(1) + 100), Pseq([2], 100.rand.round(1) + 100), Pseq([3], 100.rand.round(1) + 100)].stutter(3), inf),
         \octave, 7,
         \pan, Prand([-1, 0, 1], inf),
 		//\pan, -1,
         //\pan, 0,
         //\releaseTime, Pshuf([0.2, 0.4, 0.6, 0.8, 1.0].stutter(11), inf),
-        \releaseTime, Pbrown(0.1, 1.0, 0.1, inf),
+        \releaseTime, Pbrown(0.2, 1.0, 0.1, inf),
         \scale, ~scale,
 ));
 
-//Pdef(\hatpat0r, Pbindf(Pdef(\hatpat0l), \pan, 1));
-
-/*
-Pdef(\hatecho0l,
-    Pbindf(
-        Pdef(\hatpat0l),
-        //\dur, Pwalk(~hat0durs, Prand([-1, 1], inf), 1, 0),
-        \level, ~hatecholvl,
-        \pan, Prand([-1, 1], inf)
+Pdef(\hatgrainsdrone,
+    Pbind(
+        \instrument, \hat,
+        \curve, -4,
+        \degree, Pseq([Pseq([[7, 10]], 503), Pseq([Rest], 503)], inf),
+        \dur, 16.reciprocal,
+        \level, 0.002,
+        \numharm, 0,
+        \octave, 6,
+        \pan, Prand([-1, 0, 1].mirror1, inf),
+        \releaseTime, 0.2,
+        \scale, ~scale
 ));
-*/
 
-//Pdef(\hatecho0r, Pbindf(Pdef(\hatecho0l), \pan, 1));
-//Pdef(\hatpar0, Ppar([Pdef(\hatpat0l), Pdef(\hatpat0r), Pdef(\hatecho0l), Pdef(\hatecho0r)], inf));
-//Pdef(\hatpar0, Ppar([Pdef(\hatpat0l)], inf));
 );
 
 /*
-Pdef(\hatpar0).play(~tempo, quant: 1);
-Pdef(\hatpar0).isPlaying;
-Pdef(\hatpar0).stop;
+Pdef(\hatgrains).play(~tempo);
+Pdef(\hatgrains).isPlaying;
+Pdef(\hatgrains).stop;
 */
 
-//Pdef(\hatpar1, Pbindf(Pdef(\hatpar0), \degree, [7, 10]));
+/*
+Pdef(\hatgrainsdrone).play(~tempo);
+Pdef(\hatgrains).isPlaying;
+Pdef(\hatgrains).stop;
+*/
 
 (
 Pdef(\hatpat1,
@@ -638,7 +644,8 @@ Pdef(\hatpulse).stop
 
 // Midi Control
 
-~midiktrl.value(\hatgrains, 35);
+~midiktrl.value(\hatgrains, 50);
+~midiktrl.value(\hatgrainsdrone, 66);
 ~midiktrl.value(\hatpat1, 51);
 ~midiktrl.value(\hatpulse, 67);
 
@@ -740,6 +747,7 @@ SynthDef(\crumble, { | a = 1, b = 1.9, bwr = 0.03, curve = -4, dur = 1, freq = 1
 
 // Patterns
 
+/*
 (
 Pdef(\crumblechord,
     Pbind(
@@ -755,6 +763,7 @@ Pdef(\crumblechord,
         \scale, ~scale
 ));
 );
+*/
 
 /*
 Pdef(\crumblechord).play(t);
@@ -823,7 +832,7 @@ Pdef(\crumble4).stop;
 
 // Midi Control
 
-~midiktrl.value(\crumblechord, 36);
+//~midiktrl.value(\crumblechord, 36);
 ~midiktrl.value(\crumblepar0, 52);
 ~midiktrl.value(\crumble4, 68);
 
@@ -1079,10 +1088,10 @@ MIDIdef.cc(\paddronestopktrl, {
 // "Scene" Control
 // A set of patterns to be triggered together. Their being triggered causes certain other patterns to turn off.
 (
-~scene1 = [Pdef(\sinfbdrone1), Pdef(\hatgrains)];
-~scene1lights = [49, 35];
+~scene1 = [Pdef(\sinfbdrone1), Pdef(\hatgrains), Pdef(\hatgrainsdrone)];
+~scene1lights = [49, 50, 66];
 ~scene2 = [Pdef(\sinfbdrone2), Pdef(\basswithstutter), Pdef(\hatpat1), Pdef(\hatpulse), Pdef(\snrs), Pdef(\crumblepar0), Pdef(\crumble4)];
-~scene2lights = [65, 48, 51, 67, 34, 52, 68];
+~scene2lights = [65, 32, 51, 67, 34, 52, 68];
 MIDIdef.cc(\scene1, {
     ~midiout.control(0, 105, 0);
     ~midiout.control(0, 104, 127);
