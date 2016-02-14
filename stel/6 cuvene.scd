@@ -98,15 +98,16 @@ SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate 
 );
 
 (
-~paddurs1 = [41, 45, 49].scramble + 0.25;
-~paddurs2 = ~paddurs1 - 10;
+//~paddurs1 = [41, 45, 49].scramble + 0.25;
+//~paddurs2 = ~paddurs1 - 10;
 Pdef(\pad1,
     Pbind(
         \instrument, \pad,
         \attack, 0.1,
         \curve, 0,
-        \dur, Pseq(~paddurs1, inf),
         \degree, Pseq([[0, 7], [7, 12]], inf),
+        //\dur, Pseq(~paddurs1, inf),
+        \dur, Pshuf([51, 53, 55], inf),
         \fb, Pshuf([0.5, 1.0, 1.5].stutter(5), inf),
         \k, Pwhite(0.9, 4.0, inf),
         \legato, 0.5,
@@ -121,7 +122,7 @@ Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(4), inf));
 
 Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, Pshuf([[-2, 2], [2, 10]], inf)));
 
-Pdef(\padsgroup1, Ptpar([0, Pdef(\pads1), ~paddurs1[0] * 0.25, Pdef(\pads2)], inf));
+Pdef(\padsgroup1, Ptpar([0, Pdef(\pads1), 3, Pdef(\pads2)], inf));
 
 /*
 Pdef(\pad1).play(t);
@@ -149,11 +150,11 @@ Pdef(\padsgroup1).stop;
 
 //
 
-Pdef(\pads3, Pbindf(Pdef(\pads1), \dur, Pseq(~paddurs2, inf), \octave, 6));
+Pdef(\pads3, Pbindf(Pdef(\pads1), \octave, 6));
 
-Pdef(\pads4, Pbindf(Pdef(\pads2), \dur, Pseq(~paddurs2, inf), \octave, 6));
+Pdef(\pads4, Pbindf(Pdef(\pads2), \octave, 6));
 
-Pdef(\padsgroup2, Ptpar([0, Pdef(\pads3), ~paddurs1[0] * 0.25, Pdef(\pads4)], inf));
+Pdef(\padsgroup2, Ptpar([0, Pdef(\pads3), 4, Pdef(\pads4)], inf));
 
 /*
 Pdef(\pads3).play(t);
@@ -290,7 +291,7 @@ Pdef(\sin).stop;
 Pdef(\sinlo,
     Pbind(
         \instrument, \sin,
-        \dur, 73,
+        \dur, 53,
         \degree, 2,
         \fb, 0.5,
         \legato, 0.5,
@@ -308,106 +309,6 @@ Pdef(\sinlo).stop;
 ~midiktrl.value(\sindrone, 32);
 ~midiktrl.value(\sin, 48);
 ~midiktrl.value(\sinlo, 64);
-
-/*
-(
-MIDIdef.cc(\sindroneplay, {
-	if(Pdef(\sindrone).isPlaying.not) {
-		Pdef(\sindrone).play(t);
-		"sindrone play".postln;
-    }
-}, 32, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\sindronestop, {
-	if(Pdef(\sindrone).isPlaying) {
-		Pdef(\sindrone).stop;
-		"sinddrone stop".postln;
-    }
-}, 32, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-
-(
-MIDIdef.cc(\sinplay, {
-    if(Pdef(\sin).isPlaying.not) {
-        Pdef(\sin).play(t);
-        "sin play".postln;
-    }
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\sinstop, {
-    if(Pdef(\sin).isPlaying) {
-        Pdef(\sin).stop;
-        "sin stop".postln;
-    }
-}, 48, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-
-(
-MIDIdef.cc(\sinloplay, {
-    if(Pdef(\sinlo).isPlaying.not) {
-        Pdef(\sinlo).play(t);
-        "sinlo play".postln;
-    }
-}, 64, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\sinlostop, {
-    if(Pdef(\sinlo).isPlaying) {
-        Pdef(\sinlo).stop;
-        "sinlo stop".postln;
-    }
-}, 64, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-*/
-
-////////////////////////////////////////////////////////////////
-// KLK
-
-(
-SynthDef(\klk, { |freq = 440, level = 0.1, numharm = 100, pan = 0|
-    var env             =   Env.new([0, level, level / 25, 0], [0.005, 0.005, 0.01], );
-    var envgen          =   EnvGen.ar(env, doneAction: 2);
-    var blip            =   Blip.ar(freq, numharm, envgen);
-    var pan2            =   Pan2.ar(blip, pan);
-    Out.ar(0, pan2);
-}).add;
-);
-
-(
-Pdef(\klk,
-    Pbind(
-        \instrument, \klk,
-        \dur, Pshuf([0.25, 0.5, Pseq([0.25], 2), 0.75, Pseq([0.25], 3), 1, 1.25, 1.5].stutter(5), inf),
-        \level, 0.05,
-        \numharm, Pshuf((1..5).stutter(4), inf),
-        \octave, 10,
-        \pan, Prand([-1, 0, 1], inf),
-        \scale, ~scale
-));
-);
-
-/*
-Pdef(\klk).play(t);
-*/
-
-//~midiktrl.value(\klk, 34);
-
-/*
-(
-MIDIdef.cc(\klkplay, {
-    if(Pdef(\klk).isPlaying.not) {
-        Pdef(\klk).play(t);
-        "klk play".postln;
-    }
-}, 34, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\klkstop, {
-    if(Pdef(\klk).isPlaying) {
-        Pdef(\klk).stop;
-        "klk stop".postln;
-    }
-}, 34, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-*/
 
 ////////////////////////////////////////////////////////////////
 // KIK
@@ -436,7 +337,8 @@ Pdef(\prcpat1,
         //\dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(3), inf),
         \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75], inf),
 		\level, ~prcpatlevel1,
-        \degree, Pseq([Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], 5), Pseq([Rest], 45)], inf),
+        //\degree, Pseq([Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], 5), Pseq([Rest], 45)], inf),
+        \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
         \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
 		\scale, ~scale,
 		\releaseTime, 0.5
@@ -449,15 +351,16 @@ Pdef(\prcpat2,
         //\c, Pwhite([0.07, 0.11, 0.15], inf),
         \c, 0.15,
 		\curve, -16,
-        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4], inf),
         \level, ~kiklevel,
-        \degree, Pseq([Pseq(0!2, 53), Pseq([Rest], 53)], inf),
+        \degree, Pseq([Pseq(0!2, 11), Pseq([Rest], 22)], inf),
 		\octave, 5,
 		\releaseTime, 1
 ));
 Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
 Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
-Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat2)], inf));
+Pdef(\prcpat1c, Pbindf(Pdef(\prcpat1), \dur, 1));
+Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat1c), Pdef(\prcpat2)], inf));
 );
 
 /*
@@ -520,7 +423,7 @@ Pdef(\murky,
         \octave, Pshuf([4, 5, 6, 7], inf),
         \scale, ~scale
 ));
-Pdef(\littlemurky, Pbindf(Pdef(\murky), \dur, Pshuf([0.25, 0.5, 0.75].stutter(7), inf), \level, ~murkyecholvl));
+Pdef(\littlemurky, Pbindf(Pdef(\murky), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(7), inf), \level, ~murkyecholvl));
 Pdef(\murkys, Ppar([Pdef(\murky), Pdef(\littlemurky)], inf));
 );
 
@@ -602,16 +505,16 @@ MIDIdef.cc(\murkystop, {
 );
 
 (
-~scene4 = [\padsgroup2, \murkys];
-~scene4lights = [34, 52];
+~scene4 = [\padsgroup2];
+~scene4lights = [34];
 ~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
 );
 
 (
 ~scene5 = [\pads5];
 ~scene5lights = [35];
-~scene5stoppers = [\sinlo, \prcpar];
-~scene5stopperlights = [64, 36];
+~scene5stoppers = [\sinlo];
+~scene5stopperlights = [64];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights, ~scene5stoppers, ~scene5stopperlights);
 );
 
