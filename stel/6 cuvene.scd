@@ -610,8 +610,8 @@ MIDIdef.cc(\murkystop, {
 (
 ~scene5 = [\pads5];
 ~scene5lights = [35];
-~scene5stoppers = [\sinlo, \padsgroup2, \prcpar];
-~scene5stopperlights = [64, 34, 50, 36];
+~scene5stoppers = [\sinlo, \prcpar];
+~scene5stopperlights = [64, 36];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights, ~scene5stoppers, ~scene5stopperlights);
 );
 
@@ -623,6 +623,6 @@ MIDIdef.cc(\murkystop, {
 
 (
 ~scene7stoppers = [\sindrone, \padsgroup1, \padsgroup2, \pads5];
-~scene7stopperlights = [32, 33, 49, 35];
+~scene7stopperlights = [32, 33, 34, 35];
 ~scenetoggle.value(\scene7, 110, patternstostop: ~scene7stoppers, stoplights: ~scene7stopperlights);
 );
