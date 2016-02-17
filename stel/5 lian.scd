@@ -1065,10 +1065,10 @@ Pdef(\bassstutter).play(t);
 );
 
 (
-~scene5 = [\prc1, \heavypat1, \prc2b];
-~scene5lights = [36, 52, 68];
-~scene5stoppers = [\bassthree, \pnopulse2, \wat, \clappar];
-~scene5stopperlights = [64, 65, 50, 51];
+~scene5 = [\heavypat1, \prc2b];
+~scene5lights = [52, 68];
+~scene5stoppers = [\prc1, \bassthree, \pnopulse2, \wat, \clappar];
+~scene5stopperlights = [36, 64, 65, 50, 51];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5stoppers, ~scene5lights, ~scene5stopperlights);
 );
 
