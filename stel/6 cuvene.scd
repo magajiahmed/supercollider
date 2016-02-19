@@ -84,7 +84,7 @@ SynthDef(\dynamix, { |inBus|
 // PAD
 
 (
-SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.01, release = 1, round = 0.1, stan_freq = 100|
+SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.015, release = 1, round = 0.1, stan_freq = 100|
 	var env				=	Env.asr(attack, level, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var freqmod			=	LFNoise2.kr(0.1!2, 0.0005, 1);
@@ -98,19 +98,17 @@ SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate 
 );
 
 (
-//~paddurs1 = [41, 45, 49].scramble + 0.25;
-//~paddurs2 = ~paddurs1 - 10;
 Pdef(\pad1,
     Pbind(
         \instrument, \pad,
         \attack, 0.1,
-        \curve, 0,
-        \degree, Pseq([[0, 7], [7, 12]], inf),
+        \curve, -4,
+        \degree, Pshuf([Rest, Rest, [0, 7], [7, 12]], inf),
         //\dur, Pseq(~paddurs1, inf),
-        \dur, Pshuf([51, 53, 55], inf),
+        \dur, Pshuf([51, 53, 55, 57, 59] + 0.25, inf),
         \fb, Pshuf([0.5, 1.0, 1.5].stutter(5), inf),
         \k, Pwhite(0.9, 4.0, inf),
-        \legato, 0.5,
+        \legato, 1,
         \octave, 5,
         \release, 0.1,
         \round, 0.5,
@@ -120,9 +118,9 @@ Pdef(\pad1,
 
 Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(4), inf));
 
-Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, Pshuf([[-2, 2], [2, 10]], inf)));
+Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, Pshuf([Rest, Rest, [-2, 2], [2, 10]], inf)));
 
-Pdef(\padsgroup1, Ptpar([0, Pdef(\pads1), 3, Pdef(\pads2)], inf));
+Pdef(\padsgroup1, Ppar([Pdef(\pads1), Pdef(\pads2)], inf));
 
 /*
 Pdef(\pad1).play(t);
@@ -150,11 +148,11 @@ Pdef(\padsgroup1).stop;
 
 //
 
-Pdef(\pads3, Pbindf(Pdef(\pads1), \octave, 6));
+Pdef(\pads3, Pbindf(Pdef(\pads1), \dur, Pshuf([31, 33, 35, 37, 39] + 0.25, inf), \octave, 6));
 
-Pdef(\pads4, Pbindf(Pdef(\pads2), \octave, 6));
+Pdef(\pads4, Pbindf(Pdef(\pads2), \dur, Pshuf([31, 33, 35, 37, 39] + 0.25, inf), \octave, 6));
 
-Pdef(\padsgroup2, Ptpar([0, Pdef(\pads3), 4, Pdef(\pads4)], inf));
+Pdef(\padsgroup2, Ppar([Pdef(\pads3), Pdef(\pads4)], inf));
 
 /*
 Pdef(\pads3).play(t);
@@ -176,46 +174,11 @@ Pdef(\padsgroup2).stop;
 
 //
 
-(
-Pdef(\pad5,
-    //Pmono(
-        //\pad,
-    Pbind(
-        \instrument, \pad,
-        \attack, 0.1,
-        \degree, [7, 10, 12],
-        \dur, 53,
-        \fb, 0.3,
-        \k, Pwhite(0.9, 4.0, inf),
-        \legato, 0.5,
-        \octave, 4,
-        \release, 0.1,
-        \round, 0.5,
-        \scale, ~scale
-));
+Pdef(\pads5, Pbindf(Pdef(\pads1), \dur, Pshuf([21, 23, 25, 27, 29] + 0.25, inf), \octave, 7));
 
-Pdef(\pads5, Ppar([Pdef(\pad5)].stutter(4), inf));
-);
+Pdef(\pads6, Pbindf(Pdef(\pads2), \dur, Pshuf([21, 23, 25, 27, 29] + 0.25, inf), \octave, 7));
 
-Pdef(\pads6, Pbindf(Pdef(\pads5), \degree, Pseq([[-2, 2], [2, 10]], inf)));
-
-);
-
-//
-
-/*
-Pdef(\pad5).play(t);
-Pdef(\pad5).isPlaying;
-Pdef(\pad5).stop;
-*/
-
-/*
-Pdef(\pad6).play(t);
-Pdef(\pad6).isPlaying;
-Pdef(\pad6).stop;
-*/
-
-//
+Pdef(\padsgroup3, Ppar([Pdef(\pads5), Pdef(\pads6)], inf));
 
 /*
 Pdef(\pads5).play(t);
@@ -231,10 +194,43 @@ Pdef(\pads6).stop;
 
 //
 
+(
+Pdef(\pad7,
+    //Pmono(
+        //\pad,
+    Pbind(
+        \instrument, \pad,
+        \attack, 0.1,
+        \curve, -4,
+        \degree, Pshuf([Rest, [7, 12]], inf),
+        \dur, Pshuf([71, 73, 75, 77, 79] + 0.25, inf),
+        \fb, 0.3,
+        \k, Pwhite(0.9, 4.0, inf),
+        \legato, 0.5,
+        \octave, 4,
+        \release, 0.1,
+        \round, 0.5,
+        \scale, ~scale
+));
+
+Pdef(\pads7, Ppar([Pdef(\pad7)].stutter(4), inf));
+);
+
+Pdef(\pads8, Pbindf(Pdef(\pads7), \degree, Pshuf([Rest, [2, 10]], inf)));
+
+Pdef(\padsgroup4, Ppar([Pdef(\pads7), Pdef(\pads8)], inf));
+
+);
+
+/*
+Pdef(\padsgroup4).play(t);
+*/
+//
+
 ~midiktrl.value(\padsgroup1, 33);
 ~midiktrl.value(\padsgroup2, 34);
-~midiktrl.value(\pads5, 35);
-~midiktrl.value(\pads6, 51);
+~midiktrl.value(\padsgroup3, 35);
+~midiktrl.value(\padsgroup4, 36);
 
 ////////////////////////////////////////////////////////////////
 // SIN
@@ -273,7 +269,7 @@ Pdef(\sin,
     Pbind(
         \instrument, \sin,
         \degree, ~chord,
-        \dur, 53,
+        \dur, 47,
         \fb, 0.2,
         \legato, 0.5,
         \octave, 5,
@@ -338,7 +334,7 @@ Pdef(\prcpat1,
         \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75], inf),
 		\level, ~prcpatlevel1,
         //\degree, Pseq([Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], 5), Pseq([Rest], 45)], inf),
-        \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
+        \degree, Pseq([Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest, Rest, 0], inf),
         \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
 		\scale, ~scale,
 		\releaseTime, 0.5
@@ -351,7 +347,7 @@ Pdef(\prcpat2,
         //\c, Pwhite([0.07, 0.11, 0.15], inf),
         \c, 0.15,
 		\curve, -16,
-        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4], inf),
+        \dur, Pshuf([0.25, 0.25, Pseq([0.25], 2), 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4], inf),
         \level, ~kiklevel,
         \degree, Pseq([Pseq(0!2, 11), Pseq([Rest], 22)], inf),
 		\octave, 5,
@@ -369,25 +365,7 @@ Pdef(\prcpar).isPlaying;
 Pdef(\prcpar).stop;
 */
 
-~midiktrl.value(\prcpar, 36);
-
-/*
-(
-MIDIdef.cc(\prcparplay, {
-	if(Pdef(\prcpar).isPlaying.not) {
-		Pdef(\prcpar).play(t);
-		"prc play".postln;
-    };
-}, 50, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\prcparstop, {
-	if(Pdef(\prcpar).isPlaying) {
-		Pdef(\prcpar).stop;
-		"prc stop".postln;
-    };
-}, 50, srcID: ~nanoktrl2.uid, argTemplate: 0);
-);
-*/
+//~midiktrl.value(\prcpar, 36);
 
 ////////////////////////////////////
 // MURKY
@@ -410,7 +388,7 @@ SynthDef(\murky, { | bwr = 1, curve = -64, dur = 1, ffreq = 4000, freq = 400, k 
 );
 
 (
-~murkylvl = 0.03;
+~murkylvl = 0.01;
 ~murkyecholvl = ~murkylvl / 5;
 Pdef(\murky,
     Pbind(
@@ -445,25 +423,10 @@ Pdef(\murkys).isPlaying;
 Pdef(\murkys).stop;
 */
 
-~midiktrl.value(\murkys, 52);
+//~midiktrl.value(\murkys, 52);
 
-/*
-(
-MIDIdef.cc(\murkyplay, {
-    if(Pdef(\murkys).isPlaying.not) {
-        Pdef(\murkys).play(t, quant: 1);
-        "murkys play".postln;
-    }
-}, 66, srcID: ~nanoktrl2.uid, argTemplate: { |x| x > 0 });
-
-MIDIdef.cc(\murkystop, {
-    if(Pdef(\murkys).isPlaying) {
-        Pdef(\murkys).stop;
-        "murkys stop".postln;
-    }
-}, 66, srcID: ~nanoktrl2.uid, argTemplate: 0)
-);
-*/
+////////////////////////////////////////////////////////////////
+// SCENES
 
 (
 ~scenetoggle = { |scene, light, patterns, patternlights, patternstostop, stoplights|
@@ -493,8 +456,8 @@ MIDIdef.cc(\murkystop, {
 );
 
 (
-~scene2 = [\sinlo, \prcpar];
-~scene2lights = [64, 36];
+~scene2 = [\sinlo];
+~scene2lights = [64];
 ~scenetoggle.value(\scene2, 105, ~scene2, ~scene2lights);
 );
 
@@ -513,14 +476,12 @@ MIDIdef.cc(\murkystop, {
 (
 ~scene5 = [\pads5];
 ~scene5lights = [35];
-~scene5stoppers = [\sinlo];
-~scene5stopperlights = [64];
-~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights, ~scene5stoppers, ~scene5stopperlights);
+~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights);
 );
 
 (
-~scene6stoppers = [\sin, \murkys];
-~scene6stopperlights = [48, 52];
+~scene6stoppers = [\sin];
+~scene6stopperlights = [48];
 ~scenetoggle.value(\scene6, 109, patternstostop: ~scene6stoppers, stoplights: ~scene6stopperlights);
 );
 
