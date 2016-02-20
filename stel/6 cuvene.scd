@@ -7,7 +7,7 @@ MIDIIn.connectAll;
 MIDIdef.cc(\ccpostln, { arg ...args; args.postln; });
 MIDIdef.noteOn(\noteonpostln, { arg ...args; args.postln; });
 ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad") };
-if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
+//if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") } };
 ~midiout = MIDIOut(0);
 ~midiout.connect(~lpm.uid);
 );
@@ -84,13 +84,13 @@ SynthDef(\dynamix, { |inBus|
 // PAD
 
 (
-SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.015, release = 1, round = 0.1, stan_freq = 100|
+SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.04, release = 1, round = 0.1, stan_freq = 100|
 	var env				=	Env.asr(attack, level, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var freqmod			=	LFNoise2.kr(0.1!2, 0.0005, 1);
+	var freqmod			=	LFNoise2.kr(0.1!2, 0.0003, 1);
     var stan            =   StandardN.ar([stan_freq - 5, stan_freq + 5], [k, k - 0.01]).range(0.0, fb);
     var sinfb1			=	SinOscFB.ar(freq, stan);
-    var sinfb2			=	SinOscFB.ar(freq * freqmod, 0);
+    var sinfb2			=	SinOscFB.ar(freq * freqmod, fb * 0.3);
     var sinfbmix        =   (sinfb1 + sinfb2).round(round) * envgen;
     var rhpf            =   RHPF.ar(sinfbmix, (freq * 4).clip(50, SampleRate.ir / 2.5));
     Out.ar(0, rhpf);
@@ -101,9 +101,9 @@ SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate 
 Pdef(\pad1,
     Pbind(
         \instrument, \pad,
-        \attack, 0.1,
+        \attack, 10,
         \curve, -4,
-        \degree, Pshuf([Rest, Rest, [0, 7], [7, 12]], inf),
+        \degree, Pshuf([Rest, [0, 7], [7, 12]], inf),
         //\dur, Pseq(~paddurs1, inf),
         \dur, Pshuf([51, 53, 55, 57, 59] + 0.25, inf),
         \fb, Pshuf([0.5, 1.0, 1.5].stutter(5), inf),
@@ -116,9 +116,9 @@ Pdef(\pad1,
         \stan_freq, 50
 ));
 
-Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(4), inf));
+Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(3), inf));
 
-Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, Pshuf([Rest, Rest, [-2, 2], [2, 10]], inf)));
+Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, Pshuf([Rest, [-2, 2], [2, 10]], inf)));
 
 Pdef(\padsgroup1, Ppar([Pdef(\pads1), Pdef(\pads2)], inf));
 
@@ -200,7 +200,7 @@ Pdef(\pad7,
         //\pad,
     Pbind(
         \instrument, \pad,
-        \attack, 0.1,
+        \attack, 10,
         \curve, -4,
         \degree, Pshuf([Rest, [7, 12]], inf),
         \dur, Pshuf([71, 73, 75, 77, 79] + 0.25, inf),
@@ -213,7 +213,7 @@ Pdef(\pad7,
         \scale, ~scale
 ));
 
-Pdef(\pads7, Ppar([Pdef(\pad7)].stutter(4), inf));
+Pdef(\pads7, Ppar([Pdef(\pad7)].stutter(3), inf));
 );
 
 Pdef(\pads8, Pbindf(Pdef(\pads7), \degree, Pshuf([Rest, [2, 10]], inf)));
@@ -227,10 +227,10 @@ Pdef(\padsgroup4).play(t);
 */
 //
 
-~midiktrl.value(\padsgroup1, 33);
-~midiktrl.value(\padsgroup2, 34);
-~midiktrl.value(\padsgroup3, 35);
-~midiktrl.value(\padsgroup4, 36);
+~midiktrl.value(\padsgroup1, 34);
+~midiktrl.value(\padsgroup2, 35);
+~midiktrl.value(\padsgroup3, 36);
+~midiktrl.value(\padsgroup4, 37);
 
 ////////////////////////////////////////////////////////////////
 // SIN
@@ -305,6 +305,55 @@ Pdef(\sinlo).stop;
 ~midiktrl.value(\sindrone, 32);
 ~midiktrl.value(\sin, 48);
 ~midiktrl.value(\sinlo, 64);
+
+////////////////////////////////////////////////////////////////
+// TONE
+
+(
+SynthDef(\tone, { |curve = -4, dur, freq = 440, level = 0.02|
+    var env             =   Env.perc(0.01, dur, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    //var sin             =   FBSineC.ar(freq!2, mul: envgen);
+    var sin             =   SinOscFB.ar(freq!2, 0.25 * XLine.kr(1, 0.1, dur), envgen);
+    Out.ar(0, sin);
+}).add
+);
+
+(
+Pdef(\tone1,
+    Pbind(
+        \instrument, \tone,
+        \curve, -2,
+        \degree, 0,
+        \dur, Pseq([Pshuf([3, 3.25, 3.5, 3.75, 4].stutter(3)), 23.25], inf),
+        \octave, 5,
+        \scale, ~scale
+));
+
+Pdef(\tone2, Pbindf(Pdef(\tone1), \degree, 7));
+
+Pdef(\tones, Ppar([Pdef(\tone1), Pdef(\tone2)], inf));
+);
+
+/*
+Pdef(\tone1).play(t);
+Pdef(\tone1).isPlaying;
+Pdef(\tone1).stop;
+*/
+
+/*
+Pdef(\tone2).play(t);
+Pdef(\tone2).isPlaying;
+Pdef(\tone2).stop;
+*/
+
+/*
+Pdef(\tones).play(t);
+Pdef(\tones).stop;
+*/
+
+~midiktrl.value(\tone1, 33);
+~midiktrl.value(\tone2, 49);
 
 ////////////////////////////////////////////////////////////////
 // KIK
@@ -388,7 +437,7 @@ SynthDef(\murky, { | bwr = 1, curve = -64, dur = 1, ffreq = 4000, freq = 400, k 
 );
 
 (
-~murkylvl = 0.01;
+~murkylvl = 0.025;
 ~murkyecholvl = ~murkylvl / 5;
 Pdef(\murky,
     Pbind(
@@ -398,7 +447,7 @@ Pdef(\murky,
         \k, Pshuf((12..16) / 10, inf),
         \level, ~murkylvl,
         \degree, Pshuf([-2, 0, 1, 2, 3, 7], inf),
-        \octave, Pshuf([4, 5, 6, 7], inf),
+        \octave, Pshuf([3, 5, 7], inf),
         \scale, ~scale
 ));
 Pdef(\littlemurky, Pbindf(Pdef(\murky), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(7), inf), \level, ~murkyecholvl));
@@ -462,31 +511,37 @@ Pdef(\murkys).stop;
 );
 
 (
-~scene3 = [\padsgroup1];
-~scene3lights = [33];
+~scene3 = [\padsgroup1, \tone2];
+~scene3lights = [34, 49];
 ~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
 );
 
 (
 ~scene4 = [\padsgroup2];
-~scene4lights = [34];
+~scene4lights = [35];
 ~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
 );
 
 (
-~scene5 = [\pads5];
-~scene5lights = [35];
+~scene5 = [\tone1, \padsgroup3];
+~scene5lights = [33, 36];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights);
 );
 
 (
-~scene6stoppers = [\sin];
-~scene6stopperlights = [48];
-~scenetoggle.value(\scene6, 109, patternstostop: ~scene6stoppers, stoplights: ~scene6stopperlights);
+~scene6 = [\padsgroup4];
+~scene6lights = [37];
+~scenetoggle.value(\scene6, 109, ~scene6, ~scene6lights);
 );
 
 (
-~scene7stoppers = [\sindrone, \padsgroup1, \padsgroup2, \pads5];
-~scene7stopperlights = [32, 33, 34, 35];
+~scene7stoppers = [\sindrone, \sin, \sinlo, \tone1, \tone2];
+~scene7stopperlights = [32, 48, 64];
 ~scenetoggle.value(\scene7, 110, patternstostop: ~scene7stoppers, stoplights: ~scene7stopperlights);
+);
+
+(
+~scene8stoppers = [\padsgroup1, \padsgroup2, \padsgroup3, \padsgroup4];
+~scene8stopperlights = [34, 35, 36, 37];
+~scenetoggle.value(\scene8, 111, patternstostop: ~scene8stoppers, stoplights: ~scene8stopperlights);
 );
