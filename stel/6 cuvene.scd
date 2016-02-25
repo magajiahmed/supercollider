@@ -84,7 +84,7 @@ SynthDef(\dynamix, { |inBus|
 // PAD
 
 (
-SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.04, release = 0.2, round = 0.1, stan_freq = 100|
+SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.02, release = 0.2, round = 0.1, stan_freq = 100|
 	var env				=	Env.asr(attack, level, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	//var freqmod			=	LFNoise2.kr(0.1!2, 0.0003, 1);
@@ -316,11 +316,11 @@ Pdef(\sinlo).stop;
 // TONE
 
 (
-SynthDef(\tone, { |curve = -4, dur, freq = 440, level = 0.03|
+SynthDef(\tone, { |curve = -4, dur, fb = 0, freq = 440, level = 0.02|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     //var sin             =   FBSineC.ar(freq!2, mul: envgen);
-    var sin             =   SinOscFB.ar(freq!2, XLine.kr(1, 0.1, 0.05), envgen);
+    var sin             =   SinOscFB.ar([freq - 0.2, freq + 0.2], fb, envgen);
     Out.ar(0, sin);
 }).add
 );
@@ -331,7 +331,7 @@ Pdef(\tone1,
         \instrument, \tone,
         \curve, -4,
         \degree, [-2, 0],
-        \dur, Pseq([Pxrand([3, 3.25, 3.5, 3.75, 4], 15), 23.25], inf),
+        \dur, Pseq([Pxrand([3, 3.75, 4.25, 5], 15), 23.25], inf),
         \octave, 5,
         \scale, ~scale
 ));
@@ -505,8 +505,8 @@ Pdef(\murkys).stop;
 );
 
 (
-~scene1 = [\sindrone, \sin];
-~scene1lights = [32, 48];
+~scene1 = [\sindrone, \sin, \tone2];
+~scene1lights = [32, 48, 49];
 ~scenetoggle.value(\scene1, 104, ~scene1, ~scene1lights);
 );
 
@@ -517,8 +517,8 @@ Pdef(\murkys).stop;
 );
 
 (
-~scene3 = [\tone2, \padsgroup1];
-~scene3lights = [49, 34];
+~scene3 = [\padsgroup1];
+~scene3lights = [34];
 ~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
 );
 
