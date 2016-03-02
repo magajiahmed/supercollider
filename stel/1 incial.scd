@@ -120,7 +120,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outBus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.1, \outBus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.5, \outBus, 0));
 );
 
 /*
