@@ -8,7 +8,6 @@ Pdef.removeAll;
 // init
 
 (
-s.meter;
 t = TempoClock(96/60);
 );
 
