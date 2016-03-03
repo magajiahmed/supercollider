@@ -110,17 +110,17 @@ SynthDef(\dynamix, { |inBus|
 // LIMITER
 
 (
-SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outBus = 0|
+SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
     var env             =   Env.asr(0.01, 1, 0.01, 0);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inBus, 2);
     var limiter         =   Limiter.ar(in, level, dur);
-    Out.ar(outBus, limiter);
+    Out.ar(outbus, limiter);
 }).add;
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.5, \outBus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.5, \outbus, 0));
 );
 
 /*
@@ -133,15 +133,15 @@ Pdef(\limiter).stop;
 // DELAY
 
 (
-SynthDef(\delay, { |delay = 1, inBus = 0, outBus = 0|
+SynthDef(\delay, { |delay = 1, inBus = 0, outbus = 0|
     var in              =   In.ar(inBus, 2);
     var delayc          =   DelayC.ar(in, 2, delay);
-    Out.ar(outBus, delayc);
+    Out.ar(outbus, delayc);
 }).add;
 );
 
 (
-Pdef(\delay, Pmono(\delay, \delay, ~delay, \inBus, ~delaybus, \outBus, 0));
+Pdef(\delay, Pmono(\delay, \delay, ~delay, \inBus, ~delaybus, \outbus, 0));
 );
 
 /*
@@ -154,13 +154,13 @@ Pdef(\delay).stop;
 // VERB
 
 (
-SynthDef(\verb, { |dur = 1, gate = 1, inBus, level = 0.1, outBus|
+SynthDef(\verb, { |dur = 1, gate = 1, inBus, level = 0.1, outbus|
     var env             =   Env.asr(0.01, level, 0.1, -64);
     var envgen          =   EnvGen.ar(env, gate, doneAction: 2);
     var in              =   In.ar(inBus, 2);
     var verb            =   JPverb.ar(in, t60: 5, size: 0.1, earlyDiff: 0.1, modDepth: 0.0, modFreq: 0.0).round(0.01) * envgen;
     var grainin         =   GrainIn.ar(2, Dust2.kr(15!2), LFNoise0.kr(15!2).range(0.001, 0.1), verb);
-    Out.ar(outBus, grainin);
+    Out.ar(outbus, grainin);
 }).add;
 );
 
@@ -172,7 +172,7 @@ Pdef(\verb,
         \inBus, ~verbus,
         \legato, 1,
         \level, 0.3,
-        \outBus, ~delaybus
+        \outbus, ~delaybus
 ));
 
 Pdef(\verbs, Ppar([Pdef(\verb)].stutter(2), inf));
@@ -198,14 +198,14 @@ Pdef(\verbs).stop;
 // DINGLE
 
 (
-SynthDef(\dingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.2, outBus, pan = 0|
+SynthDef(\dingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.2, outbus, pan = 0|
 	var env				=	Env.perc(0.003, 1, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq * 4, a, 3, add: 1);
 	var sin				=	SinOsc.ar(freq * (cusp), mul: envgen);
 	var rez				=	Resonz.ar(sin, 6000, 0.1);
 	var pan2			=	Pan2.ar(rez, pan);
-	Out.ar(outBus, pan2);
+	Out.ar(outbus, pan2);
 }).add;
 );
 
@@ -229,7 +229,7 @@ Pdef(\dinglepat1,
 		], inf),
 		\level, ~dinglelvl,
 		\octave, 5,
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \scale, ~scale,
 ));
 
@@ -265,7 +265,7 @@ Pdef(\single1,
         \dur, Pshuf(Array.fill(5, { |d| (d + 1) * 0.25 }).stutter(5), inf),
         \level, Pshuf([0.2, 1].stutter(17) * 0.4, inf),
         \octave, 7,
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \pan, Pshuf([-1, -0.5, 0, 0.5, 1], inf),
         \scale, ~scale
 ));
@@ -304,12 +304,12 @@ Pdef(\single2).stop;
 // Synth
 
 (
-SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.1, outBus, rt = 0.1 |
+SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.1, outbus, rt = 0.1 |
 	var env				=	Env.new([0, level, level / 40, 0], [0.005, 0.005, dur], curve: 'cubed');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbs				=	FBSineC.ar(freq: freq, im: [im, im + 1], mul: envgen);
 	var flt				=	RHPF.ar(fbs, 2000, 0.5);
-	Out.ar(outBus, flt);
+	Out.ar(outbus, flt);
 }).add;
 );
 
@@ -323,7 +323,7 @@ Pdef(\snappat,
 		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3].stutter(7), inf),
 		\im, Pshuf((1..10), inf),
 		\octave, 10,
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
 		\scale, ~scale,
 ));
 );
@@ -342,13 +342,13 @@ Pdef(\snappat).stop;
 // XAOS
 
 (
-SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.5, outBus, resonz_freq = 4000, rhpf_freq = 8000|
+SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.5, outbus, resonz_freq = 4000, rhpf_freq = 8000|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xaos            =   Crackle.ar(chaos!2).round(0.05) * envgen;
     var resonz          =   Resonz.ar(xaos, resonz_freq.clip(50, SampleRate.ir / 2.5), 0.3) * LFClipNoise.ar(80).range(0.5, 1);
     var rhpf            =   RHPF.ar(xaos, rhpf_freq.clip(50, SampleRate.ir / 2.5), 0.5) * LFClipNoise.ar(80).range(0.5, 1);
-    Out.ar(outBus, (resonz + rhpf).fold2(level).tanh);
+    Out.ar(outbus, (resonz + rhpf).fold2(level).tanh);
 }).add;
 );
 
@@ -360,7 +360,7 @@ Pdef(\xaos,
         \curve, Prand([-64, -32, -16], inf),
         \degree, Pseq([Pseq([0], 53), Pseq([Rest], 31)], inf),
         \dur, Pseq([Pseq([0.125], 4), Pshuf(Array.fill(7, { |i| (i) * 0.25 }).stutter(11))], inf),
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \resonz_freq, Pshuf(Array.fill(5, { |i| pi.pow(i + 4) }).stutter(5), inf),
         \rhpf_freq, Pshuf([1000, 10000].stutter(3), inf),
 ));
@@ -378,13 +378,13 @@ Pdef(\xaos).stop;
 // SINPRC
 
 (
-SynthDef(\sinprc, { |curve = -16, fb = 2.5, ffreq = 4000, freq = 440, gfreq = 22050, level = 0.2, outBus, xi = 1.2, yi = 2.1|
+SynthDef(\sinprc, { |curve = -16, fb = 2.5, ffreq = 4000, freq = 440, gfreq = 22050, level = 0.2, outbus, xi = 1.2, yi = 2.1|
     var env             =   Env.perc(0.01, 0.3, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var gbman           =   GbmanL.ar([gfreq, gfreq - 1], xi, yi, 0.25, 1);
     var sin             =   SinOscFB.ar(freq * gbman * XLine.kr(1, 0.1, 0.1), fb, envgen);
     var rhpf            =   RHPF.ar(sin, ffreq.clip(50, SampleRate.ir / 2.5), 0.5);
-    Out.ar(outBus, rhpf.fold2(level));
+    Out.ar(outbus, rhpf.fold2(level));
 }).add;
 );
 
@@ -397,7 +397,7 @@ Pdef(\sinprc,
         \fb, Pshuf([1, 2, 3].stutter(17), inf),
         \ffreq, Pshuf([100, 10000].stutter(9), inf),
         \freq, Pshuf([100, 1000, 10000].stutter(13), inf),
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \xi, Pshuf([-0.5, 0, 0.5].stutter(5), inf),
         \yi, Pshuf([-2, 0, 2].stutter(7), inf)
 ));
@@ -415,7 +415,7 @@ Pdef(\sinprc).stop;
 // clip noise percussion
 
 (
-SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.05, outBus, releaseTime = 0.1, rhpf_cutoff_start = 1, rhpf_cutoff_end = 1|
+SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.05, outbus, releaseTime = 0.1, rhpf_cutoff_start = 1, rhpf_cutoff_end = 1|
     var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var blip            =   Blip.ar(0, mul: envgen);
@@ -423,7 +423,7 @@ SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.05, outBus, rele
     var rlpf            =   BLowPass4.ar(blip + clipnoiz, freq.clip(50, SampleRate.ir / 2.5), 0.1);
     var rhpf            =   RHPF.ar(blip + clipnoiz, (12000 * XLine.ar(rhpf_cutoff_start, rhpf_cutoff_end, releaseTime)).clip(50, SampleRate.ir / 2.5), 0.5);
     var balance         =   Balance2.ar((rlpf + rhpf)[0], (rlpf + rhpf)[1], bal);
-    Out.ar(outBus, balance);
+    Out.ar(outbus, balance);
 }).add;
 );
 
@@ -438,7 +438,7 @@ Pdef(\cnprc1,
         \dur, Pseq([Pseq([0.125], 4), Pshuf(Array.fill(11, { |d| (d + 1) * 0.25 }))], inf),
         \freq, Pseq([Pshuf([80, 800].stutter(17)), Pseq([Rest], 17)], inf),
         \level, ~cnprclvl,
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \releaseTime, Pshuf([0.05, 0.1, 0.2, 0.4].stutter(13), inf),
         \rhpf_cutoff_start, Pshuf([0.25, 0.5, 1], inf),
         \rhpf_cutoff_end, Pshuf([0.1, 1, 1, 1, 1], inf)
@@ -479,13 +479,13 @@ Pdef(\cnprc3).stop;
 // LORI
 
 (
-SynthDef(\lori, { |balance = 0, curve = -16, dur = 1, freq = 440, length = 1, level = 0.2, lfreq = 22050, lorimul = 1, outBus, r = 28, s = 10, start = 1, end = 1|
+SynthDef(\lori, { |balance = 0, curve = -16, dur = 1, freq = 440, length = 1, level = 0.2, lfreq = 22050, lorimul = 1, outbus, r = 28, s = 10, start = 1, end = 1|
     var env             =   Env.perc(0.005, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var lori            =   LorenzL.ar(lfreq * XLine.ar(start, end, length), [s, s - 0.05], [r, r - 0.05], mul: lorimul, add: 1);
     var sin             =   SinOsc.ar(freq * lori, mul: envgen);
     var bal             =   Balance2.ar(sin[0], sin[1], balance);
-    Out.ar(outBus, bal);
+    Out.ar(outbus, bal);
 }).add;
 );
 
@@ -499,7 +499,7 @@ Pdef(\lori,
         \freq, Pseq([Pshuf([64, 8192].stutter(3), 10), Pseq([Rest], 31)], inf),
         \length, Pshuf([0.5, 0.75, 1].stutter(11), inf),
         \lorimul, Pshuf([0.5, 1, 2, 4].stutter(17), inf),
-        \outBus, ~prcfxbus,
+        \outbus, ~prcfxbus,
         \r, Pshuf((29..40), inf),
         \s, Pshuf((8..12), inf),
         \start, Pshuf([0.2, 0.4, 0.6, 0.8, 1.0], inf),
@@ -519,11 +519,11 @@ Pdef(\lori).stop;
 // PAD
 
 (
-SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.005, outBus|
+SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.005, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin1            =   SinOscFB.ar(freq!2 * XLine.ar(freqmod_start, 1, freqmod_length), fb, envgen);
-    Out.ar(outBus, sin1);
+    Out.ar(outbus, sin1);
 }).add;
 );
 
@@ -538,7 +538,7 @@ Pdef(\pad1,
         \legato, 0.25,
         \degree, Pshuf([[0, 7, 10], [7, 10, 12], [10, 12, 19]], inf),
         \octave, Pshuf([4, 5, 6].powerset.reject ({ |i| i.isEmpty }), inf),
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
         \scale, ~scale,
 ));
 
@@ -562,7 +562,7 @@ Pdef(\paddrone1,
         \freqmod_start, Pshuf([2, 4].stutter(7), inf),
         \legato, 0.999,
         \octave, 5,
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
         \scale, ~scale
 ));
 
@@ -608,14 +608,14 @@ Pdef(\paddrones).stop;
 // LARRY
 
 (
-SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005, outBus, s = 10|
+SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005, outbus, s = 10|
     var env             =   Env.asr(0.01, level, 0.01, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var frqmod          =   Lorenz2DN.ar(15, 15000, s: [s, s - 0.001],  mul: 0.9, add: 1);
     var sinmod          =   SinOscFB.ar(freq * 8 * frqmod, fb, envgen / 8);
     var sin1            =   SinOscFB.ar(freq, fb, envgen);
     var sin2            =   SinOsc.ar(freq * LFNoise0.kr(15, 0.003, 1), mul: envgen);
-    Out.ar(outBus, sinmod + sin1 + sin2);
+    Out.ar(outbus, sinmod + sin1 + sin2);
 }).add;
 );
 
@@ -629,7 +629,7 @@ Pdef(\larry1,
         \legato, 1,
         \degree, Pseq([[7, 10, 12, 13], Rest], inf),
         \octave, 5,
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
         \s, Pwhite(8.0, 12.0, inf),
         \scale, ~scale
 ));
@@ -689,13 +689,13 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.02, outBus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.02, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
     var sin1            =   SinOscFB.ar(freq * xline * LFNoise2.kr(0.5!2, 0.001, 1) * LFNoise0.kr(17!2, 0.002, 1), fb);
     var sin3            =   SinOscFB.ar(freq!2 * xline, fb);
-    Out.ar(outBus, ((sin1 + sin3).fold2(0.2) * 5 * envgen * 0.5) + ((sin1 + sin3) * envgen * 0.5));
+    Out.ar(outbus, ((sin1 + sin3).fold2(0.2) * 5 * envgen * 0.5) + ((sin1 + sin3) * envgen * 0.5));
 }).add;
 );
 
@@ -708,7 +708,7 @@ Pdef(\pno1,
         \fb, 0,
         \level, Prand([0.2, 1] * 0.01, inf),
         \octave, 5,
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
         \scale, ~scale
 ));
 
@@ -731,7 +731,7 @@ Pdef(\pnochord,
         \dur, Pshuf([13, 17, 19], inf),
         \fb, Pshuf([0, 0.125, 0.25, 0.5, 1], inf),
         \octave, 4,
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
         \scale, ~scale
 ));
 );
@@ -771,7 +771,7 @@ MIDIdef.cc(\pnostop, {
 // SynthDef
 
 (
-SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.05, outBus|
+SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var fbmod           =   LFNoise2.kr(3!2, 1, 1) * LFNoise2.kr(11!2, 1, 1);
@@ -779,7 +779,7 @@ SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb 
     var sinfb1          =   SinOscFB.ar(freq!2 * sinfb1freqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
     var sinfb2          =   SinOscFB.ar(freq, fb * fbmod) * envgen;
     var tri             =   LFTri.ar(freq!2, mul: envgen);
-    Out.ar(outBus, sinfb1 + sinfb2 + tri);
+    Out.ar(outbus, sinfb1 + sinfb2 + tri);
 }).add;
 );
 
@@ -798,7 +798,7 @@ Pdef(\bass,
         \dur, Pshuf(~bassdurations.stutter(3), inf),
         \fb, Pshuf([0.25, 0.5, 0.75].stutter(5), inf),
         \octave, 3,
-        \outBus, [~delaybus, ~bassfxbus],
+        \outbus, [~delaybus, ~bassfxbus],
 		\scale, ~scale,
 ));
 
@@ -811,7 +811,7 @@ Pdef(\bass2,
         \dur, Pshuf(~bassdurations, inf),
         \fb, Pshuf([0.25, 0.5, 1].stutter(7), inf),
         \octave, 3,
-        \outBus, [~delaybus, ~bassfxbus],
+        \outbus, [~delaybus, ~bassfxbus],
         \scale, ~scale
 ));
 );
@@ -846,14 +846,14 @@ SynthDef(\recbuf, { |dur = 2, gate = 1, inBus = 2, isRecording = 1, trigger = 1|
 );
 
 (
-SynthDef(\bufrd, { |dur = 1, ffreq = 3000, gate = 1, level = 1, outBus, pan = 0|
+SynthDef(\bufrd, { |dur = 1, ffreq = 3000, gate = 1, level = 1, outbus, pan = 0|
 	//var kbn1			=	LFBrownNoise1.kr(4).range(0.75, 1);
 	var env				=	Env.asr(0.003, level, 0.1);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
 	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
     var rhpf			=	RHPF.ar(bufrd, ffreq.clip(50, SampleRate.ir / 2.5), 0.3, envgen * 2);
 	var pan2			=	Pan2.ar(rhpf, pan);
-	Out.ar(outBus, pan2);
+	Out.ar(outbus, pan2);
 }).add;
 );
 
@@ -881,7 +881,7 @@ Pdef(\pbpat,
         \dur, 0.25,
 		\ffreq, 4000,
         \level, 1,
-        \outBus, ~delaybus,
+        \outbus, ~delaybus,
 		\pan, Prand([-0.5, 0, 0.5], inf)
 ));
 );
@@ -908,7 +908,7 @@ Pdef(\buffpat).pause;
 // PLUNK
 
 (
-SynthDef(\plunk, { |a = 1, curve = -16, dur = 1, fb = 0, freq = 400, level = 0.1, outBus, rq = 0.3, shapelimit = 1|
+SynthDef(\plunk, { |a = 1, curve = -16, dur = 1, fb = 0, freq = 400, level = 0.1, outbus, rq = 0.3, shapelimit = 1|
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var sinfb			=	SinOscFB.ar(freq, fb);
@@ -916,7 +916,7 @@ SynthDef(\plunk, { |a = 1, curve = -16, dur = 1, fb = 0, freq = 400, level = 0.1
     var shape			=	SineShaper.ar(sinfb, shapelimit * cusp, (shapelimit * 2).reciprocal);
     var rlpf			=	BLowPass4.ar(shape, (freq).clip(50, SampleRate.ir / 3));
     var rhpf			=	RHPF.ar(shape, (freq * 8).clip(50, SampleRate.ir / 3), rq);
-    Out.ar(outBus, (rlpf + rhpf) * envgen);
+    Out.ar(outbus, (rlpf + rhpf) * envgen);
 }).add;
 );
 
@@ -930,7 +930,7 @@ Pdef(\plunkpat1,
         \degree, 0,
         \fb, Pshuf(([0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]), inf),
         \octave, 6,
-        \outBus, [~delaybus, ~verbus],
+        \outbus, [~delaybus, ~verbus],
 		\scale, ~scale,
         \shapelimit, Pshuf([0.3, 0.4, 0.5, 0.6, 0.7, 0.8], inf)
 ));
