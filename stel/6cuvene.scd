@@ -13,7 +13,6 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 );
 
 (
-s.meter;
 t = TempoClock(120/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
@@ -37,10 +36,8 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
 (
-// Bus depot
-~prcfxbus = Bus.audio(s, 2);
 // Pitch logic
-~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 1024/729, 3/2, 14/9, 12/7, 7/4, 243/128];
+~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
@@ -57,34 +54,11 @@ s.record;
 s.stopRecording;
 */
 
-////////////////////////////////////////////////////////
-// COMPANDER
-
-(
-SynthDef(\dynamix, { |inBus|
-	var in	   		= 	In.ar(inBus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/2); // compressor
-	Out.ar(0, compressor);
-}).add;
-);
-
-(
-~startdynamix = {
-	s.sync;
-    ~dynamix = Synth(\dynamix, [\inBus, ~prcfxbus]).register;
-}.fork;
-);
-
-/*
-~dynamix.isPlaying;
-~dynamix.free;
-*/
-
 ////////////////////////////////////////////////////////////////
 // PAD
 
 (
-SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.02, release = 0.2, round = 0.1, stan_freq = 100|
+SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.05, release = 0.2, round = 0.1, stan_freq = 100|
 	var env				=	Env.asr(attack, level, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	//var freqmod			=	LFNoise2.kr(0.1!2, 0.0003, 1);
@@ -105,7 +79,8 @@ Pdef(\pad1,
         \instrument, \pad,
         \attack, 0.03,
         \curve, 0,
-        \degree, Pseq([[-2, 0, 7], [7, 10, 12]], inf),
+        //\degree, Pseq([[-2, 0, 7], [7, 10, 12]], inf),
+        \degree, Pshuf(~chords, inf),
         \dur, Pshuf([31, 33, 35, 37, 39] + 0.25, inf),
         \fb, 0.5,
         \k, Pwhite(0.9, 4.0, inf),
@@ -120,7 +95,8 @@ Pdef(\pad1,
 
 Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(2), inf));
 
-Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, [2, 5]));
+//Pdef(\pads2, Pbindf(Pdef(\pads1), \degree, [2, 5]));
+Pdef(\pads2, Pbindf(Pdef(\pads1)));
 
 Pdef(\padsgroup1, Ppar([Pdef(\pads1), Pdef(\pads2)], inf));
 
@@ -204,7 +180,7 @@ Pdef(\padlo,
         \instrument, \pad,
         \attack, 0.1,
         \curve, -4,
-        \degree, [7, 12],
+        \degree, [0, 7, 12],
         \dur, Pshuf([41, 43, 45, 47, 49] + 0.25, inf),
         \fb, 0.3,
         \k, Pwhite(0.9, 4.0, inf),
@@ -215,7 +191,7 @@ Pdef(\padlo,
         \scale, ~scale
 ));
 
-Pdef(\padslo, Ppar([Pdef(\pad7)].stutter(2), inf));
+Pdef(\padslo, Ppar([Pdef(\padlo)].stutter(2), inf));
 );
 
 //Pdef(\padsgroup4, Ppar([Pdef(\pads7), Pdef(\pads8)], inf));
@@ -242,7 +218,7 @@ Pdef(\padsgroup4).play(t);
 // SIN
 
 (
-SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.005|
+SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.02|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, fb, envgen);
@@ -316,10 +292,9 @@ Pdef(\sinlo).stop;
 // TONE
 
 (
-SynthDef(\tone, { |curve = -4, dur, fb = 0, freq = 440, level = 0.02|
+SynthDef(\tone, { |curve = -4, dur, fb = 0, freq = 440, level = 0.1|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    //var sin             =   FBSineC.ar(freq!2, mul: envgen);
     var sin             =   SinOscFB.ar([freq - 0.2, freq + 0.2], fb, envgen);
     Out.ar(0, sin);
 }).add
@@ -361,124 +336,6 @@ Pdef(\tones).stop;
 ~midiktrl.value(\tone1, 33);
 ~midiktrl.value(\tone2, 49);
 
-////////////////////////////////////////////////////////////////
-// KIK
-
-(
-SynthDef(\kik, { |a = 1.1, c = 0.13, curve = 0, freq = 22050, level = 0.1, pan = 0, releaseTime = 0.01|
-	var env				=	Env.perc(0.003, releaseTime, level, curve);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    var lc				=	LinCongC.ar(freq * SinOsc.ar(freq, 0, 0.2, 1), a, c) * envgen;
-	var rhpf			=	RHPF.ar(lc, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.1);
-	var pan2			=	Pan2.ar(lc + rhpf, pan);
-    Out.ar(~prcfxbus, pan2).fold2(level);
-}).add;
-);
-
-(
-~kiklevel = 0.25;
-~prcpatlevel1 = 0.15;
-~prcpatlevel2 = ~prcpatlevel1 / 5;
-Pdef(\prcpat1,
-	Pbind(
-		\instrument, \kik,
-        \a, Pshuf([1.15, 1.2, 1.25], inf),
-        \c, Pshuf([0.05, 0.07, 0.09, 0.11, 0.13, 0.15], inf),
-		\curve, -64,
-        //\dur, Pshuf([0.5, 1, Pseq([0.75], 2)].stutter(3), inf),
-        \dur, Pshuf([0.75, 1, 1.25, 1.5, 1.75], inf),
-		\level, ~prcpatlevel1,
-        //\degree, Pseq([Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], 5), Pseq([Rest], 45)], inf),
-        \degree, Pseq([Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest, Rest, 0], inf),
-        \octave, Pshuf([[7, 12], [7, 13], [7, 14], [9, 12], [9, 13], [9, 14]], inf),
-		\scale, ~scale,
-		\releaseTime, 0.5
-));
-
-Pdef(\prcpat2,
-	Pbind(
-		\instrument, \kik,
-        \a, Pshuf([0.9, 1.0, 1.1, 1.2, 1.3], inf),
-        //\c, Pwhite([0.07, 0.11, 0.15], inf),
-        \c, 0.15,
-		\curve, -16,
-        \dur, Pshuf([0.25, 0.25, Pseq([0.25], 2), 0.5, 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4], inf),
-        \level, ~kiklevel,
-        \degree, Pseq([Pseq(0!2, 11), Pseq([Rest], 22)], inf),
-		\octave, 5,
-		\releaseTime, 1
-));
-Pdef(\prcpat1a, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75].stutter(17), inf), \level, ~prcpatlevel2, \pan, -1));
-Pdef(\prcpat1b, Pbindf(Pdef(\prcpat1a), \pan, 1));
-Pdef(\prcpat1c, Pbindf(Pdef(\prcpat1), \dur, 1));
-Pdef(\prcpar, Ppar([Pdef(\prcpat1), Pdef(\prcpat1a), Pdef(\prcpat1b), Pdef(\prcpat1c), Pdef(\prcpat2)], inf));
-);
-
-/*
-Pdef(\prcpar).play(t, quant: 0.5);
-Pdef(\prcpar).isPlaying;
-Pdef(\prcpar).stop;
-*/
-
-//~midiktrl.value(\prcpar, 36);
-
-////////////////////////////////////
-// MURKY
-
-(
-SynthDef(\murky, { | bwr = 1, curve = -64, dur = 1, ffreq = 4000, freq = 400, k = 1.4, level = 0.1, pan = 0 |
-	var env				=	Env.new([0, level, level / 10, 0], [0.005, 0.05, dur / 2]);
-	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var stan			=	Standard2DN.ar(300, 3000, k: k, mul: 1, add: 1);
-	var fbfreqmod		=	LFNoise0.kr(0.5).range(1, 30);
-	var fbmod			=	LFNoise1.kr(fbfreqmod).range(0, 0.999);
-	var sinfb			=	SinOscFB.ar(freq * stan, 0.999, mul: envgen);
-	var lfn				=	LFNoise1.kr(1 / (dur * 10), mul: 1, add: 1);
-    var rlpf			=	RLPF.ar(sinfb, ffreq.clip(50, SampleRate.ir / 3), 0.05);
-	var lfndelaymod		=	LFNoise0.kr(5).range(0.005, 0.05);
-	var delay			=	DelayC.ar(rlpf, 0.2, freq.reciprocal);
-	var pan2			=	Pan2.ar(rlpf + delay, pan);
-	Out.ar(~prcfxbus, pan2);
-}).add;
-);
-
-(
-~murkylvl = 0.025;
-~murkyecholvl = ~murkylvl / 5;
-Pdef(\murky,
-    Pbind(
-        \instrument, \murky,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 1.75, 2, 3, 4, 6], inf),
-        \ffreq, Pshuf([8, 16, 32] * 262, inf),
-        \k, Pshuf((12..16) / 10, inf),
-        \level, ~murkylvl,
-        \degree, Pshuf([-2, 0, 1, 2, 3, 7], inf),
-        \octave, Pshuf([3, 5, 7], inf),
-        \scale, ~scale
-));
-Pdef(\littlemurky, Pbindf(Pdef(\murky), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(7), inf), \level, ~murkyecholvl));
-Pdef(\murkys, Ppar([Pdef(\murky), Pdef(\littlemurky)], inf));
-);
-
-/*
-Pdef(\murky).play(t, quant: 1);
-Pdef(\murky).isPlaying;
-Pdef(\murky).stop;
-*/
-
-/*
-Pdef(\littlemurky).play(t, quant: 1);
-Pdef(\littlemurky).isPlaying;
-Pdef(\littlemurky).stop;
-*/
-
-/*
-Pdef(\murkys).play(t, quant: 1);
-Pdef(\murkys).isPlaying;
-Pdef(\murkys).stop;
-*/
-
-//~midiktrl.value(\murkys, 52);
 
 ////////////////////////////////////////////////////////////////
 // SCENES
@@ -539,35 +396,3 @@ Pdef(\murkys).stop;
 ~scene6stopperlights = [34, 35];
 ~scenetoggle.value(\scene6, 109, patternstostop: ~scene6stoppers, stoplights: ~scene6stopperlights);
 );
-
-/*
-(
-~scene4 = [\padsgroup2];
-~scene4lights = [35];
-~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
-);
-
-(
-~scene5 = [\tone1, \padsgroup3];
-~scene5lights = [33, 36];
-~scenetoggle.value(\scene5, 108, ~scene5, ~scene5lights);
-);
-
-(
-~scene6 = [\padsgroup4];
-~scene6lights = [37];
-~scenetoggle.value(\scene6, 109, ~scene6, ~scene6lights);
-);
-
-(
-~scene7stoppers = [\sindrone, \sin, \sinlo, \tone1, \tone2];
-~scene7stopperlights = [32, 48, 64, 33, 49];
-~scenetoggle.value(\scene7, 110, patternstostop: ~scene7stoppers, stoplights: ~scene7stopperlights);
-);
-
-(
-~scene8stoppers = [\padsgroup1, \padsgroup2, \padsgroup3, \padsgroup4];
-~scene8stopperlights = [34, 35, 36, 37];
-~scenetoggle.value(\scene8, 111, patternstostop: ~scene8stoppers, stoplights: ~scene8stopperlights);
-);
-*/

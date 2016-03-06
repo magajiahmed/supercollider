@@ -54,7 +54,7 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 
 // Pitch logic
 (
-~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 12/7, 7/4, 15/8];
+~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
@@ -991,12 +991,14 @@ Pdef(\plunkpat6).stop;
 ////////////////////////////////////////////////////////////////
 // START UP THE EFFECTS
 
+(
 {
     s.sync;
     Pdef(\limiter).play(t);
     Pdef(\delay).play(t);
     Pdef(\verbs).play(t);
 }.fork;
+);
 
 ////////////////////////////////////////////////////////////////
 // SCENES

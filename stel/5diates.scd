@@ -3,7 +3,7 @@ Pdef.removeAll;
 // pitch logic
 (
 ~root = 0;
-~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 12/7, 7/4, 15/8];
+~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 ~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 ~scale = Scale.new((0..11), 12, ~tuning);
@@ -133,7 +133,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.5, \
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.1, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.15, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0!2);
     var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 2);
@@ -178,7 +178,6 @@ Pdef(\basspat2,
         \instrument, \bass,
         \degree, Pseq([[0, 7], Rest, [0, 7], Rest, Rest, [0, 7], Rest, Rest, Rest], inf),
         \dur, Pseq([1, 5, 1, 4, 3, 1, 4, 3, 2] + 0.25, inf),
-        \level, 0.1,
         \octave, 3,
         \outbus, ~delaybus,
         \root, ~root,
@@ -217,7 +216,7 @@ Pdef(\hatpat1,
         //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
         \dur, Pshuf(Array.fill(17, { |i| (i + 1) * 0.25 }), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
-		\level, 0.1,
+		\level, 0.05,
 		\degree, 0,
 		\octave, 9,
         \outbus, ~prcbus,
@@ -229,7 +228,7 @@ Pdef(\hatpat2,
     Pbindf(
         Pdef(\hatpat1),
         //\dur, Pshuf([Pseq([0.25], 4), Pseq([0.5], 2), 1, 2].stutter(11), inf),
-        \level, 0.015
+        \level, 0.01
 ));
 
 Pdef(\hatpar, Ppar([Pdef(\hatpat1), Pdef(\hatpat2)], inf));
@@ -259,7 +258,7 @@ Pdef(\hatpar).stop;
 Pdef(\pulsepat1a,
 	Pbind(
 		\instrument, \hat,
-        \curve, Prand([-16, -8, -4], inf),
+        \curve, Prand([-64, -16, -4], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24].stutter(11), inf),
 		\fb, Pwhite(2.7, 3.2, inf),
 		\level, ~pulselvl,
@@ -385,7 +384,7 @@ Pdef(\prcpat1,
 		\instrument, \prc,
         \a, 1,
         \curve, Prand([-16, -8], inf),
-        \degree, Pseq([Rest, Rest, 0, Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest, 0], inf),
+        \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
         \dur, Pxrand([0.75, 1, 1.25], inf),
         \foldfactor, Prand([100, 200], inf),
         \level, Prand([0.2, 1] * 0.15, inf),
@@ -430,7 +429,7 @@ Pdef(\kikpat,
 	Pbind(
 		\instrument, \kik,
 		\a, Pwhite(1.0, 2.0, inf).round(0.01),
-        \dur, Pshuf(Array.fill(23, { |d| (d + 1) * 0.25 }), inf),
+        \dur, Pshuf(Array.fill(13, { |d| (d + 1) * 0.25 }), inf),
 		\ffreq, 1000,
 		\frq, 0.1,
 		\degree, [0, 7],
@@ -502,7 +501,7 @@ Pdef(\prcpar2).stop;
 
 (
 SynthDef(\banjo, {
-	|curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, level = 0.15, outbus, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
+	|curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, level = 0.05, outbus, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var noiz			=	LFNoise0.kr(30!2).range(0.999, 1);
@@ -521,7 +520,6 @@ Pdef(\banjopat,
         \dur, Pshuf(Array.fill(17, { |d| (d + 0.25) }), inf),
 		\fb, Pwhite(0.0, 1.0, inf),
 		\foldfactor, Pwhite(1, 20, inf),
-        \level, 0.1,
         \degree, 0,
 		\octave, Pwhite(4, 6, inf),
         \outbus, ~delaybus,
@@ -533,7 +531,7 @@ Pdef(\banjopat,
 		\scale, ~scale,
 ));
 
-Pdef(\banjopar, Ppar([Pdef(\banjopat)].stutter(4), inf));
+Pdef(\banjopar, Ppar([Pdef(\banjopat)].stutter(3), inf));
 
 Pdef(\banjo2, Pbindf(Pdef(\banjopat), \dur, 101));
 );
@@ -624,12 +622,17 @@ SynthDef(\stringdelayktrl, {|delaytime = 0.01, dur = 1, outbus = 0|
 //
 
 (
+~setdelaytimedursshort = [2, 3].collect({ |d| Pseq([d.reciprocal], d) });
+~setdelaytimedurslong = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13] + 0.25;
+~setdelaytimedurs = ~setdelaytimedursshort ++ ~setdelaytimedurslong;
+
 Pdef(\stringpat0setdelaytime,
 	Pbind(
 		\instrument,\stringdelayktrl,
 		\delaytime, Pbrown(0.0001, 0.01, 0.001, inf),
 		//\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48], inf),
-        \dur, Pwhite(0.02, 20, inf),
+        //\dur, Pwhite(0.01, 10, inf),
+        \dur, Pshuf(~setdelaytimedurs, inf),
 		\legato, 1,
 		\outbus, ~stringpat0delayktrlbus,
 ));
@@ -826,7 +829,7 @@ Pdef(\stringpat6setdelaytime,
 Pdef(\stringpat6,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat6delayktrlbus.asMap,
-        \degree, Pshuf([[-5, 0], Rest], inf),
+        \degree, Pshuf([[-5, 0], [0, 7]], inf),
 		\octave, 7,
 ));
 );
@@ -853,7 +856,7 @@ Pdef(\stringpat7setdelaytime,
 Pdef(\stringpat7,
 	Pbindf(Pdef(\stringpat2),
 		\delaytime, ~stringpat7delayktrlbus.asMap,
-        \degree, Pshuf([[-2, 2], Rest], inf),
+        \degree, Pshuf([[-2, 2], [2, 10]], inf),
 		\octave, 7
 ));
 );
@@ -1048,8 +1051,10 @@ Pdef(\stringpat0setdelaytime).isPlaying;
 
 ////////////////////////////////
 // start up the effects
+(
 {
     s.sync;
     Pdef(\limiter).play(t);
     Pdef(\delay).play(t);
 }.fork;
+);

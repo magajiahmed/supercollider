@@ -41,10 +41,10 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |s| s.name.contains("out0") }
 
 // pitch logic
 (
-~ratios = [1/1, 256/243, 9/8, 7/6, 81/64, 4/3, 1024/729, 3/2, 14/9, 7/4];
+~ratios = [1/1, 16/15, 9/8, 7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8];
 ~tuning = Tuning.new(~ratios.ratiomidi);
 //~bassscale = Scale.new(#[0, 1, 2, 3], ~ratios.size, ~tuning);
-~scaledegrees = #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+~scaledegrees = (0..(~ratios.size - 1));
 ~scale = Scale.new(~scaledegrees, ~ratios.size, ~tuning);
 );
 
@@ -109,13 +109,13 @@ SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.005, outbus|
 }).add;
 );
 
-Pdef(\sinfbdrone0, Pmono(\sinfbdrone, \degree, [7, 10], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\sinfbdrone0, Pmono(\sinfbdrone, \degree, [7, 12], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
 
 (
 Pdef(\sinfbdrone1,
     Pbind(
         \instrument, \sinfbdrone,
-        \degree, 9,
+        \degree, 10,
         \dur, Pshuf([35, 37, 39], inf),
         \legato, 0.5,
         \octave, 4,
@@ -125,7 +125,7 @@ Pdef(\sinfbdrone1,
 
 //Pdef(\sinfbdronepar, Ppar([Pdef(\sinfbdrone0), Pdef(\sinfbdrone1)], inf));
 
-Pdef(\sinfbdrone2, Pmono(\sinfbdrone, \degree, [0, 7, 10, 17], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\sinfbdrone2, Pmono(\sinfbdrone, \degree, [0, 7, 12, 19], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
 
 // midi
 
@@ -189,7 +189,7 @@ Pdef(\thump).stop;
 */
 
 (
-~bassdegrees = [-3, -1, 0, 1, 2, 3, 4].scramble;
+~bassdegrees = [-5, -2, -1, 0, 1, 2, 3].scramble;
 ~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24];
 Pdef(\basspat,
 	Pbind(
@@ -199,7 +199,7 @@ Pdef(\basspat,
 			Pseq([~bassdegrees[0], ~bassdegrees[1], Rest]),
 			Pseq([~bassdegrees[2], ~bassdegrees[3], Rest]),
 			Pseq([~bassdegrees[4], ~bassdegrees[5], ~bassdegrees[6], Rest])
-		], inf),
+		], inf).trace,
         \dur, Pshuf(~bassdurations, inf),
         \octave, 3,
         \outbus, [~delaybus, ~bassfxbus],
@@ -234,7 +234,7 @@ SynthDef(\bufrd, { |dur = 1, ffreq = 8000, gate = 1, outbus, pan = 0|
 	var env				=	Env.asr(0.003, 1, 0.1);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
 	var bufrd			=	BufRd.ar(~buffer.numChannels, ~buffer.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
-	var rhpf			=	RHPF.ar(bufrd, ffreq, 0.1, envgen);
+    var rhpf			=	RHPF.ar(bufrd, ffreq.clip(50, SampleRate.ir / 2.5), 0.1, envgen);
 	var pan2			=	Pan2.ar(rhpf, pan);
 	Out.ar(outbus, pan2);
 }).add;
@@ -261,6 +261,7 @@ Pdef(\pbpdef,
 	Pbind(
 		\instrument, \bufrd,
 		\dur, Pshuf([0.75, 1.5, 3, 6], inf),
+        \ffreq, Prand([4000, 8000], inf),
         \outbus, ~delaybus,
 		\pan, Pshuf([-1, -0.5, 0, 0.5, 1], inf)
 ));
@@ -410,7 +411,7 @@ Pdef(\hatgrains,
         //\curve, Pshuf([-4, -16, -64].stutter(17), inf),
         \curve, Pbrown(-64, -8, -1, inf),
         \dur, 16.reciprocal,
-        \degree, Pseq([Pseq([[7, 9, 10]], 601), Pseq([Rest], 601)], inf),
+        \degree, Pseq([Pseq([[7, 10, 12]], 601), Pseq([Rest], 601)], inf),
         \level, 0.02,
         \numharm, Pshuf([Pseq([1], 100.rand.round(1) + 100), Pseq([2], 100.rand.round(1) + 100), Pseq([3], 100.rand.round(1) + 100)].stutter(3), inf),
         \octave, 7,
@@ -424,13 +425,13 @@ Pdef(\hatgrainsdrone,
     Pbind(
         \instrument, \hat,
         \curve, -4,
-        \degree, Pseq([Pseq([[7, 10]], 503), Pseq([Rest], 503)], inf),
+        \degree, Pseq([Pseq([[7, 12]], 503), Pseq([Rest], 503)], inf),
         \dur, 16.reciprocal,
         \level, 0.005,
         \numharm, 0,
         \octave, 6,
         \outbus, ~limiterbus,
-        \pan, Prand([-1, 0, 1].mirror1, inf),
+        \pan, Prand([-1, 0, 1], inf),
         \releaseTime, 0.2,
         \scale, ~scale
 ));
@@ -453,7 +454,7 @@ Pdef(\hatgrains).stop;
 Pdef(\hatpat1,
     Pbind(
         \instrument, \hat,
-        \degree, Pseq([Pseq([[7, 10]], 71), Pseq([Rest], 71)], inf),
+        \degree, Pseq([Pseq([[7, 12]], 71), Pseq([Rest], 71)], inf),
         \dur, 0.25,
         \octave, 7,
         \outbus, ~limiterbus,
@@ -531,8 +532,8 @@ Pdef(\crumble0,
 ));
 
 Pdef(\crumble1, Pbindf(Pdef(\crumble0), \degree, Pseq([7, Rest], inf)));
-Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([9, Rest], inf)));
-Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([10, Rest], inf)));
+Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([10, Rest], inf)));
+Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([12, Rest], inf)));
 Pdef(\crumblepar0, Ppar([Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3)], inf));
 
 Pdef(\crumble4, Pbindf(Pdef(\crumble0), \degree, 0));
@@ -588,7 +589,6 @@ SynthDef(\pno2, { |a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, fbmod_freq = 50
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var fbmod           =   CuspN.ar(fbmod_freq, [a, a - 0.1], [b, b - 0.1]).range(1, fbmod_mul).round(fbmod_mul);
 	var sin				=	SinOscFB.ar(freq!2, fb * fbmod, envgen);
-    //var sinmod          =   SinOscFB.ar(freq!2 * freqmod, fb, mul: envgen / 2);
 	Out.ar(outbus, sin);
 }).add;
 );
@@ -628,7 +628,7 @@ Pdef(\pno2pat1,
         \a, Pwhite(1.0, 1.99, inf).round(0.1),
         \b, Pwhite(1.8, 2.0, inf).round(0.1),
         \curve, -16,
-        \degree, [7, 9, 10],
+        \degree, [7, 10, 12],
 		\dur, Pseq(~pno2pat1durs1, inf),
         \fb, 0.01,
         \fbmod_freq, 100,
@@ -688,7 +688,7 @@ Pdef(\padpat0,
 	Pbind(
         \instrument, \pad,
         \curve, 0,
-        \degree, [-1, 0, 5, 7],
+        \degree, [-2, 0, 5, 7],
 		\dur, Prand(~paddurs0, inf),
         \envtime, 0.1,
 		\octave, 5,
@@ -696,7 +696,7 @@ Pdef(\padpat0,
 		\scale, ~scale,
 ));
 
-Pdef(\paddrone, Pmono(\pad, \degree, [-1, 0, 5, 7], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\paddrone, Pmono(\pad, \degree, [-2, 0, 5, 7], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
 );
 
 /*
