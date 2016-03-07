@@ -135,7 +135,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.4, \
 (
 SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.15, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
-	var imp				=	Impulse.ar(0!2);
+	var imp				=	Impulse.ar(0!2, mul: level);
     var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 2);
     var leakdc          =   LeakDC.ar(comb);
     var roundmod        =   LFBrownNoise2.kr(roundmod_freq!2, mul: 1, add: 1);

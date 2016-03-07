@@ -480,10 +480,11 @@ Pdef(\wet).stop;
 
 (
 SynthDef(\pingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.1, outbus, pan = 0, rq = 1|
-	var env				=	Env.perc(0.0005, 1, level: level, curve: curve);
-	var envgen			=	EnvGen.ar(env, doneAction: 2);
-    var imp             =   Impulse.ar(0!2, mul: envgen);
+	//var env				=	Env.perc(0.0005, 1, level: level, curve: curve);
+	//var envgen			=	EnvGen.ar(env, doneAction: 2);
+    var imp             =   Impulse.ar(0!2, mul: level);
     var rhpf            =   RHPF.ar(imp, freq.clip(50, SampleRate.ir / 2.5), rq.clip(0.0001, 1));
+	var ds              =   DetectSilence.ar(rhpf, doneAction: 2);
     var pan2            =   Pan2.ar(rhpf, pan);
     Out.ar(outbus, pan2);
 }).add;
