@@ -91,14 +91,14 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~limiterbus, \level, 0.5, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~limiterbus, \level, 0.4, \outbus, 0));
 );
 
 ////////////////////////////////////////////////////////
 // SINFBDRONE //////////////////////////////////////////
 
 (
-SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.005, outbus|
+SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.01, outbus|
     var env             =   Env.asr(0.1, level, 1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var freqmod         =   LFBrownNoise0.kr(0.1!2, mul: 0.001, add: 1);
@@ -157,7 +157,7 @@ Pdef(\sinfbdrone2).stop;
 // SynthDef
 
 (
-SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.1, outbus, width = 0.5|
+SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.2, outbus, width = 0.5|
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var saw 			=	VarSaw.ar(freq + XLine.kr([-0.01, 0.01], [-1, 1], dur), width: width).round(0.03) * envgen;
@@ -167,26 +167,6 @@ SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.1, outbus, width = 
 );
 
 // Pattern
-
-/*
-(
-Pdef(\thump,
-    Pbind(
-        \instrument, \bass,
-        \curve, 0,
-        \degree, Pseq([0, Rest, Rest, 0, Rest, Rest, Rest, 0, Rest, Rest, Rest, Rest], inf),
-        \dur, Pseq([0.5, 7.25, 7.25, 0.5, 7.25, 7.25, 7.25, 0.5, 7.25, 7.25, 7.25, 7.25], inf),
-        \octave, 3,
-        \scale, ~scale
-));
-);
-*/
-
-/*
-Pdef(\thump).play(t);
-Pdef(\thump).isPlaying;
-Pdef(\thump).stop;
-*/
 
 (
 ~bassdegrees = [-5, -2, -1, 0, 1, 2, 3].scramble;
@@ -199,7 +179,7 @@ Pdef(\basspat,
 			Pseq([~bassdegrees[0], ~bassdegrees[1], Rest]),
 			Pseq([~bassdegrees[2], ~bassdegrees[3], Rest]),
 			Pseq([~bassdegrees[4], ~bassdegrees[5], ~bassdegrees[6], Rest])
-		], inf).trace,
+		], inf),
         \dur, Pshuf(~bassdurations, inf),
         \octave, 3,
         \outbus, [~delaybus, ~bassfxbus],
@@ -584,7 +564,7 @@ Pdef(\crumble4).stop;
 // PNO2 ////////////////////////////////////////////////////////
 
 (
-SynthDef(\pno2, { |a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, fbmod_freq = 50, fbmod_mul = 0, freq = 400, level = 0.01, outbus, pan = 0|
+SynthDef(\pno2, { |a = 1, b = 1.9, curve = -32, dur = 1, fb = 0, fbmod_freq = 50, fbmod_mul = 0, freq = 400, level = 0.02, outbus, pan = 0|
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var fbmod           =   CuspN.ar(fbmod_freq, [a, a - 0.1], [b, b - 0.1]).range(1, fbmod_mul).round(fbmod_mul);
@@ -607,7 +587,7 @@ Pdef(\pno2pat0,
         \fbmod_freq, 0,
         \fbmod_mul, 0,
 		\dur, Pshuf([11, 12, 13].nthPrime, inf),
-        \level, 0.02,
+        \level, 0.05,
         \octave, 7,
         \outbus, ~delaybus,
 		\scale, ~scale,
@@ -656,7 +636,7 @@ Pdef(\pno2pat1).stop;
 // Synth
 
 (
-SynthDef(\pad, { |curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.02, outbus|
+SynthDef(\pad, { |curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.05, outbus|
 	var env				=	Env.asr(envtime, level, envtime, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	2;

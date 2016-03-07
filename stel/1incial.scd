@@ -7,7 +7,7 @@ Pdef.removeAll;
 // Clock and buffer
 (
 t = TempoClock(84/60);
-b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
+b = Buffer.alloc(s, s.sampleRate * (t.tempo * 3), 1);
 );
 
 // MIDI
@@ -69,42 +69,12 @@ s.record;
 s.stopRecording;
 */
 
-//
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // FX
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//
-
-////////////////////////////////////////////////////////
-// COMPANDER
-
-/*
-(
-SynthDef(\dynamix, { |inBus|
-	var in	   		= 	In.ar(inBus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/128); // compressor
-	Out.ar(0, compressor);
-}).add;
-);
-*/
-
-/*
-(
-~startdynamix = {
-	s.sync;
-    ~dynamix = Synth(\dynamix, [\inBus, ~prcfxbus]).register;
-}.fork;
-);
-*/
-
-/*
-~dynamix.isPlaying;
-~dynamix.free;
-*/
 
 ////////////////////////////////////////////////////////////////
 // LIMITER
@@ -120,7 +90,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.5, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.4, \outbus, 0));
 );
 
 /*
@@ -304,7 +274,7 @@ Pdef(\single2).stop;
 // Synth
 
 (
-SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.1, outbus, rt = 0.1 |
+SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.05, outbus, rt = 0.1 |
 	var env				=	Env.new([0, level, level / 40, 0], [0.005, 0.005, dur], curve: 'cubed');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbs				=	FBSineC.ar(freq: freq, im: [im, im + 1], mul: envgen);
@@ -519,7 +489,7 @@ Pdef(\lori).stop;
 // PAD
 
 (
-SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.005, outbus|
+SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.01, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin1            =   SinOscFB.ar(freq!2 * XLine.ar(freqmod_start, 1, freqmod_length), fb, envgen);
@@ -608,7 +578,7 @@ Pdef(\paddrones).stop;
 // LARRY
 
 (
-SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005, outbus, s = 10|
+SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.01, outbus, s = 10|
     var env             =   Env.asr(0.01, level, 0.01, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var frqmod          =   Lorenz2DN.ar(15, 15000, s: [s, s - 0.001],  mul: 0.9, add: 1);
@@ -689,7 +659,7 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.02, outbus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
@@ -706,8 +676,8 @@ Pdef(\pno1,
         \degree, Pshuf([0, [-2, 0], [0, 1, 7]], inf),
         \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25], inf),
         \fb, 0,
-        \level, Prand([0.2, 1] * 0.01, inf),
-        \octave, 5,
+        \level, Prand([0.2, 1] * 0.02, inf),
+        \octave, 6,
         \outbus, ~delaybus,
         \scale, ~scale
 ));
@@ -727,10 +697,10 @@ Pdef(\pnos).stop;
 Pdef(\pnochord,
     Pbind(
         \instrument, \pno,
-        \degree, Pseq([[0, 1, 7], [7, 12], [7, 10, 12, 13]], inf),
+        \degree, Pseq([[0, 1, 7], [1, 7, 12], [7, 10, 12, 13]], inf),
         \dur, Pshuf([13, 17, 19], inf),
         \fb, Pshuf([0, 0.125, 0.25, 0.5, 1], inf),
-        \octave, 4,
+        \octave, 5,
         \outbus, ~delaybus,
         \scale, ~scale
 ));
@@ -745,33 +715,13 @@ Pdef(\pnochord).stop;
 ~midiktrl.value(\pnos, 36);
 ~midiktrl.value(\pnochord, 52);
 
-/*
-(
-MIDIdef.cc(\pnoplay, {
-    if(Pdef(\pnos).isPlaying.not) {
-        ~midiout.control(0, 36, 127);
-        Pdef(\pnos).play(t);
-        "pno play".postln;
-    }
-}, 36, srcID: ~nanoktrl2.uid);
-
-MIDIdef.cc(\pnostop, {
-    if(Pdef(\pnos).isPlaying) {
-        ~midiout.control(0, 36, 0);
-        Pdef(\pnos).stop;
-        "pno stop".postln;
-    }
-}, 36, srcID: ~nanoktrl2.uid);
-);
-*/
-
 ////////////////////////////////////////////////////////
 // BASS
 
 // SynthDef
 
 (
-SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
+SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.1, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var fbmod           =   LFNoise2.kr(3!2, 1, 1) * LFNoise2.kr(11!2, 1, 1);
@@ -851,7 +801,7 @@ SynthDef(\bufrd, { |dur = 1, ffreq = 3000, gate = 1, level = 1, outbus, pan = 0|
 	var env				=	Env.asr(0.003, level, 0.1);
 	var envgen			=	EnvGen.ar(env, gate, doneAction: 2);
 	var bufrd			=	BufRd.ar(b.numChannels, b.bufnum, Phasor.ar(0, 1, s.sampleRate * dur, 0), loop: 1, interpolation: 2);
-    var rhpf			=	RHPF.ar(bufrd, ffreq.clip(50, SampleRate.ir / 2.5), 0.3, envgen * 2);
+    var rhpf			=	RHPF.ar(bufrd, ffreq.clip(50, SampleRate.ir / 2.5), 0.3, envgen);
 	var pan2			=	Pan2.ar(rhpf, pan);
 	Out.ar(outbus, pan2);
 }).add;
@@ -862,7 +812,7 @@ Pdef(\rbpdef,
 	Pbind(
 		\instrument, \recbuf,
         \inBus, ~bassfxbus,
-		\dur, 6,
+		\dur, 3,
 ));
 );
 
@@ -878,7 +828,7 @@ Pdef(\pbpat,
 	Pbind(
 		\instrument, \bufrd,
 		//\dur, Prand([1, 1.5], inf),
-        \dur, 0.25,
+        \dur, Prand([0.25, 0.5], inf),
 		\ffreq, 4000,
         \level, 1,
         \outbus, ~delaybus,
@@ -895,7 +845,7 @@ Pdef(\pbpat).pause;
 Pdef(\buffpat, Ppar([Pdef(\rbpdef), Pdef(\pbpat)], inf));
 
 /*
-Pdef(\buffpat).play(t, quant: 0.5);
+Pdef(\buffpat).play(t);
 Pdef(\buffpat).isPlaying;
 Pdef(\buffpat).pause;
 */
