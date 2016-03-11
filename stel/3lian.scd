@@ -7,7 +7,7 @@ Pdef.removeAll;
 
 
 (
-t = TempoClock(108/60);
+t = TempoClock(132/60);
 b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 );
 
@@ -67,32 +67,6 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 s.prepareForRecord;
 s.record;
 s.stopRecording;
-*/
-
-/*
-////////////////////////////////////////////////////////
-// COMPANDER ///////////////////////////////////////////
-
-(
-SynthDef(\dynamix, { |inBus|
-	var in	   		= 	In.ar(inBus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/2); // compressor
-	Out.ar(0, compressor);
-}).add;
-);
-
-(
-~startdynamix = {
-	s.sync;
-    ~dynamix = Synth(\dynamix, [\inBus, ~prcfxbus]).register;
-}.fork;
-);
-
-/*
-~dynamix.isPlaying;
-~dynamix.free;
-*/
-
 */
 
 ////////////////////////////////////////////////////////////////
@@ -156,7 +130,7 @@ Pdef(\basspat1,
         \curve, -16,
         \degree, 0,
         \dur, Pshuf(Array.fill(17, { |d| (d + 1) * 0.25 })
-            //++ Array.fill(3, { |d| Pseq([0.25], d + 1) }).stutter(2)
+            ++ Array.fill(3, { |d| Pseq([0.25], d + 1) }).stutter(2)
             , inf),
         \fb, Pshuf([0, 0.25, 0.5, 1, 2].stutter(7), inf),
 		\foldfactor, Pshuf(~bassfoldseries.stutter(3), inf),
@@ -202,7 +176,7 @@ Pdef(\basstwo,
     Pbind(
         \instrument, \bass,
         \curve, -8,
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6].stutter(5), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3].stutter(5), inf),
         \foldfactor, Pshuf((11..23) * 0.01, inf),
         \level, 0.02,
         \octave, [4, 5, 6],
@@ -703,7 +677,7 @@ SynthDef(\heavy, { |brightness = 1000, curve = -8, dur = 1, freq = 440, level = 
 // Pattern
 
 (
-~heavypatlvl = 0.08;
+~heavypatlvl = 0.05;
 ~heavypatecholvl = ~heavypatlvl / 4;
 Pdef(\heavypat1,
 	Pbind(
@@ -714,7 +688,7 @@ Pdef(\heavypat1,
         \dur, Pshuf([Pseq([0.25], 3), Pseq([0.25], 5), Pseq([0.25], 7), 2, 3, 4, 6, 8, 12, 16, 24], inf),
         \level, ~heavypatlvl,
 		\octave, 5,
-        \outbus, ~prcfxbus,
+        \outbus, ~delaybus,
 		\pan, Prand([-0.5, 0, 0.5], inf),
         \scale, ~scale,
 		\sinfb, Pshuf((1..3), inf)
@@ -847,8 +821,8 @@ Pdef(\heavypar).stop;
 (
 ~scene7 = [\basspar, \bassthree, \wut, \wat, \wet, \clappar, \prc2a, \prc1];
 ~scene7lights = [32, 64, 34, 50, 66, 51, 67, 36];
-~scene7stoppers = [\pno1, \pnopulse, \pinglepat];
-~scene7stopperlights = [33, 49, 35];
+~scene7stoppers = [\basstwo, \pno1, \pnopulse, \pinglepat];
+~scene7stopperlights = [48, 33, 49, 35];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
