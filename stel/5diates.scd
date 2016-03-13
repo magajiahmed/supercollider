@@ -10,7 +10,7 @@ Pdef.removeAll;
 );
 
 // time
-~tempo = TempoClock(96/60);
+~tempo = TempoClock(100/60);
 
 //midi
 (
@@ -49,6 +49,7 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 
 // bus depot
 (
+~companderbus = Bus.audio(s, 2);
 ~delay = 0.05;
 ~delaybus = Bus.audio(s, 2);
 ~prcbus = Bus.audio(s, 2);
@@ -71,29 +72,23 @@ s.record;
 s.stopRecording;
 */
 
-/*
 ////////////////////////////////////////////////////////
 // COMPANDER
 
 (
-SynthDef(\dynamix, { |inBus|
-	var in	   		= 	In.ar(inBus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.125, clampTime: 0.001, slopeAbove: 1/2); // compressor
-	Out.ar(0, compressor);
+SynthDef(\dynamix, { |inbus, outbus|
+	var in	   		= 	In.ar(inbus, 2);
+	var compressor	=	Compander.ar(in, in, thresh: 0.25, clampTime: 0.001, slopeAbove: 1/4); // compressor
+	Out.ar(outbus, compressor);
 }).add;
 );
 
-(
-d = {
-	s.sync;
-    ~dynamix = Synth(\dynamix, [\inBus, ~prcbus]).register;
-}.fork;
-);
+Pdef(\dynamix, Pmono(\dynamix, \inbus, ~companderbus, \outbus, ~delaybus));
 
 /*
-d.isPlaying;
-d.free;
-*/
+Pdef(\dynamix).play;
+Pdef(\dynamix).isPlaying;
+Pdef(\dynamix).stop;
 */
 
 ////////////////////////////////////////////////////////
@@ -133,7 +128,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.4, \
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.15, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.3, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0!2, mul: level);
     var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 2);
@@ -253,7 +248,7 @@ Pdef(\hatpar).stop;
 //
 
 (
-~pulselvl = 0.02;
+~pulselvl = 0.05;
 ~pulseecholvl = ~pulselvl / 4;
 Pdef(\pulsepat1a,
 	Pbind(
@@ -264,7 +259,7 @@ Pdef(\pulsepat1a,
 		\level, ~pulselvl,
         \degree, Prand([[-6, -5, -1, 0]] ++ [[-5, 0]].stutter(7) ++ [[-5, -4, 0, 1]], inf),
 		\octave, 4,
-        \outbus, ~prcbus,
+        \outbus, ~delaybus,
 		\root, ~root,
 		\scale, ~scale
 ));
@@ -367,7 +362,7 @@ Pdef(\pingpat).stop;
 
 (
 SynthDef(\prc, {
-	|a = 1.1, curve = -4, dur = 1, foldfactor = 2, freq = 440, level = 0.15, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
+	|a = 1.1, curve = -4, dur = 1, foldfactor = 2, freq = 440, level = 0.2, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
 	var env				=	Env.perc(0.01, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen;
@@ -387,7 +382,7 @@ Pdef(\prcpat1,
         \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
         \dur, Pxrand([0.75, 1, 1.25], inf),
         \foldfactor, Prand([100, 200], inf),
-        \level, Prand([0.2, 1] * 0.15, inf),
+        \level, Prand([0.2, 1] * 0.2, inf),
         \octave, 6,
         \outbus, ~prcbus,
         \rez_rq, 0.5,
@@ -462,7 +457,7 @@ Pdef(\prcpar).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.15, outbus, releaseTime = 1|
+SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.3, outbus, releaseTime = 1|
     var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var latoo           =   LatoocarfianC.ar([freq - 10, freq + 10], a, mul: XLine.kr(3, 0.1, 0.1), add: 1);
@@ -484,7 +479,7 @@ Pdef(\prc2,
         \scale,  ~scale
 ));
 
-Pdef(\prc2echo, Pbindf(Pdef(\prc2), \dur, Prand([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], inf), \level, 0.04));
+Pdef(\prc2echo, Pbindf(Pdef(\prc2), \dur, Prand([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], inf), \level, 0.1));
 
 Pdef(\prcpar2, Ppar([Pdef(\prc2), Pdef(\prc2echo)], inf));
 );
@@ -600,7 +595,7 @@ Pdef(\pnopat).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.02, outbus, release = 0.1, xlinestart = 1|
+SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.03, outbus, release = 0.1, xlinestart = 1|
     var env             =   Env.asr(0.01, level, release);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var xline           =   XLine.kr(xlinestart, 1, dur / 4);
@@ -630,22 +625,20 @@ Pdef(\stringpat0setdelaytime,
 	Pbind(
 		\instrument,\stringdelayktrl,
 		\delaytime, Pbrown(0.0001, 0.01, 0.001, inf),
-		//\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48], inf),
-        //\dur, Pwhite(0.01, 10, inf),
         \dur, Pshuf(~setdelaytimedurs, inf),
 		\legato, 1,
 		\outbus, ~stringpat0delayktrlbus,
 ));
 
 Pdef(\stringpat0,
-	Pmono(
+    Pmono(
 		\string,
 		\delaytime, ~stringpat0delayktrlbus.asMap,
 		\dur, 5,
 		\degree, [-5, 0],
         \fb1, 1,
         \fb2, 1,
-        \outbus, ~delaybus,
+        \outbus, ~companderbus,
         \release, 0.1,
 		\root, ~root,
 		\scale, ~scale,
@@ -660,7 +653,7 @@ Pdef(\stringpat0setdelaytime).stop;
 */
 
 /*
-Pdef(\stringpat0).play(~tempo, quant: 1);
+Pdef(\stringpat0).play(~tempo);
 Pdef(\stringpat0).isPlaying;
 Pdef(\stringpat0).stop;
 */
@@ -689,7 +682,7 @@ Pdef(\stringpat1,
         \fb2, 1,
 		\legato, 1,
 		\octave, 6,
-        \outbus, ~delaybus,
+        \outbus, ~companderbus,
 		\root, ~root,
 		\scale, ~scale,
         \xlinestart, Pshuf([1/2, 2/1].stutter(5), inf),
@@ -1054,7 +1047,8 @@ Pdef(\stringpat0setdelaytime).isPlaying;
 (
 {
     s.sync;
-    Pdef(\limiter).play(t);
     Pdef(\delay).play(t);
+    Pdef(\dynamix).play(t);
+    Pdef(\limiter).play(t);
 }.fork;
 );
