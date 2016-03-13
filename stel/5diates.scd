@@ -53,6 +53,7 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 ~delay = 0.05;
 ~delaybus = Bus.audio(s, 2);
 ~prcbus = Bus.audio(s, 2);
+//
 ~stringpat0delayktrlbus = Bus.control(s);
 ~stringpat1delayktrlbus = Bus.control(s);
 ~stringpat2delayktrlbus = Bus.control(s);
@@ -78,7 +79,7 @@ s.stopRecording;
 (
 SynthDef(\dynamix, { |inbus, outbus|
 	var in	   		= 	In.ar(inbus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.25, clampTime: 0.001, slopeAbove: 1/4); // compressor
+	var compressor	=	Compander.ar(in, in, thresh: 0.5, clampTime: 0.002, slopeAbove: 1/8);
 	Out.ar(outbus, compressor);
 }).add;
 );
@@ -128,7 +129,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.4, \
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.3, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.2, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0!2, mul: level);
     var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 2);
@@ -173,6 +174,7 @@ Pdef(\basspat2,
         \instrument, \bass,
         \degree, Pseq([[0, 7], Rest, [0, 7], Rest, Rest, [0, 7], Rest, Rest, Rest], inf),
         \dur, Pseq([1, 5, 1, 4, 3, 1, 4, 3, 2] + 0.25, inf),
+        \level, 0.3,
         \octave, 3,
         \outbus, ~delaybus,
         \root, ~root,
@@ -192,7 +194,7 @@ Pdef(\basspat2).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
+SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.03, outbus|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfn				=	LFNoise0.kr(50!2, 0.002, 1);
@@ -248,7 +250,7 @@ Pdef(\hatpar).stop;
 //
 
 (
-~pulselvl = 0.05;
+~pulselvl = 0.03;
 ~pulseecholvl = ~pulselvl / 4;
 Pdef(\pulsepat1a,
 	Pbind(
@@ -307,10 +309,11 @@ Pdef(\pulsepar3).stop;
 Pdef(\hat2,
     Pbind(
         \instrument, \hat,
-        \curve, Prand([-64, -4], inf),
+        \curve, -64,
         \degree, [0, 2, 7, 10, 12],
-        \dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
-        \level, Pshuf([0.2, 1] * 0.02, inf),
+        //\dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
+        \level, Pshuf([0.2, 1].stutter(7) * 0.02, inf),
         \octave, [8, 9, 10],
         \outbus, ~prcbus,
         \root, ~root,
@@ -366,33 +369,36 @@ SynthDef(\prc, {
 	var env				=	Env.perc(0.01, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen;
-	var delay			=	DelayC.ar(lc, 0.2, freq.reciprocal);
-	var rez				=	Resonz.ar(lc + delay, (rez_freq).clip(50, SampleRate.ir / 3), rez_rq) * rez_rq.reciprocal;
-	Out.ar(outbus, rez);
+	//var delay			=	DelayC.ar(lc, 0.2, freq.reciprocal);
+	var rez				=	Resonz.ar(lc, (rez_freq).clip(50, SampleRate.ir / 3), rez_rq) * rez_rq.reciprocal;
+	Out.ar(outbus, lc + rez);
 }).add;
 );
 
 (
-~degrees = [2, 7, 10, 12].powerset.reject({ |d| d.isEmpty });
+//~degrees = [2, 7, 10, 12].powerset.reject({ |d| d.isEmpty });
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
-        \a, 1,
-        \curve, Prand([-16, -8], inf),
-        \degree, Pseq([Rest, 0, Rest, Rest, 0, Rest, Rest, Rest, 0], inf),
-        \dur, Pxrand([0.75, 1, 1.25], inf),
-        \foldfactor, Prand([100, 200], inf),
-        \level, Prand([0.2, 1] * 0.2, inf),
+        \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
+        \curve, -8,
+        \degree, Pseq([Rest, 0], inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5, 3], inf),
+        //\foldfactor, Pshuf([100, 200, 400, 800], inf),
+        \foldfactor, Pwhite(200, 800, inf),
+        \level, 0.2,
         \octave, 6,
         \outbus, ~prcbus,
         \rez_rq, 0.5,
 		\root, ~root,
 		\scale, ~scale,
 		\rez_freq, 2000,
-        \rez_rq, Prand([0.25, 0.5], inf)
+        //\rez_rq, Pshuf([0.25, 0.5].stutter(7), inf)
 ));
 
-Pdef(\prcpar1, Ppar([Pdef(\prcpat1)].stutter(2)));
+Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75], inf), \level, 0.04));
+
+Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 );
 
 /*
@@ -415,7 +421,8 @@ SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq =
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lc				=	LinCongC.ar([freq, freq * 1.01], a, c, m, mul: envgen);
 	var rhpf			=	RHPF.ar(lc, ffreq, frq, 2);
-	Out.ar(outbus, lc + rhpf);
+    var sin             =   SinOsc.ar(freq * XLine.kr(0.25, 0.125, dur) * (lc + 1), mul: envgen);
+	Out.ar(outbus, lc + rhpf + sin);
 }).add;
 );
 
@@ -424,10 +431,10 @@ Pdef(\kikpat,
 	Pbind(
 		\instrument, \kik,
 		\a, Pwhite(1.0, 2.0, inf).round(0.01),
-        \dur, Pshuf(Array.fill(13, { |d| (d + 1) * 0.25 }), inf),
+        \dur, Pshuf(Array.fill(17, { |d| (d + 1) * 0.25 }), inf),
 		\ffreq, 1000,
 		\frq, 0.1,
-		\degree, [0, 7],
+        \degree, [0, 7],
 		\octave, 5,
         \outbus, ~prcbus,
 		\root, ~root,
