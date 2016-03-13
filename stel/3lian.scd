@@ -611,11 +611,12 @@ Pdef(\prc2a,
     Pbind(
         \instrument, \prc2,
         \curve, -8,
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 1, 2, Pseq([1.25], 2), 4].stutter(2), inf),
+        //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 1, 2, Pseq([1.25], 2), 4].stutter(2), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, Pseq([0.75], 2), 1.5, 2, 3].stutter(3), inf),
         \fb, Pshuf([0.5, 1, 1.5, 2, 2.5, 3], inf),
         \freq, Prand([100, 1000, 10000], inf),
         \length, 0.2,
-        \lfreq, Prand([5000, 10000, 20000], inf),
+        \lfreq, Pxrand([2500, 5000, 10000, 20000], inf),
         \outbus, ~prcfxbus,
         \s, Pshuf([9, 12].stutter(5), inf)
 ));
@@ -632,11 +633,10 @@ Pdef(\prc2b,
     Pbind(
         \instrument, \prc2,
         \curve, -2,
-        \dur, Pshuf([
-            Pseq([0.125], 2), 0.25, 0.5, 0.75, Pseq([0.75], 2), Pseq([1], 2), Pseq([1.25], 2)
-        ], inf),
+        \dur, Pseq([Pshuf([0.25, 0.5, 0.75].stutter(11)), 3], inf),
         \fb, Pshuf([0.25, 0.5].stutter(23), inf),
-        \freq, Pshuf([Pwhite(190.0, 210.0, 1), Pwhite(1000.0, 2000.0, 1)].stutter(3), inf),
+        //\freq, Pshuf([Pwhite(190.0, 210.0, 1), Pwhite(1000.0, 2000.0, 1)].stutter(3), inf),
+        \freq, Pxrand([250, 500, 1000, 2000, 4000], inf),
         \length, Pshuf([0.1, 0.4].stutter(17), inf),
         \level, Pshuf([0.2, 1, 1, 1].stutter(11) * 0.2, inf),
         \lfreq, Pshuf((1..19) * 1000, inf),

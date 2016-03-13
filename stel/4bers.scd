@@ -87,7 +87,7 @@ Pdef(\delay, Pmono(\delay, \delay, ~delay, \inBus, ~delaybus, \outbus, 0));
 // LIMITER
 
 (
-SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.5, outbus|
+SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.4, outbus|
     var in          =   In.ar(inBus, 2);
     var limiter     =   Limiter.ar(in, level, dur);
     Out.ar(outbus, limiter);
@@ -100,7 +100,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.4,
 // VERB
 
 (
-SynthDef(\verb, { |ffreq = 4000, freq = 1, gate = 1, inBus, level = 0.2, outbus, phase = 0, rq = 1, size = 1, t60 = 1|
+SynthDef(\verb, { |ffreq = 4000, freq = 1, gate = 1, inBus, level = 0.3, outbus, phase = 0, rq = 1, size = 1, t60 = 1|
     var env         =   Env.asr(0.01, level, 0.01);
     var envgen      =   EnvGen.kr(env, gate, doneAction: 2);
 	var in			=	In.ar(inBus, 2);
@@ -178,7 +178,7 @@ SynthDef(\dynamix, { |inBus|
 // PNO
 
 (
-SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.05, lffreq = 1000, outbus, rq1 = 1, rq2 = 1, sinhimul = 0|
+SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, outbus, rq1 = 1, rq2 = 1, sinhimul = 0|
     var env             =   Env.perc(0.001, dur + 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinfb1          =   SinOscFB.ar(freq!2, fb, envgen / 4);
@@ -196,7 +196,7 @@ Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
         \curve, -8,
-        \dur, Pshuf([0.75, 1, 1.25, 1.5].stutter(2), inf),
+        \dur, Pshuf([0.75, 1, 1.25, 1.5].stutter(5), inf),
 		\fb, 0.0,
         \degree, 0,
         \octave, 6,
@@ -231,7 +231,7 @@ Pdef(\pnobass1,
         \fb2, Pshuf((1..5), inf),
         \fb2mul, 0.05,
         \hffreq, Pshuf((4..12) * 1000, inf),
-        \level, 0.2,
+        \level, 0.3,
         \lffreq, 5000,
         \degree, 0,
         \octave, 3,
@@ -254,7 +254,7 @@ Pdef(\pnobass1).stop;
 ~midiktrl.value(\pnobass1, 64);
 
 ////////////////////////////////////////////////////////////////
-// prc
+// PRC
 
 (
 SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level = 0.2, outbus, pan = 0, releaseTime = 0.2 |
@@ -273,7 +273,7 @@ SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level 
 (
 ~prcpatfrq1 = 90;
 ~prcpatfrq2 = ~prcpatfrq1 * 32;
-~prcpatlvl = 0.3;
+~prcpatlvl = 0.4;
 ~prcpatecholvl = ~prcpatlvl / 5;
 Pdef(\prc1,
 	Pbind(
@@ -285,7 +285,7 @@ Pdef(\prc1,
 		\freq, Pshuf([~prcpatfrq1, ~prcpatfrq2], inf),
         \ffreq, Pkey(\freq),
 		\level, ~prcpatlvl,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [4, 1].normalizeSum, inf),
+        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
 		\pan, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
         \releaseTime, 0.1
 ));
@@ -327,7 +327,7 @@ Pdef(\prc4,
 		\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, 0.75, 0.75, 0.75, 1, 1, 1, 1.25, 1.25, 1.25], inf),
         \ffreq, Pshuf([10000, 20000], inf),
 		\octave, 9,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [4, 1].normalizeSum, inf),
+        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
 ));
 
 //
@@ -343,7 +343,7 @@ Pdef(\prc5,
             ~prcpatfrq1 * 8, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16,
             ~prcpatfrq1 * 8, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16
         ], inf),
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [4, 1].normalizeSum, inf),
+        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
 		\releaseTime, 0.05
 ));
 
@@ -360,7 +360,7 @@ Pdef(\prc6,
 		\curve, -16,
 		\dur, Prand([4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75], inf),
 		\octave, 10,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [4, 1].normalizeSum, inf),
+        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
 ));
 
 //
@@ -447,7 +447,7 @@ Pdef(\prc8).stop;
 // Synth
 
 (
-SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.02, outbus|
+SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.03, outbus|
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
@@ -485,7 +485,6 @@ Pdef(\pad2pat,
         //\dur, Pshuf((23..28)),
         \dur, 23,
         \legato, 0.75,
-		//\level, 0.05,
         \octave, 5,
         \outbus, ~delaybus,
 		\scale, ~scale,
