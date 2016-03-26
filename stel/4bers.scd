@@ -94,7 +94,7 @@ SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.4, outbus|
 }).add;
 );
 
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.4, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.3, \outbus, 0));
 
 ////////////////////////////////////////////////////////
 // VERB
