@@ -70,11 +70,13 @@ s.stopRecording;
 */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// FX
+//  _______  __
+// |  ___\ \/ /
+// | |_   \  /
+// |  _|  /  \
+// |_|   /_/\_\
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////
 // LIMITER
@@ -90,7 +92,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.4, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.3, \outbus, 0));
 );
 
 /*
@@ -158,7 +160,12 @@ Pdef(\verbs).stop;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// SYNTHS
+//  ___ _   _ ____ _____ ____  _   _ __  __ _____ _   _ _____ ____
+// |_ _| \ | / ___|_   _|  _ \| | | |  \/  | ____| \ | |_   _/ ___|
+//  | ||  \| \___ \ | | | |_) | | | | |\/| |  _| |  \| | | | \___ \
+//  | || |\  |___) || | |  _ <| |_| | |  | | |___| |\  | | |  ___) |
+// |___|_| \_|____/ |_| |_| \_\\___/|_|  |_|_____|_| \_| |_| |____/
+//
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -182,7 +189,7 @@ SynthDef(\dingle, { |a = 0.02, curve = -16, freq = 10000, level = 0.2, outbus, p
 // Pattern
 
 (
-~dinglelvl = 0.2;
+~dinglelvl = 0.4;
 ~dingleecholvl = ~dinglelvl / 4;
 
 Pdef(\dinglepat1,
@@ -274,7 +281,7 @@ Pdef(\single2).stop;
 // Synth
 
 (
-SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.05, outbus, rt = 0.1 |
+SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.2, outbus, rt = 0.1 |
 	var env				=	Env.new([0, level, level / 40, 0], [0.005, 0.005, dur], curve: 'cubed');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbs				=	FBSineC.ar(freq: freq, im: [im, im + 1], mul: envgen);
@@ -312,13 +319,13 @@ Pdef(\snappat).stop;
 // XAOS
 
 (
-SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.5, outbus, resonz_freq = 4000, rhpf_freq = 8000|
+SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.2, outbus, resonz_freq = 4000, rhpf_freq = 8000|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var xaos            =   Crackle.ar(chaos!2).round(0.05) * envgen;
-    var resonz          =   Resonz.ar(xaos, resonz_freq.clip(50, SampleRate.ir / 2.5), 0.3) * LFClipNoise.ar(80).range(0.5, 1);
-    var rhpf            =   RHPF.ar(xaos, rhpf_freq.clip(50, SampleRate.ir / 2.5), 0.5) * LFClipNoise.ar(80).range(0.5, 1);
-    Out.ar(outbus, (resonz + rhpf).fold2(level).tanh);
+    var xaos            =   Crackle.ar([chaos, chaos - 0.01]).round(0.5) * envgen * 2;
+    var resonz          =   Resonz.ar(xaos, resonz_freq.clip(50, SampleRate.ir / 2.5), 0.5) * 20;
+    //var rhpf            =   RHPF.ar(xaos, rhpf_freq.clip(50, SampleRate.ir / 2.5), 0.5) * LFClipNoise.ar(80).range(0.5, 1).round(0.5);
+    Out.ar(outbus, resonz.fold2(level));
 }).add;
 );
 
@@ -326,13 +333,15 @@ SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.5, outbus, reson
 Pdef(\xaos,
     Pbind(
         \instrument, \xaos,
-        \chaos, Pshuf([1.0, 2.0].stutter(11), inf),
-        \curve, Prand([-64, -32, -16], inf),
+        \chaos, Pshuf([1.1, 1.25, 1.9, 2.0].stutter(11), inf),
+        //\curve, Prand([-64, -32, -16], inf),
+        \curve, -64,
         \degree, Pseq([Pseq([0], 53), Pseq([Rest], 31)], inf),
-        \dur, Pseq([Pseq([0.125], 4), Pshuf(Array.fill(7, { |i| (i) * 0.25 }).stutter(11))], inf),
+        \dur, Pseq([Pseq([0.125], 4), Pshuf(Array.fill(3, { |i| (i + 1) * 0.25 }).stutter(3))], inf),
         \outbus, ~prcfxbus,
-        \resonz_freq, Pshuf(Array.fill(5, { |i| pi.pow(i + 4) }).stutter(5), inf),
-        \rhpf_freq, Pshuf([1000, 10000].stutter(3), inf),
+        //\resonz_freq, Pshuf(Array.fill(3, { |i| pi.pow(i + 5) }).stutter(5), inf),
+        \resonz_freq, Prand([100, 1000, 10000], inf),
+        //\rhpf_freq, Pshuf([1000, 10000].stutter(3), inf),
 ));
 );
 
@@ -578,7 +587,7 @@ Pdef(\paddrones).stop;
 // LARRY
 
 (
-SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.01, outbus, s = 10|
+SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.003, outbus, s = 10|
     var env             =   Env.asr(0.01, level, 0.01, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var frqmod          =   Lorenz2DN.ar(15, 15000, s: [s, s - 0.001],  mul: 0.9, add: 1);
@@ -659,7 +668,7 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.03, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
@@ -724,12 +733,14 @@ Pdef(\pnochord).stop;
 SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.1, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var fbmod           =   LFNoise2.kr(3!2, 1, 1) * LFNoise2.kr(11!2, 1, 1);
-    var sinfb1freqmod   =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.2), 0, carrier_amp * XLine.kr(1, 0.1, 0.2), 1);
+    //var fbmod           =   LFNoise2.kr(3!2, XLine.kr(1, 0.01, dur), 1) * LFNoise2.kr(11!2, XLine.kr(1, 0.01, dur), 1);
+    var fbmod           =   1;
+    var sinfb1freqmod   =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.1), 0, carrier_amp * XLine.kr(1, 0.1, 0.1), 1);
     var sinfb1          =   SinOscFB.ar(freq!2 * sinfb1freqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
     var sinfb2          =   SinOscFB.ar(freq, fb * fbmod) * envgen;
-    var tri             =   LFTri.ar(freq!2, mul: envgen);
-    Out.ar(outbus, sinfb1 + sinfb2 + tri);
+    //var tri             =   LFTri.ar(freq!2, mul: envgen);
+    var sinfb3          =   SinOscFB.ar(freq ! 2, 0.2, envgen);
+    Out.ar(outbus, sinfb1 + sinfb2 + sinfb3);
 }).add;
 );
 
@@ -742,8 +753,8 @@ SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb 
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \carrier_amp, Pshuf([10, 20, 30, 40, 50, 60, 70].stutter(3), inf),
-        \carrier_ratio, 4,
+        \carrier_amp, Pshuf((1..23), inf),
+        \carrier_ratio, Pxrand([1, 2, 4], inf),
         \degree, Pseq([Pshuf(~bassnotes, 4), Pseq([Rest], ~bassnotes.size)], inf),
         \dur, Pshuf(~bassdurations.stutter(3), inf),
         \fb, Pshuf([0.25, 0.5, 0.75].stutter(5), inf),

@@ -62,8 +62,7 @@ s.stopRecording;
 */
 
 ////////////////////////////////////////////////////////
-// DELAY ///////////////////////////////////////////////
-// (to compensate for limiter delay ////////////////////
+// DELAY (to compensate for limiter delay //////////////
 
 (
 SynthDef(\delay, { |delay = 1, inBus = 0, outbus = 0|
@@ -91,7 +90,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~limiterbus, \level, 0.4, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~limiterbus, \level, 0.3, \outbus, 0));
 );
 
 ////////////////////////////////////////////////////////
@@ -157,7 +156,7 @@ Pdef(\sinfbdrone2).stop;
 // SynthDef
 
 (
-SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.2, outbus, width = 0.5|
+SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.1, outbus, width = 0.5|
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var saw 			=	VarSaw.ar(freq + XLine.kr([-0.01, 0.01], [-1, 1], dur), width: width).round(0.03) * envgen;
@@ -287,6 +286,7 @@ SynthDef(\snr, { |a = 1, freq = 1000, curve = -64, level = 0.15, outbus = 0, pan
 
 // Pattern
 
+/*
 (
 ~snrfreq0 = 5000;
 ~snrfreq1 = 100;
@@ -297,7 +297,7 @@ Pdef(\snrpat0,
 	Pbind(
 		\instrument, \snr,
 		\a, Pwhite(0.98, 1.02, inf),
-		\curve, Pshuf([-32, -28, -24, -20, -16], inf),
+		\curve, Prand([-32, -16], inf),
 		\freq, ~snrfreq0,
 		/*
 		\dur, Pshuf([
@@ -351,7 +351,41 @@ Pdef(\snrpar2, Ppar([Pdef(\snrpat6), Pdef(\snrpat7), Pdef(\snrpat8)]));
 
 Pdef(\snrs, Ppar([Pdef(\snrpar0), Pdef(\snrpar2), Pdef(\snrpar2)]));
 );
+*/
 
+//
+
+(
+~snrlvl = 0.15;
+~snrecholvl = ~snrlvl / 4;
+
+Pdef(\snr1,
+    Pbind(
+        \instrument, \snr,
+        \a, Pwhite(0.98, 1.02, inf),
+        \curve, Pshuf([-16, -8], inf),
+        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        \freq, Pshuf([100, 500, 1000, 5000, 10000].stutter(3), inf),
+        \level, ~snrlvl,
+        \outbus, ~limiterbus
+));
+
+Pdef(\snr2, Pbindf(Pdef(\snr1), \level, ~snrecholvl));
+
+Pdef(\snrs, Ppar([Pdef(\snr1), Pdef(\snr2)]));
+);
+
+/*
+Pdef(\snr1).play(~tempo);
+Pdef(\snr1).isPlaying;
+Pdef(\snr1).stop;
+*/
+
+/*
+Pdef(\snr2).play(~tempo);
+Pdef(\snr2).isPlaying;
+Pdef(\snr2).stop;
+*/
 
 // Midi Control
 
@@ -587,7 +621,7 @@ Pdef(\pno2pat0,
         \fbmod_freq, 0,
         \fbmod_mul, 0,
 		\dur, Pshuf([11, 12, 13].nthPrime, inf),
-        \level, 0.05,
+        \level, 0.03,
         \octave, 7,
         \outbus, ~delaybus,
 		\scale, ~scale,
@@ -636,7 +670,7 @@ Pdef(\pno2pat1).stop;
 // Synth
 
 (
-SynthDef(\pad, { |curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.05, outbus|
+SynthDef(\pad, { |curve = 0, dur = 1, envtime = 8, freq = 400, gate = 1, level = 0.02, outbus|
 	var env				=	Env.asr(envtime, level, envtime, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var n				=	2;

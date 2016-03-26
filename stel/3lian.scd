@@ -176,13 +176,13 @@ Pdef(\basstwo,
     Pbind(
         \instrument, \bass,
         \curve, -8,
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3].stutter(5), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5].stutter(5), inf),
         \foldfactor, Pshuf((11..23) * 0.01, inf),
         \level, 0.02,
         \octave, [4, 5, 6],
         \outbus, ~delaybus,
         \scale, ~scale,
-        \start, Pshuf([1/1, 16/15], inf),
+        \start, Pshuf([7/8, 1/1, 16/15, 3/2], inf),
         \end, Pshuf([1/1, 16/15].stutter(3), inf)
 ));
 );
@@ -386,7 +386,7 @@ Pdef(\pnopulses2).stop;
 // WUT
 
 (
-SynthDef(\wut, { |attack = 0.01, curve = 0, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, k = 1.4, level = 0.03, outbus, release = 0.1|
+SynthDef(\wut, { |attack = 0.01, curve = 0, dur = 1, fb = 0, foldfactor = 1, freq = 440, gate = 1, k = 1.4, level = 0.02, outbus, release = 0.1|
     var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var freqmod         =   LFNoise0.kr(11!2, 0.0005, 1);
@@ -426,7 +426,7 @@ Pdef(\wat,
         \dur, 53,
         \fb, 2,
         \legato, 0.5,
-        \level, 0.015,
+        \level, 0.01,
         \octave, 4,
         \outbus, ~delaybus,
         \scale, ~scale
@@ -574,7 +574,7 @@ Pdef(\prc1,
         \instrument, \prc1,
         \a, Pshuf([1.0, 1.1, 1.2, 1.3].stutter(17), inf),
         \c, Pshuf([0.1, 0.12, 0.14, 0.16, 0.18, 0.2].stutter(3), inf),
-        \curve, -16,
+        \curve, -32,
         \dur, Pshuf([Pseq([0.125, 0.125, 0.25]), 0.25, 0.5, 0.75, 1, 1.5, 2, Pseq([1.25], 2), Pseq([1], 2), 3].stutter(2), inf),
         \fb, Prand([0, 1], inf),
         \freq, Pshuf([100, 500, 1000].stutter(13), inf),
@@ -638,7 +638,7 @@ Pdef(\prc2b,
         //\freq, Pshuf([Pwhite(190.0, 210.0, 1), Pwhite(1000.0, 2000.0, 1)].stutter(3), inf),
         \freq, Pxrand([250, 500, 1000, 2000, 4000], inf),
         \length, Pshuf([0.1, 0.4].stutter(17), inf),
-        \level, Pshuf([0.2, 1, 1, 1].stutter(11) * 0.2, inf),
+        \level, Pshuf([0.2, 1, 1, 1].stutter(11) * 0.1, inf),
         \lfreq, Pshuf((1..19) * 1000, inf),
         \outbus, ~prcfxbus,
         \s, Pwhite(7.0, 12.0, inf).round(0.1)
@@ -658,7 +658,7 @@ Pdef(\prc2b).stop;
 // HEAVY PERC
 
 (
-SynthDef(\heavy, { |brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.08, multiplier = 1, outbus, pan = 0, releaseTime = 1, sinfb = 0|
+SynthDef(\heavy, { |brightness = 1000, curve = -8, dur = 1, freq = 440, level = 0.03, multiplier = 1, outbus, pan = 0, releaseTime = 1, sinfb = 0|
 	var env				=	Env.perc(0.005, releaseTime: releaseTime, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var kxline			=	XLine.kr(1, 0.125, dur / 5);
@@ -677,7 +677,7 @@ SynthDef(\heavy, { |brightness = 1000, curve = -8, dur = 1, freq = 440, level = 
 // Pattern
 
 (
-~heavypatlvl = 0.05;
+~heavypatlvl = 0.03;
 ~heavypatecholvl = ~heavypatlvl / 4;
 Pdef(\heavypat1,
 	Pbind(
@@ -803,10 +803,10 @@ Pdef(\heavypar).stop;
 );
 
 (
-~scene5 = [\heavypar, \prc2b];
-~scene5lights = [52, 68];
-~scene5stoppers = [\prc1, \bassthree, \wat, \wet, \clappar];
-~scene5stopperlights = [36, 64, 50, 66, 51];
+~scene5 = [\wet, \heavypar, \prc2b];
+~scene5lights = [66, 52, 68];
+~scene5stoppers = [\prc1, \bassthree, \wat, \clappar];
+~scene5stopperlights = [36, 64, 50, 51];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5stoppers, ~scene5lights, ~scene5stopperlights);
 );
 
