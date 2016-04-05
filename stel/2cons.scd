@@ -365,7 +365,7 @@ Pdef(\snr1,
         \a, Pwhite(0.98, 1.02, inf),
         \curve, Pshuf([-16, -8], inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
-        \freq, Pshuf([100, 500, 1000, 5000, 10000].stutter(3), inf),
+        \freq, Pshuf([100, 500, 1000, 5000].stutter(3), inf),
         \level, ~snrlvl,
         \outbus, ~limiterbus
 ));

@@ -79,7 +79,7 @@ s.stopRecording;
 (
 SynthDef(\dynamix, { |inbus, outbus|
 	var in	   		= 	In.ar(inbus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.5, clampTime: 0.002, slopeAbove: 1/8);
+	var compressor	=	Compander.ar(in, in, thresh: 0.5, clampTime: 0.002, slopeAbove: 1/20);
 	Out.ar(outbus, compressor);
 }).add;
 );
@@ -129,10 +129,10 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.2, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.1, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
 	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
 	var imp				=	Impulse.ar(0!2, mul: level);
-    var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 2);
+    var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 4);
     var leakdc          =   LeakDC.ar(comb);
     var roundmod        =   LFBrownNoise2.kr(roundmod_freq!2, mul: 1, add: 1);
     var sinfb			=	SinOscFB.ar(freq * LFNoise2.kr(17!2, 0.005, 1), fb * LFBrownNoise2.kr(0.2!2, mul: 1, add: 1)).round(sinfb_round * 0.25 * roundmod).round(sinfb_round * 0.5 * roundmod).round(sinfb_round * roundmod) * (env * 0.5);
@@ -172,9 +172,10 @@ Pdef(\basspat1).stop;
 Pdef(\basspat2,
     Pbind(
         \instrument, \bass,
+        \curve, -8,
         \degree, Pseq([[0, 7], Rest, [0, 7], Rest, Rest, [0, 7], Rest, Rest, Rest], inf),
         \dur, Pseq([1, 5, 1, 4, 3, 1, 4, 3, 2] + 0.25, inf),
-        \level, 0.3,
+        \level, 0.2,
         \octave, 3,
         \outbus, ~delaybus,
         \root, ~root,
@@ -194,7 +195,7 @@ Pdef(\basspat2).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.03, outbus|
+SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.02, outbus|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lfn				=	LFNoise0.kr(50!2, 0.002, 1);
@@ -250,12 +251,12 @@ Pdef(\hatpar).stop;
 //
 
 (
-~pulselvl = 0.03;
+~pulselvl = 0.01;
 ~pulseecholvl = ~pulselvl / 4;
 Pdef(\pulsepat1a,
 	Pbind(
 		\instrument, \hat,
-        \curve, Prand([-64, -16, -4], inf),
+        \curve, Prand([-16, -4], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24].stutter(11), inf),
 		\fb, Pwhite(2.7, 3.2, inf),
 		\level, ~pulselvl,
@@ -383,7 +384,7 @@ Pdef(\prcpat1,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
         \curve, -8,
         \degree, Pseq([Rest, 0], inf),
-        \dur, Pshuf([0.75, 1, 1.25, 1.5, 3], inf),
+        \dur, Pshuf([0.75, 1, 1.5, 3, 4], inf),
         //\foldfactor, Pshuf([100, 200, 400, 800], inf),
         \foldfactor, Pwhite(200, 800, inf),
         \level, 0.2,
@@ -416,7 +417,7 @@ Pdef(\prcpar1).stop;
 //
 
 (
-SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.2, outbus|
+SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.1, outbus|
 	var env				=	Env.perc(0.005, 1, level, -16);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lc				=	LinCongC.ar([freq, freq * 1.01], a, c, m, mul: envgen);
@@ -464,7 +465,7 @@ Pdef(\prcpar).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.3, outbus, releaseTime = 1|
+SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.1, outbus, releaseTime = 1|
     var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var latoo           =   LatoocarfianC.ar([freq - 10, freq + 10], a, mul: XLine.kr(3, 0.1, 0.1), add: 1);
@@ -602,13 +603,13 @@ Pdef(\pnopat).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.03, outbus, release = 0.1, xlinestart = 1|
+SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.015, outbus, release = 0.1, xlinestart = 1|
     var env             =   Env.asr(0.01, level, release);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var xline           =   XLine.kr(xlinestart, 1, dur / 4);
     var fbmod           =   SinOscFB.ar(freq * xline, 0, 1, 1);
     var carrier         =   SinOscFB.ar(freq * LFNoise2.kr(0.2!2, 0.001, 1), fbmod).round(0.5) * envgen;
-    var rhpf            =   RHPF.ar(carrier, (freq * 4).clip(50, SampleRate.ir / 2.5));
+    var rhpf            =   RHPF.ar(carrier, (freq * 16).clip(50, SampleRate.ir / 2.5));
     var delay           =   DelayC.ar(carrier + rhpf, 1, delaytime.clip(0.00008, 0.1));
     Out.ar(outbus, carrier + rhpf + delay);
 }).add;

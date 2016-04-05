@@ -100,14 +100,14 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.3,
 // VERB
 
 (
-SynthDef(\verb, { |ffreq = 4000, freq = 1, gate = 1, inBus, level = 0.3, outbus, phase = 0, rq = 1, size = 1, t60 = 1|
+SynthDef(\verb, { |ffreq = 4000, freq = 1, gate = 1, inBus, level = 0.5, outbus, phase = 0, rq = 1, size = 1, t60 = 1|
     var env         =   Env.asr(0.01, level, 0.01);
     var envgen      =   EnvGen.kr(env, gate, doneAction: 2);
 	var in			=	In.ar(inBus, 2);
 	var verb		=	JPverb.ar(in, t60, size: size) * envgen;
     var trig        =   Impulse.kr(freq * LFNoise2.kr(2!2).range(1.0, 8.0));
     var grain       =   GrainIn.ar(2, trig, 0.005, verb);
-    var hipass		=	BHiPass4.ar(grain, ffreq.clip(50, SampleRate.ir / 2.5), rq.clip(0.0001, 1));
+    var hipass		=	BHiPass4.ar(grain, (ffreq * LFNoise2.kr(2!2, 1, 1)).clip(50, SampleRate.ir / 2.5), rq.clip(0.0001, 1));
 	Out.ar(outbus, hipass);
 }).add;
 );
@@ -117,8 +117,8 @@ Pdef(\verb,
     Pbind(
         \instrument, \verb,
         \dur, Prand([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
-        \freq, Pwhite(1, 25, inf),
-        \ffreq, Pwhite(2000, 8000, inf),
+        \freq, Pwhite(1, 30, inf),
+        \ffreq, Pwhite(2000, 4000, inf),
         \inBus, ~verbus,
         \outbus, ~prcfxbus,
         \phase, Pwhite(0, pi, inf),
@@ -127,7 +127,6 @@ Pdef(\verb,
         \t60, 5
 ));
 );
-
 
 /*
 Pdef(\verb).play(t);
@@ -178,16 +177,16 @@ SynthDef(\dynamix, { |inBus|
 // PNO
 
 (
-SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, outbus, rq1 = 1, rq2 = 1, sinhimul = 0|
+SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, hffreq = 8000, level = 0.1, lffreq = 1000, octavelowermul = 0, outbus, rq1 = 1, rq2 = 1, sinhimul = 0|
     var env             =   Env.perc(0.001, dur + 1, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinfb1          =   SinOscFB.ar(freq!2, fb, envgen / 4);
     var sinfb2          =   SinOscFB.ar(freq!2, fb2, envgen * fb2mul);
-    //var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
-    var sinhi           =   SinOsc.ar(freq * 11, mul: envgen * sinhimul);
+    var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
+    //var sinhi           =   SinOsc.ar(freq * 11, mul: envgen * sinhimul);
     var rlpf            =   RLPF.ar(sinfb1, lffreq.clip(50, SampleRate.ir / 3), rq1);
     var rhpf            =   RHPF.ar(sinfb2, hffreq.clip(50, SampleRate.ir / 3), rq2);
-    Out.ar(outbus, rlpf + rhpf + sinhi);
+    Out.ar(outbus, octavelower + rlpf + rhpf);
 }).add;
 );
 
@@ -203,7 +202,7 @@ Pdef(\pnopulse1,
         \outbus, ~delaybus,
         \rq1, 0.1,
         \scale, ~scale,
-        \sinhimul, 0.0
+        //\sinhimul, 0.0
 ));
 
 Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, [0, 7], \dur, Pshuf([1.75, 2, 2.25, 2.5, 2.75, 3, 3.25], inf), \fb, 0.1));
@@ -228,14 +227,14 @@ Pdef(\pnobass1,
         \curve, -8,
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(2), inf),
         \fb, 0.5,
-        \fb2, Pshuf((1..5), inf),
+        \fb2, Pshuf((0..2), inf),
         \fb2mul, 0.05,
-        \hffreq, Pshuf((4..12) * 1000, inf),
+        \hffreq, Pshuf((8..12) * 1000, inf),
         \level, 0.3,
         \lffreq, 5000,
         \degree, 0,
         \octave, 3,
-        \octavelowermul, 1,
+        \octavelowermul, 0.5,
         \outbus, ~delaybus,
 		\rq1, 1,
         \rq2, 0.3,
@@ -257,7 +256,7 @@ Pdef(\pnobass1).stop;
 // PRC
 
 (
-SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level = 0.2, outbus, pan = 0, releaseTime = 0.2 |
+SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level = 0.4, outbus, pan = 0, releaseTime = 0.2 |
 	var env				=	Env.perc(releaseTime: releaseTime, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
@@ -285,7 +284,8 @@ Pdef(\prc1,
 		\freq, Pshuf([~prcpatfrq1, ~prcpatfrq2], inf),
         \ffreq, Pkey(\freq),
 		\level, ~prcpatlvl,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
+        //\outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
+        \outbus, Pshuf([~prcfxbus, [~prcfxbus, ~verbus]], inf),
 		\pan, Pshuf([-0.5, -0.25, 0, 0.25, 0.5], inf),
         \releaseTime, 0.1
 ));
@@ -327,7 +327,7 @@ Pdef(\prc4,
 		\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, 0.75, 0.75, 0.75, 1, 1, 1, 1.25, 1.25, 1.25], inf),
         \ffreq, Pshuf([10000, 20000], inf),
 		\octave, 9,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
+        \outbus, Pshuf([~prcfxbus, [~prcfxbus, ~verbus]], inf),
 ));
 
 //
@@ -343,7 +343,7 @@ Pdef(\prc5,
             ~prcpatfrq1 * 8, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16,
             ~prcpatfrq1 * 8, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16, ~prcpatfrq2 / 16
         ], inf),
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
+        \outbus, Pshuf([~prcfxbus, [~prcfxbus, ~verbus]], inf),
 		\releaseTime, 0.05
 ));
 
@@ -360,7 +360,7 @@ Pdef(\prc6,
 		\curve, -16,
 		\dur, Prand([4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75], inf),
 		\octave, 10,
-        \outbus, Pwrand([~prcfxbus, [~prcfxbus, ~verbus]], [2, 1].normalizeSum, inf),
+        \outbus, Pshuf([~prcfxbus, [~prcfxbus, ~verbus]], inf),
 ));
 
 //
@@ -497,8 +497,9 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \degree, [-5, 0].stutter(2), \octave, 5, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 24, 31], \octave, 2, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+//Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 24, 31], \octave, 2, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 10, 14, 19], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
