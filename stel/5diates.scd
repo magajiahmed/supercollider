@@ -366,7 +366,7 @@ Pdef(\pingpat).stop;
 
 (
 SynthDef(\prc, {
-	|a = 1.1, curve = -4, dur = 1, foldfactor = 2, freq = 440, level = 0.2, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
+	|a = 1.1, curve = -4, dur = 1, foldfactor = 2, freq = 440, level = 0.1, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
 	var env				=	Env.perc(0.01, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen;
@@ -387,7 +387,6 @@ Pdef(\prcpat1,
         \dur, Pshuf([0.75, 1, 1.5, 3, 4], inf),
         //\foldfactor, Pshuf([100, 200, 400, 800], inf),
         \foldfactor, Pwhite(200, 800, inf),
-        \level, 0.2,
         \octave, 6,
         \outbus, ~prcbus,
         \rez_rq, 0.5,
@@ -397,7 +396,7 @@ Pdef(\prcpat1,
         //\rez_rq, Pshuf([0.25, 0.5].stutter(7), inf)
 ));
 
-Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75], inf), \level, 0.04));
+Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75], inf), \level, 0.02));
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 );
@@ -465,7 +464,7 @@ Pdef(\prcpar).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.1, outbus, releaseTime = 1|
+SynthDef(\prc2, { |a = 1.0, curve = -16, dur = 1, freq = 440, level = 0.05, outbus, releaseTime = 1|
     var env             =   Env.perc(0.003, releaseTime, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var latoo           =   LatoocarfianC.ar([freq - 10, freq + 10], a, mul: XLine.kr(3, 0.1, 0.1), add: 1);
@@ -602,6 +601,7 @@ Pdef(\pnopat).stop;
 
 ////////////////////////////////////////////////////////////////
 
+/*
 (
 SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.015, outbus, release = 0.1, xlinestart = 1|
     var env             =   Env.asr(0.01, level, release);
@@ -614,11 +614,28 @@ SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, ga
     Out.ar(outbus, carrier + rhpf + delay);
 }).add;
 );
+*/
 
 (
 SynthDef(\stringdelayktrl, {|delaytime = 0.01, dur = 1, outbus = 0|
 	var setdelaytime	=	Line.kr(delaytime, delaytime, dur, doneAction: 2);
 	Out.kr(outbus, setdelaytime);
+}).add;
+);
+
+(
+SynthDef(\string, { |delaytime = 0.01, dur = 1, freq = 440, gate = 1, level = 0.005, outbus, release = 0.1|
+    var env             =   Env.asr(0.01, level, release);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    //var widthmod        =   LFBrownNoise2.kr(LFBrownNoise2.kr(0.5!2).range(0.05, 1)).range(0.0, 1.0);
+    var widthmod        =   SinOscFB.ar([0.03, 0.04], 0.75).range(0.0, 1.0);
+    //var ampmod          =   LFClipNoise.kr(11!2).range(0.75, 1);
+    var osc             =   VarSaw.ar(freq, width: widthmod).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5).round(0.6).round(0.7).round(0.8).round(0.9) * envgen;
+    //var ratemod         =   LFBrownNoise2.kr(0.2!2).range(4410, 44100) * LFClipNoise.kr(LFNoise0.kr(2!2).range(0.2, 5)).range(0.5, 1);
+    var bitmod          =   SinOscFB.kr(0.1, 0.75).range(8, 24);
+    var deci            =   Decimator.ar(osc, bits: bitmod);
+    var delay           =   DelayC.ar(deci, 1, delaytime.clip(0.00008, 0.1));
+    Out.ar(outbus, (osc + delay));
 }).add;
 );
 
@@ -642,10 +659,10 @@ Pdef(\stringpat0,
     Pmono(
 		\string,
 		\delaytime, ~stringpat0delayktrlbus.asMap,
-		\dur, 5,
+		\dur, 19,
 		\degree, [-5, 0],
-        \fb1, 1,
-        \fb2, 1,
+        //\fb1, 1,
+        //\fb2, 1,
         \outbus, ~companderbus,
         \release, 0.1,
 		\root, ~root,
@@ -678,7 +695,7 @@ Pdef(\stringpat1setdelaytime,
 	[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [0, 3, 7], [0, 6, 7], [0, 7, 7]
 ];
 */
-~chords = [[-5, -2, 0], [-5, 0, 0], [-5, 0, 2], [0, 3, 7], [0, 5, 7], [0, 6, 7], [0, 7, 7]];
+~chords = [[-5, -2, 0], [-5, 0, 0], [-5, 0, 1], [-5, 0, 2], [0, 3, 7], [0, 5, 7], [0, 6, 7], [0, 7, 7]];
 
 Pdef(\stringpat1,
 	Pbind(
@@ -686,14 +703,14 @@ Pdef(\stringpat1,
 		\degree, Pshuf(~chords, inf),
 		\delaytime, ~stringpat1delayktrlbus.asMap,
 		\dur, Pshuf(Array.fill(5, { |i| (i + 7).nthPrime }), inf),
-        \fb1, 1,
-        \fb2, 1,
+        //\fb1, 1,
+        //\fb2, 1,
 		\legato, 1,
 		\octave, 6,
         \outbus, ~companderbus,
 		\root, ~root,
 		\scale, ~scale,
-        \xlinestart, Pshuf([1/2, 2/1].stutter(5), inf),
+        //\xlinestart, Pshuf([1/2, 2/1].stutter(5), inf),
 ));
 );
 

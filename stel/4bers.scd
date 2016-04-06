@@ -499,7 +499,7 @@ Pdef(\pad2pat).stop;
 
 Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 4, \outbus, ~delaybus, \scale, ~scale));
 //Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 12, 24, 31], \octave, 2, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 10, 14, 19], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 6, \outbus, ~delaybus, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
