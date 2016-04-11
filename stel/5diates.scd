@@ -54,6 +54,10 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 ~delaybus = Bus.audio(s, 2);
 ~prcbus = Bus.audio(s, 2);
 //
+~stringchordsdelayktrlbus = Bus.control(s);
+~stringchorddronedelayktrlbus = Bus.control(s);
+~dronedelayktrlbus = Bus.control(s);
+/*
 ~stringpat0delayktrlbus = Bus.control(s);
 ~stringpat1delayktrlbus = Bus.control(s);
 ~stringpat2delayktrlbus = Bus.control(s);
@@ -64,6 +68,7 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 ~stringpat7delayktrlbus = Bus.control(s);
 ~stringpat8delayktrlbus = Bus.control(s);
 ~stringpat9delayktrlbus = Bus.control(s);
+*/
 );
 
 // record
@@ -600,6 +605,52 @@ Pdef(\pnopat).stop;
 
 ////////////////////////////////////////////////////////////////
 
+(
+SynthDef(\stringdelayktrl, {|delaytime = 0.01, dur = 1, outbus = 0|
+	var setdelaytime	=	Line.kr(delaytime, delaytime, dur, doneAction: 2);
+	Out.kr(outbus, setdelaytime);
+}).add;
+);
+
+~setdelaytimedursshort = [2, 3].collect({ |d| Pseq([d.reciprocal], d) });
+~setdelaytimedurslong = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] + 0.25;
+~setdelaytimedurs = ~setdelaytimedursshort ++ ~setdelaytimedurslong;
+
+(
+Pdef(\stringchordssetdelaytime,
+	Pbind(
+		\instrument,\stringdelayktrl,
+		\delaytime, Pbrown(0.0001, 0.01, 0.001, inf),
+        \dur, Pshuf(~setdelaytimedurs, inf),
+		\legato, 1,
+		\outbus, ~stringchordsdelayktrlbus,
+));
+
+Pdef(\stringchorddronesetdelaytime, Pbindf(Pdef(\stringchordssetdelaytime), \outbus, ~stringchorddronedelayktrlbus));
+
+Pdef(\dronesetdelaytime, Pbindf(Pdef(\stringchordssetdelaytime), \outbus, ~dronedelayktrlbus));
+);
+
+/*
+Pdef(\stringchordssetdelaytime).play(~tempo);
+Pdef(\stringchordssetdelaytime).isPlaying;
+Pdef(\stringchordssetdelaytime).stop;
+*/
+
+/*
+Pdef(\stringchorddronesetdelaytime).play(~tempo);
+Pdef(\stringchorddronesetdelaytime).isPlaying;
+Pdef(\stringchorddronesetdelaytime).stop;
+*/
+
+/*
+Pdef(\dronesetdelaytime).play(~tempo);
+Pdef(\dronesetdelaytime).isPlaying;
+Pdef(\dronesetdelaytime).stop;
+*/
+
+////////////////////////////////////////////////////////////////
+
 /*
 (
 SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, gate = 1, level = 0.015, outbus, release = 0.1, xlinestart = 1|
@@ -616,101 +667,119 @@ SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, ga
 */
 
 (
-SynthDef(\stringdelayktrl, {|delaytime = 0.01, dur = 1, outbus = 0|
-	var setdelaytime	=	Line.kr(delaytime, delaytime, dur, doneAction: 2);
-	Out.kr(outbus, setdelaytime);
-}).add;
-);
-
-(
-SynthDef(\string, { |attack = 0.01, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 1, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.02, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
-    var env             =   Env.asr(attack, level, release, -4);
+SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 1, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.005, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
+    var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(widthmod_freq_min, widthmod_freq_max)).range(widthmod_min, widthmod_max);
     var foldmod         =   LFNoise2.kr(LFNoise0.kr(0.1 ! 2).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
     var osc             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
     var delay           =   DelayC.ar(osc, 1, delaytime.clip(0.00008, 0.1));
-    Out.ar(outbus, (osc + delay).fold2(level));
+    var sin             =   SinOscFB.ar(freq ! 2, 0.5).round(0.01) * envgen * 0.25;
+    Out.ar(outbus, (osc + delay).fold2(level) + sin);
 }).add;
 );
 
 //
 
 (
-~stringchords = [-2, 0, 2, 7].collect({ |c| [-2, 0, 2, 7] ++ ([-2, 0, 2, 7] + c) });
+~stringchords = [[-2, 0, 2, 7], [0, 2, 7, 10], [2, 7, 10, 12], [7, 10, 12, 14]].collect({ |c| c.stutter(5) });
 
-Pdef(\string1,
+Pdef(\stringchords,
     Pbind(
         \instrument, \string,
-        \attack, 8,
-        \degree, Pseq([Pshuf(~stringchords), Rest], inf),
-        \delaytime, ~stringpat0delayktrlbus.asMap,
-        \dur, 71,
-        \foldmod_freq_min, Pwhite(0.05, 0.5, inf),
-        \foldmod_freq_max, Pwhite(1, 10, inf),
+        \curve, 0,
+        \degree, Pseq([Pseq(~stringchords), Rest], inf).trace(prefix: "stringchord: "),
+        \delaytime, ~stringchordsdelayktrlbus.asMap,
+        \dur, Pseq([Pseq([101], ~stringchords.size), 31], inf),
+        \foldmod_freq_min, Pwhite(0.05, 0.25, inf),
+        \foldmod_freq_max, Pwhite(0.25, 5, inf),
         \foldmod_min, Pwhite(0.025, 0.05, inf),
         \foldmod_max, Pwhite(0.1, 0.5, inf),
         \legato, 0.75,
-        \octave, 6,
-        \release, 8,
-        \scale, ~scale
+        \octave, [5, 6],
+        \outbus, ~companderbus,
+        \scale, ~scale,
+        \widthmod_freq_min, Pwhite(0.0, 0.1, inf),
+        \widthmod_freq_max, Pwhite(0.25, 1.0, inf),
+        \widthmod_min, Pwhite(0.0, 0.5, inf),
+        \widthmod_max, Pwhite(0.5, 1.0, inf)
 ));
 );
 
 /*
-Pdef(\string1).play(~tempo);
-Pdef(\string1).isPlaying;
-Pdef(\string1).stop;
+Pdef(\stringchords).play(~tempo);
+Pdef(\stringchords).isPlaying;
+Pdef(\stringchords).stop;
 */
 
 (
-Pdef(\drone1,
+Pdef(\stringchorddrones,
     Pmono(
         \string,
-        \degree, [7, 12],
-        \delaytime, ~stringpat1delayktrlbus.asMap,
-        \dur, 11,
-        \foldmod_min, Pwhite(0.1, 0.2, inf),
-        \foldmod_max, Pkey(\foldmod_min),
-        \level, 0.01,
-        \octave, 3,
-        \release, 5,
+        \degree, [0, 7].stutter(3),
+        \delaytime, ~stringchorddronedelayktrlbus.asMap,
+        \dur, Pseq([11, 13, 15], inf),
+        \foldmod_freq_min, 0.05,
+        \foldmod_freq_max, 0.1,
+        \foldmod_min, Pwhite(0.05, 0.1, inf),
+        \foldmod_max, Pwhite(0.1, 0.2, inf),
+        \legato, 1,
+        \octave, 4,
+        \outbus, ~companderbus,
         \scale, ~scale,
-        \widthmod_min, Pwhite(0.0, 1.0, inf),
-        \widthmod_max, Pkey(\widthmod_min)
+        \widthmod_freq_min, 0.05,
+        \widthmod_freq_max, 0.1,
+        \widthmod_min, 0,
+        \widthmod_max, 1
 ));
-
-Pdef(\drone2, Pbindf(Pdef(\drone1), \degree, 0, \delaytime, ~stringpat2delayktrlbus.asMap));
 );
 
 /*
-Pdef(\drone1).play(~tempo);
-Pdef(\drone1).isPlaying;
-Pdef(\drone1).stop;
+Pdef(\stringchorddrones1).play(~tempo);
+Pdef(\stringchorddrones1).isPlaying;
+Pdef(\stringchorddrones1).stop;
 */
 
+(
+Pdef(\drone,
+    Pbind(
+        \instrument, \string,
+        \degree, [0].stutter(5),
+        \delaytime, ~dronedelayktrlbus.asMap,
+        \dur, 53,
+        \foldmod_freq_min, 0.0,
+        \foldmod_freq_max, Pkey(\foldmod_freq_min),
+        \legato, 0.75,
+        \octave, [2, 3],
+        \outbus, ~companderbus,
+        \scale, ~scale,
+        \widthmod_freq_min, 0,
+        \widthmod_freq_max, Pkey(\widthmod_freq_min),
+));
+);
+
 /*
-Pdef(\drone2).play(~tempo);
-Pdef(\drone2).isPlaying;
-Pdef(\drone2).stop;
+Pdef(\drone).play(~tempo);
+Pdef(\drone).isPlaying;
+Pdef(\drone).stop;
 */
+
+~midiktrl.value(\stringchords, 52);
+~midiktrl.value(\drone, 68);
+~midiktrl.value(\stringchorddrones, 37);
+
+/////////////////////////////////////
+
+
+
+
+
+//OLD STUFF
 
 //
 
+/*
 (
-~setdelaytimedursshort = [2, 3].collect({ |d| Pseq([d.reciprocal], d) });
-~setdelaytimedurslong = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13] + 0.25;
-~setdelaytimedurs = ~setdelaytimedursshort ++ ~setdelaytimedurslong;
-
-Pdef(\stringpat0setdelaytime,
-	Pbind(
-		\instrument,\stringdelayktrl,
-		\delaytime, Pbrown(0.0001, 0.01, 0.001, inf),
-        \dur, Pshuf(~setdelaytimedurs, inf),
-		\legato, 1,
-		\outbus, ~stringpat0delayktrlbus,
-));
-
 Pdef(\stringpat0,
     Pmono(
 		\string,
@@ -1032,6 +1101,7 @@ Pdef(\stringpat9).stop;
 /*
 Pdef(\stringpat0setdelaytime).isPlaying;
 */
+*/
 
 ////////////////////////////////////////////////////////////////
 // SCENES
@@ -1096,26 +1166,28 @@ Pdef(\stringpat0setdelaytime).isPlaying;
 );
 
 (
-~scene6 = [\basspat2];
-~scene6lights = [65];
-~scene6stoppers = [\pulsepat2a, \pulsepat3a, \hatpar, \prcpar];
-~scene6stopperlights = [48, 64, 34, 50];
+~scene6 = [\basspat2, \hat2];
+~scene6lights = [65, 33];
+~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \hatpar, \prcpar];
+~scene6stopperlights = [32, 48, 64, 34, 50];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
 );
 
 (
-~scene7 = [\pingpat, \banjopat, \stringpat0];
-~scene7lights = [67, 36, 52];
+~scene7 = [\pingpat, \banjopat, \drone];
+~scene7lights = [67, 36, 68];
 ~scene7stoppers = [\pulsepat1a, \hatpar, \prcpar, \banjopar];
 ~scene7stopperlights = [32, 34, 50, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
 (
-~scene8 = [\stringpat1];
-~scene8lights = [68];
-~scene8stoppers = [\basspat1];
-~scene8stopperlights = [49];
+~scene8 = [\stringchords];
+~scene8lights = [52];
+//~scene8stoppers = [\basspat1];
+//~scene8stopperlights = [49];
+~scene8stoppers = nil;
+~scene8stopperlights = nil;
 ~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);
 );
 
@@ -1129,3 +1201,16 @@ Pdef(\stringpat0setdelaytime).isPlaying;
     Pdef(\limiter).play(t);
 }.fork;
 );
+
+(
+{
+    s.sync;
+    Pdef(\stringchordssetdelaytime).play(~tempo);
+    Pdef(\dronesetdelaytime).play(~tempo);
+}.fork;
+);
+
+/*
+Pdef(\stringchordssetdelaytime).isPlaying;
+Pdef(\dronesetdelaytime).isPlaying;
+*/
