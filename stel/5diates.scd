@@ -10,7 +10,7 @@ Pdef.removeAll;
 );
 
 // time
-~tempo = TempoClock(100/60);
+~tempo = TempoClock(96/60);
 
 //midi
 (
@@ -314,12 +314,14 @@ Pdef(\pulsepar3).stop;
 Pdef(\hat2,
     Pbind(
         \instrument, \hat,
-        \curve, -64,
+        \curve, Prand([-64, -4], inf),
         \degree, [0, 2, 7, 10, 12],
         //\dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
+        //\dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
+        //\dur, Pshuf(Array.fill(3, { |d| Pseq([0.75 + (d * 0.25)], 2) }), inf),
+        \dur, Prand([0.25, 0.5, 0.75, 1, 1.5, 2, 3], inf),
         \level, Pshuf([0.2, 1].stutter(7) * 0.02, inf),
-        \octave, [8, 9, 10],
+        \octave, [9, 10],
         \outbus, ~prcbus,
         \root, ~root,
         \scale, ~scale
@@ -670,8 +672,12 @@ SynthDef(\string, { |delaytime = 0.01, dur = 1, fb1 = 0, fb2 = 0, freq = 440, ga
 SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 1, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.005, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
     var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(widthmod_freq_min, widthmod_freq_max)).range(widthmod_min, widthmod_max);
-    var foldmod         =   LFNoise2.kr(LFNoise0.kr(0.1 ! 2).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
+    //var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(widthmod_freq_min, widthmod_freq_max)).range(widthmod_min, widthmod_max);
+	//var widthmod        =   Line.kr(0.0, 1.0, dur);
+    //var widthmod        =   0.0;
+    var widthmod        =   SinOscFB.kr(dur.reciprocal, 1.01).range(0.0, 1.0);
+    //var foldmod         =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
+    var foldmod         =   SinOsc.ar(LFNoise2.ar(1).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
     var osc             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
     var delay           =   DelayC.ar(osc, 1, delaytime.clip(0.00008, 0.1));
     var sin             =   SinOscFB.ar(freq ! 2, 0.5).round(0.01) * envgen * 0.25;
@@ -682,21 +688,25 @@ SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldm
 //
 
 (
-~stringchords = [[-2, 0, 2, 7], [0, 2, 7, 10], [2, 7, 10, 12], [7, 10, 12, 14]].collect({ |c| c.stutter(5) });
+~stringchords = [[-5, -2, 0, 2], [-2, 0, 2, 7], [0, 2, 7, 10], [2, 7, 10, 12]].collect({ |c| c.stutter(5) });
 
 Pdef(\stringchords,
-    Pbind(
-        \instrument, \string,
+    //Pbind(
+        //\instrument, \string,
+    Pmono(
+        \string,
         \curve, 0,
-        \degree, Pseq([Pseq(~stringchords), Rest], inf).trace(prefix: "stringchord: "),
+        //\degree, Pseq([Pseq(~stringchords), Rest], inf).trace(prefix: "stringchord: "),
+        \degree, Pshuf(~stringchords, inf),
         \delaytime, ~stringchordsdelayktrlbus.asMap,
-        \dur, Pseq([Pseq([101], ~stringchords.size), 31], inf),
-        \foldmod_freq_min, Pwhite(0.05, 0.25, inf),
-        \foldmod_freq_max, Pwhite(0.25, 5, inf),
+        //\dur, Pseq([Pseq([101], ~stringchords.size), 31], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+        \foldmod_freq_min, Pwhite(0.05, 0.1, inf),
+        \foldmod_freq_max, Pwhite(0.25, 0.5, inf),
         \foldmod_min, Pwhite(0.025, 0.05, inf),
         \foldmod_max, Pwhite(0.1, 0.5, inf),
-        \legato, 0.75,
-        \octave, [5, 6],
+        //\legato, 1,
+        \octave, [5, 6, 7],
         \outbus, ~companderbus,
         \scale, ~scale,
         \widthmod_freq_min, Pwhite(0.0, 0.1, inf),
@@ -713,10 +723,10 @@ Pdef(\stringchords).stop;
 */
 
 (
-Pdef(\stringchorddrones,
+Pdef(\stringchorddrones1,
     Pmono(
         \string,
-        \degree, [0, 7].stutter(3),
+        \degree, [-2, 0, 7].stutter(3),
         \delaytime, ~stringchorddronedelayktrlbus.asMap,
         \dur, Pseq([11, 13, 15], inf),
         \foldmod_freq_min, 0.05,
@@ -724,7 +734,7 @@ Pdef(\stringchorddrones,
         \foldmod_min, Pwhite(0.05, 0.1, inf),
         \foldmod_max, Pwhite(0.1, 0.2, inf),
         \legato, 1,
-        \octave, 4,
+        \octave, 5,
         \outbus, ~companderbus,
         \scale, ~scale,
         \widthmod_freq_min, 0.05,
@@ -732,6 +742,14 @@ Pdef(\stringchorddrones,
         \widthmod_min, 0,
         \widthmod_max, 1
 ));
+
+Pdef(\stringchorddrones2, Pbindf(Pdef(\stringchorddrones1), \degree, [0].stutter(4), \octave, 3));
+
+Pdef(\stringchorddrones3, Pbindf(Pdef(\stringchorddrones1), \octave, 6));
+
+Pdef(\stringchorddrones4, Pbindf(Pdef(\stringchorddrones1), \degree, [0].stutter(5), \octave, 2));
+
+Pdef(\stringchorddrones5, Pbindf(Pdef(\stringchorddrones1), \octave, 7));
 );
 
 /*
@@ -740,33 +758,36 @@ Pdef(\stringchorddrones1).isPlaying;
 Pdef(\stringchorddrones1).stop;
 */
 
-(
-Pdef(\drone,
-    Pbind(
-        \instrument, \string,
-        \degree, [0].stutter(5),
-        \delaytime, ~dronedelayktrlbus.asMap,
-        \dur, 53,
-        \foldmod_freq_min, 0.0,
-        \foldmod_freq_max, Pkey(\foldmod_freq_min),
-        \legato, 0.75,
-        \octave, [2, 3],
-        \outbus, ~companderbus,
-        \scale, ~scale,
-        \widthmod_freq_min, 0,
-        \widthmod_freq_max, Pkey(\widthmod_freq_min),
-));
-);
+/*
+Pdef(\stringchorddrones2).play(~tempo);
+Pdef(\stringchorddrones2).isPlaying;
+Pdef(\stringchorddrones2).stop;
+*/
 
 /*
-Pdef(\drone).play(~tempo);
-Pdef(\drone).isPlaying;
-Pdef(\drone).stop;
+Pdef(\stringchorddrones3).play(~tempo);
+Pdef(\stringchorddrones3).isPlaying;
+Pdef(\stringchorddrones3).stop;
+*/
+
+/*
+Pdef(\stringchorddrones4).play(~tempo);
+Pdef(\stringchorddrones4).isPlaying;
+Pdef(\stringchorddrones4).stop;
+*/
+
+/*
+Pdef(\stringchorddrones5).play(~tempo);
+Pdef(\stringchorddrones5).isPlaying;
+Pdef(\stringchorddrones5).stop;
 */
 
 ~midiktrl.value(\stringchords, 52);
-~midiktrl.value(\drone, 68);
-~midiktrl.value(\stringchorddrones, 37);
+~midiktrl.value(\stringchorddrones1, 68);
+~midiktrl.value(\stringchorddrones2, 37);
+~midiktrl.value(\stringchorddrones3, 53);
+~midiktrl.value(\stringchorddrones4, 69);
+~midiktrl.value(\stringchorddrones5, 38);
 
 /////////////////////////////////////
 
