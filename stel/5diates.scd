@@ -138,36 +138,29 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, freq = 440, k = 1, level = 0.1, outbus, roundmod_freq = 1, sinfb_line_start = 1, sinfb_line_end = 1, sinfb_round = 0.1|
-	var env				=	Env.perc(0.01, dur, level, curve).kr(2);
-	var imp				=	Impulse.ar(0!2, mul: level);
-    var comb			=	CombL.ar(imp, (freq).reciprocal, (freq).reciprocal, 15, env * 4);
-    var leakdc          =   LeakDC.ar(comb);
-    var roundmod        =   LFBrownNoise2.kr(roundmod_freq!2, mul: 1, add: 1);
-    var sinfb			=	SinOscFB.ar(freq * LFNoise2.kr(17!2, 0.005, 1), fb * LFBrownNoise2.kr(0.2!2, mul: 1, add: 1)).round(sinfb_round * 0.25 * roundmod).round(sinfb_round * 0.5 * roundmod).round(sinfb_round * roundmod) * (env * 0.5);
-    var tri             =   LFTri.ar(freq * 0.5 * LFNoise2.kr(0.2!2, 0.005, 1)).round(sinfb_round * 0.25 * LFBrownNoise2.kr(0.2!2, mul: 1, add: 1)) * (env * 0.5);
-    Out.ar(outbus, leakdc + sinfb + tri);
+SynthDef(\bass, { |curve = -2, dur = 1, fb = 0, fold = 1, freq = 440, level = 0.1, outbus, round = 0|
+	var env				=	Env.perc(0.01, dur, level, curve);
+    var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var sinfb			=	SinOscFB.ar(freq * LFNoise2.kr(1 ! 2, 0.001, 1), fb).fold2(fold).round(round) * fold.reciprocal * envgen;
+    Out.ar(outbus, sinfb);
 }).add;
 );
 
 (
+~degrees = [0].stutter(13) ++ [-2] ++ [-1] ++ [1] ++ [2];
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-        \curve, Prand([-8, -2], inf),
-        \degree, Pseq([Pshuf([[0]!2].stutter(5) ++ [[-2]!2] ++ [[1]!2] ++ [[2]!2] ++ [[3]!2], 5), Pseq([Rest], 18)], inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, 0.75, 1, 6].stutter(7), inf),
-        //\dur, Pshuf([Pseq([2/3], 3), Pshuf(Array.fill(23, { |d| (d + 1) * 0.25 }))], inf),
-        \fb, Prand([0, 0.5, 1], inf),
-        \k, Pwhite(0.9, 1.1, inf),
+        \curve, Pshuf([-4, -1].stutter(6), inf),
+        \degree, Pseq([Pshuf(~degrees.stutter(4)), Pseq([Rest], ~degrees.size)], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 3].stutter(11), inf),
+        \fb, Pshuf([0, 0.25, 0.5, 1].stutter(4), inf),
+        \fold, Pshuf([0.5, 0.75, 1].stutter(5), inf),
         \octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
+        \round, Pshuf([0, 0.05, 0.1, 0.2].stutter(3), inf),
 		\scale, ~scale,
-        \roundmod_freq, Prand([0.1, 0.5, 1], inf),
-        \sinfb_line_start, Prand([0.0, 0.1, 0.5, 1.0], inf),
-        \sinfb_line_end, Prand([0.0, 0.1, 0.25, 0.5, 1.0], inf),
-        \sinfb_round, Pshuf([0.01, 0.05, 0.1, 0.5], inf),
 ));
 );
 
@@ -221,7 +214,7 @@ Pdef(\hatpat1,
 		\instrument, \hat,
         \curve, -32,
         //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
-        \dur, Pshuf(Array.fill(17, { |i| (i + 1) * 0.25 }), inf),
+        \dur, Pshuf(Array.fill(7, { |i| (i + 1) * 0.25 }), inf),
 		\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
 		\level, 0.05,
 		\degree, 0,
@@ -319,12 +312,12 @@ Pdef(\pulsepar3).stop;
 Pdef(\hat2,
     Pbind(
         \instrument, \hat,
-        \curve, Pshuf([-64, -16, -4].stutter(3), inf),
+        \curve, Pshuf([-64, -16].stutter(3), inf),
         \degree, [0, 2, 7, 10, 12],
         //\dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
         //\dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
         //\dur, Pshuf(Array.fill(3, { |d| Pseq([0.75 + (d * 0.25)], 2) }), inf),
-        \dur, Pshuf([0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75].stutter(3), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75].stutter(3), inf),
         \level, Pshuf([0.2, 1].stutter(11) * 0.02, inf),
         \octave, [9, 10],
         \outbus, ~prcbus,
@@ -377,13 +370,13 @@ Pdef(\pingpat).stop;
 
 (
 SynthDef(\prc, {
-	|a = 1.1, curve = -4, dur = 1, foldfactor = 2, freq = 440, level = 0.1, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
+	|a = 1.1, curve = -4, delaytime = 0.01, dur = 1, foldfactor = 2, freq = 440, level = 0.1, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
 	var env				=	Env.perc(0.01, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-    var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen;
-	//var delay			=	DelayC.ar(lc, 0.2, freq.reciprocal);
+    var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen * 0.5;
+	var delay			=	DelayC.ar(lc, delaytime, delaytime) * 0.5;
 	var rez				=	Resonz.ar(lc, (rez_freq).clip(50, SampleRate.ir / 3), rez_rq) * rez_rq.reciprocal;
-	Out.ar(outbus, lc + rez);
+    Out.ar(outbus, (lc + delay + rez));
 }).add;
 );
 
@@ -393,9 +386,11 @@ Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
         \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        \curve, -8,
+        \curve, -4,
         \degree, Pseq([Rest, 0], inf),
-        \dur, Pshuf([0.75, 1, 1.5, 3, 4, 6, 8], inf),
+        \delaytime, Pwhite(0.0001, 0.02, inf),
+        //\dur, Pshuf([0.75, 1, 1.5, 3, 4, 6, 8], inf),
+        \dur, Prand([0.75, 1, 1.25], inf),
         //\foldfactor, Pshuf([100, 200, 400, 800], inf),
         \foldfactor, Pwhite(200, 800, inf),
         \octave, 6,
@@ -407,7 +402,7 @@ Pdef(\prcpat1,
         //\rez_rq, Pshuf([0.25, 0.5].stutter(7), inf)
 ));
 
-Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25], inf), \level, 0.02));
+Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \level, 0.02));
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 );
@@ -514,7 +509,7 @@ Pdef(\prcpar2).stop;
 
 (
 SynthDef(\banjo, {
-	|curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, level = 0.08, outbus, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
+	|curve = -8, dur = 1, fb = 0, foldfactor = 1, freq = 440, level = 0.05, outbus, rlpf_freq = 880, rlpf_rq = 1, rhpf_freq = 8800, rhpf_rq = 1, sawfreq = 100|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var noiz			=	LFNoise0.kr(30!2).range(0.999, 1);
