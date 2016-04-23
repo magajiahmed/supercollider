@@ -141,8 +141,8 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \
 SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 0.1, outbus, round = 0|
 	var env				=	Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sinfb1          =   SinOscFB.ar(freq ! 2, [fb, fb * 0.99]);
-    var sinfb2          =   SinOscFB.ar(freq ! 2 * LFClipNoise.kr(10 ! 2, detune, 1), [fb, fb * 0.9]);
+    var sinfb1          =   SinOscFB.ar(freq ! 2, [fb, fb * 0.99] * XLine.kr(1, 0.01, dur));
+    var sinfb2          =   SinOscFB.ar(freq ! 2 * LFClipNoise.ar(100 ! 2, detune, 1), [fb, fb * 0.9] * XLine.kr(1, 0.01, dur));
     var mix             =   (sinfb1 + sinfb2).round(round) * envgen;
     var sinfb           =   SinOscFB.ar(freq * 0.5 ! 2, XLine.kr(1, 0.1, dur), envgen);
     Out.ar(outbus, mix + sinfb);
@@ -150,15 +150,18 @@ SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 
 );
 
 (
-~degrees = [0].stutter(8) ++ [-2] ++ [1] ++ [4];
+~degrees = [0].stutter(8) ++ [-2] ++ [-2] ++ [-2] ++ [1] ++ [4] ++ [6];
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
         \curve, -8,
-        \degree, Pseq([Pshuf(~degrees.stutter(4)), Pseq([Rest], ~degrees.size)], inf),
-        \detune, Pshuf([0, 0.0025, 0.005, 0.01, 0.02].stutter(5), inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6], inf),
-        \fb, Pshuf([0, 0.25, 0.5, 2.5].stutter(7), inf),
+        \degree, Pseq([Pshuf(~degrees.stutter(3)), Pseq([Rest], ~degrees.size)], inf),
+        \detune, Pshuf([0.0025, 0.005, 0.01, 0.02, 0.04, 0.08, 0.16].stutter(5), inf),
+        \dur, Pshuf([
+            0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), Pseq([0.5], 2), 1,
+            1.5, Pseq([4, 1, 1] / 3), 2, 3, 4, 6
+        ].stutter(2), inf),
+        \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6].stutter(7), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
         \octave, 3,
         \outbus, ~delaybus,
@@ -175,13 +178,15 @@ Pdef(\basspat1).stop;
 */
 
 (
+~bass2notes = [0, 12, 19];
 Pdef(\basspat2,
     Pbind(
         \instrument, \bass,
-        \curve, -8,
-        \degree, Pseq([[0, 7], Rest, [0, 7], Rest, Rest, [0, 7], Rest, Rest, Rest], inf),
+        \curve, -16,
+        \degree, Pseq([~bass2notes, Rest, ~bass2notes, Rest, Rest, ~bass2notes, Rest, Rest, Rest], inf),
         \dur, Pseq([1, 5, 1, 4, 3, 1, 4, 3, 2] + 0.25, inf),
-        \octave, 3,
+        \fb, Pshuf([0.5, 1.5], inf),
+        \octave, 2,
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale
@@ -194,17 +199,22 @@ Pdef(\basspat2).isPlaying;
 Pdef(\basspat2).stop;
 */
 
+(
+Pdef(\basspat3, Pbindf(Pdef(\basspat1), \curve, -4, \degree, 0, \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf)));
+);
+
 ~midiktrl.value(\basspat1, 49);
 ~midiktrl.value(\basspat2, 65);
+~midiktrl.value(\basspat3, 81);
 
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.02, outbus|
+SynthDef(\hat, { |curve = -16, dur = 1, fb = 0, fbmod_mul = 0.5, freq = 440, level = 0.02, outbus|
 	var env				=	Env.perc(0.005, dur, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
-	var lfn				=	LFNoise0.kr(50!2, 0.002, 1);
-    var fbmod           =   LFBrownNoise0.ar(31!2, mul: 0.5, add: 1);
+	var lfn				=	LFNoise0.kr(50!2, 0.005, 1);
+    var fbmod           =   LFBrownNoise0.ar(31!2, mul: fbmod_mul, add: 1);
 	var sinfb			=	SinOscFB.ar(freq!2 * lfn, fb * fbmod).fold2(0.03) * envgen * 40;
 	var rhpf			=	RHPF.ar(sinfb, (freq * 2).clip(50, SampleRate.ir / 3), 0.1);
 	Out.ar(outbus, rhpf);
@@ -217,7 +227,7 @@ Pdef(\hatpat1,
 		\instrument, \hat,
         \curve, -32,
         //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6].stutter(3), inf),
-        \dur, Pshuf(Array.fill(17, { |i| (i + 1) * 0.25 }).stutter(3), inf),
+        \dur, Pshuf(Array.fill(11, { |i| (i + 1) * 0.25 }).stutter(3), inf),
 		//\fb, Pshuf(Array.series(10, 0.1, 0.1), inf),
         \fb, Prand([0, 2], inf),
 		\level, 0.05,
@@ -257,6 +267,7 @@ Pdef(\hatpar).stop;
 //
 
 (
+(
 ~pulselvl = 0.01;
 ~pulseecholvl = ~pulselvl / 4;
 Pdef(\pulsepat1a,
@@ -264,15 +275,15 @@ Pdef(\pulsepat1a,
 		\instrument, \hat,
         \curve, Prand([-16, -4], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24].stutter(11), inf),
-		\fb, Pwhite(2.2, 3.2, inf),
+        \fb, Pshuf([1, 2, 4].stutter(5), inf),
+        \fbmod_mul, Pshuf([0.25, 0.5, 1, 2, 4].stutter(3), inf),
 		\level, ~pulselvl,
-        \degree, Pshuf([[6, 7, 10, 12, 16]].stutter(3) ++ [[7, 12].stutter(3)].stutter(7) ++ [[7, 10, 12].stutter(2)].stutter(7), inf),
+        \degree, Pshuf([[4, 6, 7, 10, 12]].stutter(3) ++ [[7, 12].stutter(3)].stutter(7) ++ [[7, 10, 12].stutter(2)].stutter(7), inf),
 		\octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
 		\scale, ~scale
 ));
-
 );
 
 /*
@@ -311,6 +322,7 @@ Pdef(\pulsepar3).play(~tempo, quant: 1);
 Pdef(\pulsepar3).isPlaying;
 Pdef(\pulsepar3).stop;
 */
+);
 
 (
 Pdef(\hat2,
@@ -321,7 +333,7 @@ Pdef(\hat2,
         //\dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
         //\dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
         //\dur, Pshuf(Array.fill(3, { |d| Pseq([0.75 + (d * 0.25)], 2) }), inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75].stutter(3), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1].stutter(3), inf),
         \level, Pshuf([0.2, 1].stutter(11) * 0.02, inf),
         \fb, Prand([0, 3], inf),
         \octave, [9, 10],
@@ -376,7 +388,7 @@ Pdef(\pingpat).stop;
 
 (
 SynthDef(\prc, {
-	|a = 1.1, curve = -4, delaytime = 0.01, dur = 1, foldfactor = 2, freq = 440, level = 0.1, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
+	|a = 1.1, curve = -4, delaytime = 0.01, dur = 1, foldfactor = 2, freq = 440, level = 0.15, outbus, releaseTime = 0.3, rez_freq = 1000, rez_rq = 1|
 	var env				=	Env.perc(0.01, releaseTime, level, curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var lc				=	LinCongC.ar([freq, freq + 1], a).fold2(1 / foldfactor) * foldfactor * envgen * 0.5;
@@ -391,14 +403,15 @@ SynthDef(\prc, {
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
-        \a, Pshuf([0.8, 0.9, 1.0, 1.1, 1.2], inf),
-        \curve, -4,
-        \degree, Pseq([Rest, 0], inf),
-        \delaytime, Pwhite(0.0001, 0.02, inf),
+        \a, Pshuf([0.8, 0.9, 1.2], inf),
+        \curve, -8,
+        \degree, Pseq([Rest, 0, 0], inf),
+        \delaytime, Pwhite(0.0001, 0.001, inf),
         //\dur, Pshuf([0.75, 1, 1.5, 3, 4, 6, 8], inf),
-        \dur, Prand([0.75, 1, 1.25, 6], inf),
+        \dur, Pshuf([0.75, 1, 1.5].stutter(7), inf),
         //\foldfactor, Pshuf([100, 200, 400, 800], inf),
-        \foldfactor, Pwhite(200, 800, inf),
+        //\foldfactor, Pwhite(200, 800, inf),
+        \foldfactor, Pshuf([4, 16, 64, 256], inf),
         \octave, 6,
         \outbus, ~prcbus,
         \rez_rq, 0.5,
@@ -408,7 +421,7 @@ Pdef(\prcpat1,
         //\rez_rq, Pshuf([0.25, 0.5].stutter(7), inf)
 ));
 
-Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \level, 0.02));
+Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \level, 0.03));
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 );
@@ -428,7 +441,7 @@ Pdef(\prcpar1).stop;
 //
 
 (
-SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.1, outbus|
+SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.15, outbus|
 	var env				=	Env.perc(0.005, 1, level, -16);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lc				=	LinCongC.ar([freq, freq * 1.01], a, c, m, mul: envgen);
@@ -443,7 +456,7 @@ Pdef(\kikpat,
 	Pbind(
 		\instrument, \kik,
 		\a, Pwhite(1.0, 2.0, inf).round(0.01),
-        \dur, Pshuf(Array.fill(31, { |d| (d + 1) * 0.25 }), inf),
+        \dur, Pshuf(Array.fill(17, { |d| (d + 1) * 0.25 }) ++ [Pseq([7, 1, 1] /3)], inf),
 		\ffreq, 1000,
 		\frq, 0.1,
         \degree, [0, 7],
@@ -491,7 +504,7 @@ Pdef(\prc2,
         \instrument, \prc2,
         \a, Pxrand((1..3), inf),
         \curve, Prand([-32, -16], inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, Pseq([0.375], 2), 1, 1.5, 2, 3], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
         \octave, Prand([3, 4, 7], inf),
         \outbus, ~prcbus,
         \releaseTime, Prand([1, 1.5], inf),
@@ -692,7 +705,7 @@ Pdef(\dronesetdelaytime).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 1, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.008, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
+SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.01, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
     var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     //var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(widthmod_freq_min, widthmod_freq_max)).range(widthmod_min, widthmod_max);
@@ -704,8 +717,8 @@ SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldm
     var foldmod         =   LFClipNoise.kr(LFNoise2.kr(0.1!2).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
     var osc             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
     var delay           =   DelayC.ar(osc, 1, delaytime.clip(0.00008, 0.1));
-    //var sin             =   SinOscFB.ar(freq ! 2, 0.5).round(0.01) * envgen * 0.1;
-    Out.ar(outbus, (osc + delay).fold2(level));
+    var sin             =   SinOsc.ar(freq ! 2).round(0.02) * envgen * 0.03;
+    Out.ar(outbus, (osc + delay + sin).fold2(level));
 }).add;
 );
 
@@ -725,7 +738,7 @@ Pdef(\stringchords1,
         //\dur, 53,
         //\foldmod_freq_min, Pwhite(0.05, 0.1, inf),
         //\foldmod_freq_max, Pwhite(0.25, 0.5, inf),
-        \foldmod_freq_min, 1,
+        \foldmod_freq_min, 0.1,
         \foldmod_freq_max, 20,
         \foldmod_min, Pwhite(0.025, 0.05, inf),
         \foldmod_max, Pwhite(0.1, 0.5, inf),
@@ -879,62 +892,62 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene5 = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \hatpar, \prcpar2];
-~scene5lights = [32, 48, 64, 34, 51];
+~scene5 = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \prcpar2];
+~scene5lights = [32, 48, 64, 51];
 ~scene5stoppers = [\hat2];
 ~scene5stopperlights = [33];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5stoppers, ~scene5lights, ~scene5stopperlights);
 );
 
 (
-~scene6 = [\basspat2, \hat2];
-~scene6lights = [65, 33];
-~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \hatpar];
-~scene6stopperlights = [32, 48, 64, 34];
+~scene6 = [\basspat2];
+~scene6lights = [65];
+~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \prcpar];
+~scene6stopperlights = [32, 48, 64, 50];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
 );
 
 (
-~scene7 = [\hatpar, \pingpat, \banjo2, \stringchords1];
-~scene7lights = [34, 67, 36, 52];
-~scene7stoppers = [\pulsepat1a, \hat2, \banjopar];
-~scene7stopperlights = [32, 33, 66];
+~scene7 = [\basspat3, \pingpat, \banjo2, \stringchords1];
+~scene7lights = [81, 67, 36, 52];
+~scene7stoppers = [\basspat1, \pulsepat1a, \hat2, \banjopar];
+~scene7stopperlights = [49, 32, 33, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
 (
-~scene8 = [\hat2, \stringchords2];
-~scene8lights = [33, 68];
-~scene8stoppers = [\hatpar];
-~scene8stopperlights = [34];
+~scene8 = [\stringchords2];
+~scene8lights = [68];
+~scene8stoppers = nil;
+~scene8stopperlights = nil;
 ~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);
 );
 
 (
-~scene9 = [\hatpar, \stringchords3];
-~scene9lights = [34, 37];
-~scene9stoppers = [\hat2];
-~scene9stopperlights = [33];
+~scene9 = [\stringchords3];
+~scene9lights = [37];
+~scene9stoppers = nil;
+~scene9stopperlights = nil;
 ~scenetoggle2.value(\scene9, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
 );
 
 (
 ~scene10 = [\pulsepat1a, \stringchords4];
 ~scene10lights = [32, 53];
-~scene10stoppers = [\basspat1, \hat2, \hatpar];
-~scene10stopperlights = [33, 49, 34];
+~scene10stoppers = [\basspat2, \basspat3];
+~scene10stopperlights = [65, 81];
 ~scenetoggle2.value(\scene10, 24, ~scene10, ~scene10stoppers, ~scene10lights, ~scene10stopperlights);
 );
 
 (
-~scene11stoppers = [\prcpar, \prcpar2];
-~scene11stopperlights = [50, 51];
+~scene11stoppers = [\prcpar2];
+~scene11stopperlights = [51];
 ~scenetoggle2.value(\scene11, 40, stoppers: ~scene11stoppers, stopperlights: ~scene11stopperlights);
 );
 
 (
-~scene12stoppers = [\pulsepat1a, \basspat2, \pnopat, \pingpat, \stringchords1];
-~scene12stopperlights = [32, 65, 35, 67, 52];
+~scene12stoppers = [\pulsepat1a, \pnopat, \pingpat, \stringchords1];
+~scene12stopperlights = [32, 35, 67, 52];
 ~scenetoggle2.value(\scene12, 56, stoppers: ~scene12stoppers, stopperlights: ~scene12stopperlights);
 );
 
