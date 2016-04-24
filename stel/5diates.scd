@@ -135,10 +135,31 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \
 );
 
 ////////////////////////////////////////////////////////////////
+// SIN
+
+(
+SynthDef(\sin, { |freq = 440, gate = 1, level = 0.1, outbus|
+    var env             =   Env.asr(0.01, level, 0.1);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var foldmod         =   LFBrownNoise0.kr(17 ! 2).range(0.1, 0.11);
+    var sin             =   VarSaw.ar(freq ! 2, width: 0).fold2(foldmod) * envgen;
+    Out.ar(outbus, sin);
+}).add;
+);
+
+Pdef(\sin, Pmono(\sin, \degree, [-5, 0], \root, ~root, \scale, ~scale));
+
+/*
+Pdef(\sin).play(~tempo);
+Pdef(\sin).isPlaying;
+Pdef(\sin).stop;
+*/
+
+////////////////////////////////////////////////////////////////
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 0.1, outbus, round = 0|
+SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 0.08, outbus, round = 0|
 	var env				=	Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinfb1          =   SinOscFB.ar(freq ! 2, [fb, fb * 0.99] * XLine.kr(1, 0.01, dur));
@@ -150,17 +171,23 @@ SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 
 );
 
 (
-~degrees = [0].stutter(8) ++ [-2] ++ [-2] ++ [-2] ++ [1] ++ [4] ++ [6];
+//~degrees = [0].stutter(8) ++ [-2] ++ [-2] ++ [-2] ++ [1] ++ [4] ++ [6];
+~degrees = [-2, 0, 1, 0, 4, 0, 6, 0];
+
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-        \curve, -8,
-        \degree, Pseq([Pshuf(~degrees.stutter(3)), Pseq([Rest], ~degrees.size)], inf),
+        \curve, -4,
+        //\degree, Pseq([Pshuf(~degrees.stutter(3)), Pseq([Rest], ~degrees.size)], inf),
+        \degree, Pseq([Pseq(~degrees, 4), Pseq([Rest], ~degrees.size)], inf),
         \detune, Pshuf([0.0025, 0.005, 0.01, 0.02, 0.04, 0.08, 0.16].stutter(5), inf),
+        /*
         \dur, Pshuf([
             0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), Pseq([0.5], 2), 1,
             1.5, Pseq([4, 1, 1] / 3), 2, 3, 4, 6
         ].stutter(2), inf),
+        */
+        \dur, Pseq([0.25, 6, 0.25, 0.25, 8, 0.25, 0.25, 0.25, 12], inf),
         \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6].stutter(7), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
         \octave, 3,
@@ -275,7 +302,7 @@ Pdef(\pulsepat1a,
 		\instrument, \hat,
         \curve, Prand([-16, -4], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24].stutter(11), inf),
-        \fb, Pshuf([1, 2, 4].stutter(5), inf),
+        \fb, Pshuf([2, 3, 4].stutter(5), inf),
         \fbmod_mul, Pshuf([0.25, 0.5, 1, 2, 4].stutter(3), inf),
 		\level, ~pulselvl,
         \degree, Pshuf([[4, 6, 7, 10, 12]].stutter(3) ++ [[7, 12].stutter(3)].stutter(7) ++ [[7, 10, 12].stutter(2)].stutter(7), inf),
@@ -441,7 +468,7 @@ Pdef(\prcpar1).stop;
 //
 
 (
-SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.15, outbus|
+SynthDef(\kik, { |a = 1.4, c = 0.13, m = 1, dur = 1, fb = 0, ffreq = 1000, frq = 1, freq = 100, level = 0.1, outbus|
 	var env				=	Env.perc(0.005, 1, level, -16);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var lc				=	LinCongC.ar([freq, freq * 1.01], a, c, m, mul: envgen);
@@ -934,33 +961,27 @@ Pdef(\stringchords4).stop;
 (
 ~scene10 = [\pulsepat1a, \stringchords4];
 ~scene10lights = [32, 53];
-~scene10stoppers = [\basspat2, \basspat3];
-~scene10stopperlights = [65, 81];
+~scene10stoppers = [\basspat2, \basspat3, \prcpar2];
+~scene10stopperlights = [65, 81, 51];
 ~scenetoggle2.value(\scene10, 24, ~scene10, ~scene10stoppers, ~scene10lights, ~scene10stopperlights);
 );
 
 (
-~scene11stoppers = [\prcpar2];
-~scene11stopperlights = [51];
+~scene11stoppers = [\pulsepat1a, \pnopat, \pingpat, \stringchords1];
+~scene11stopperlights = [32, 35, 67, 52];
 ~scenetoggle2.value(\scene11, 40, stoppers: ~scene11stoppers, stopperlights: ~scene11stopperlights);
 );
 
 (
-~scene12stoppers = [\pulsepat1a, \pnopat, \pingpat, \stringchords1];
-~scene12stopperlights = [32, 35, 67, 52];
-~scenetoggle2.value(\scene12, 56, stoppers: ~scene12stoppers, stopperlights: ~scene12stopperlights);
-);
-
-(
-~scene13stopper = [\stringchords4];
-~scene13stopperlight = [53];
-~scenetoggle2.value(\scene13, 72, stoppers: ~scene13stopper, stopperlights: ~scene13stopperlight);
+~scene12stopper = [\stringchords4];
+~scene12stopperlight = [53];
+~scenetoggle2.value(\scene12, 56, stoppers: ~scene12stopper, stopperlights: ~scene12stopperlight);
 );
 
 (
 ~endstoppers = [\banjo2, \stringchords2, \stringchords3];
 ~endstopperlights = [36, 68, 37];
-~scenetoggle2.value(\end, 88, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
+~scenetoggle2.value(\end, 72, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
 );
 
 ////////////////////////////////
