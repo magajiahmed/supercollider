@@ -150,7 +150,7 @@ SynthDef(\sin, { |freq = 440, gate = 1, level = 0.03, outbus|
 }).add;
 );
 
-Pdef(\sin, Pmono(\sin, \degree, [7, 12], \octave, 4, \root, ~root, \scale, ~scale));
+Pdef(\sin, Pmono(\sin, \degree, [0, 7, 12, 19, 24], \octave, 4, \root, ~root, \scale, ~scale));
 
 /*
 Pdef(\sin).play(~tempo);
@@ -193,7 +193,7 @@ Pdef(\basspat1,
         ].stutter(2), inf),
         */
         \dur, Pseq([0.25, 6, 0.25, 0.25, 8, 0.25, 0.25, 0.25, 12], inf),
-        \fb, Pshuf([0, 0.2, 0.4, 0.8].stutter(7), inf),
+        \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6, 3.2].stutter(7), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
         \octave, 3,
         \outbus, ~delaybus,
@@ -240,10 +240,10 @@ Pdef(\bass2,
         \instrument, \bass,
         \degree, Pseq([-6, -5, -2, 1].scramble.mirror2, 13),
         \detune, Pwhite(0, 0.01, inf),
-        \dur, Pshuf([0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3], inf),
+        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3], inf),
         \fb, Pwhite(0.0, 2.5, inf),
         \octave, 3,
-        \round, Pwhite(0, 0.2, inf)
+        \round, Pwhite(0, 0.4, inf)
 ));
 );
 
@@ -492,9 +492,9 @@ Pdef(\prc3,
         \curve, Prand([-8, -4], inf),
         \degree, [0].stutter(2),
         \delaytime, Prand([0.01, 0.02, 0.04], inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), Pseq([0.375], 2), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
         \level, ~prclvl,
-        \octave, Pxrand([5, 7, 9], inf)
+        \octave, Pxrand([5, 9], inf)
 ));
 
 Pdef(\prc3a, Pbindf(Pdef(\prc3), \level, ~prcecholvl));
@@ -785,7 +785,9 @@ Pdef(\dronesetdelaytime).stop;
 */
 
 ////////////////////////////////////////////////////////////////
+// STRING
 
+/*
 (
 SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.01, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
     var env             =   Env.asr(attack, level, release, curve);
@@ -803,7 +805,18 @@ SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldm
     Out.ar(outbus, (osc + delay + sin).fold2(level));
 }).add;
 );
+*/
 
+(
+SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, fold = 1, freq = 440, gate = 1, level = 0.01, outbus, release = 0.1, width = 0|
+    var env             =   Env.asr(attack, level, release, curve);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    var osc             =   VarSaw.ar(freq, width: width).fold2(fold) * fold.reciprocal * envgen;
+    var delay           =   DelayC.ar(osc, 1, delaytime.clip(0.00008, 0.1));
+    var sin             =   SinOsc.ar(freq ! 2).round(0.02) * envgen * 0.03;
+    Out.ar(outbus, (osc + delay + sin).fold2(level));
+}).add;
+);
 //
 
 (
@@ -815,23 +828,24 @@ Pdef(\stringchords1,
         \curve, 0,
         \degree, Pshuf(~stringchords, inf),
         \delaytime, ~stringchords1delayktrlbus.asMap,
-        //\dur, Pseq([Pseq([101], ~stringchords.size), 31], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
-        //\dur, 53,
-        //\foldmod_freq_min, Pwhite(0.05, 0.1, inf),
-        //\foldmod_freq_max, Pwhite(0.25, 0.5, inf),
+        /*
         \foldmod_freq_min, 0.1,
         \foldmod_freq_max, 20,
         \foldmod_min, Pwhite(0.025, 0.05, inf),
         \foldmod_max, Pwhite(0.1, 0.5, inf),
-        //\legato, 1,
+        */
+        \fold, Pwhite(0.1, 1.0, inf),
         \octave, 5,
         \outbus, ~companderbus,
         \scale, ~scale,
+        /*
         \widthmod_freq_min, Pwhite(0.0, 0.1, inf),
         \widthmod_freq_max, Pwhite(0.25, 1.0, inf),
         \widthmod_min, Pwhite(0.0, 0.5, inf),
         \widthmod_max, Pwhite(0.5, 1.0, inf)
+        */
+        \width, Pwhite(0.0, 1.0, inf)
 ));
 
 Pdef(\stringchords2,
@@ -840,8 +854,10 @@ Pdef(\stringchords2,
         \delaytime, ~stringchords2delayktrlbus.asMap,
         \dur, 53,
         \octave, 6,
+        /*
         \widthmod_min, 1,
         \widthmod_max, Pkey(\widthmod_min)
+        */
 ));
 
 //Pdef(\stringchords3, Pbindf(Pdef(\stringchords1), \delaytime, ~stringchords3delayktrlbus.asMap, \octave, 7));
@@ -852,8 +868,10 @@ Pdef(\stringchords3,
         \degree, [0, 7, 12].stutter(5),
         \delaytime, ~stringchords3delayktrlbus.asMap,
         \dur, 53,
+        /*
         \widthmod_min, 1,
         \widthmod_max, Pkey(\widthmod_min)
+        */
 ));
 
 Pdef(\stringchords4,
@@ -861,10 +879,12 @@ Pdef(\stringchords4,
         Pdef(\stringchords1),
         \delaytime, ~stringchords4delayktrlbus.asMap,
         \degree, [0].stutter(20),
+        /*
         \foldmod_min, 1,
         \foldmod_max, 1,
         \widthmod_min, 0.5,
         \widthmod_max, 0.6,
+        */
         \octave, [2, 3]
 ));
 );
@@ -974,26 +994,26 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene5 = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \basspat1, \prcpar2];
-~scene5lights = [32, 48, 64, 49, 51];
+~scene5 = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \basspat1, \prcpar];
+~scene5lights = [32, 48, 64, 49, 50];
 ~scene5stoppers = [\sin, \hat2, \bass2, \prcpar1b];
 ~scene5stopperlights = [17, 33, 65, 82];
 ~scenetoggle.value(\scene5, 108, ~scene5, ~scene5stoppers, ~scene5lights, ~scene5stopperlights);
 );
 
 (
-~scene6 = [\sin, \bass2];
-~scene6lights = [17, 65];
+~scene6 = [\sin, \bass2, \prcpar1b];
+~scene6lights = [17, 65, 82];
 ~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \basspat1, \prcpar];
 ~scene6stopperlights = [32, 48, 64, 49, 50];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
 );
 
 (
-~scene7 = [\basspat3, \hatpar, \pingpat, \banjo2, \stringchords1];
-~scene7lights = [81, 34, 67, 36, 52];
-~scene7stoppers = [\basspat1, \pulsepat1a, \bass2, \banjopar];
-~scene7stopperlights = [49, 32, 65, 66];
+~scene7 = [\basspat3, \hatpar, \prcpar2, \pingpat, \banjo2, \stringchords1];
+~scene7lights = [81, 34, 51, 67, 36, 52];
+~scene7stoppers = [\basspat1, \pulsepat1a, \bass2, \prcpar1b, \banjopar];
+~scene7stopperlights = [49, 32, 65, 82, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
