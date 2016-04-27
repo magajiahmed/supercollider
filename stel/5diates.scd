@@ -138,7 +138,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \
 // SIN
 
 (
-SynthDef(\sin, { |freq = 440, gate = 1, level = 0.03, outbus|
+SynthDef(\sin, { |freq = 440, gate = 1, level = 0.01, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var foldmod         =   LFBrownNoise0.kr(17 ! 2).range(0.1, 0.11);
@@ -150,7 +150,7 @@ SynthDef(\sin, { |freq = 440, gate = 1, level = 0.03, outbus|
 }).add;
 );
 
-Pdef(\sin, Pmono(\sin, \degree, [7, 12].stutter(2), \octave, 4, \root, ~root, \scale, ~scale));
+Pdef(\sin, Pmono(\sin, \degree, [7, 12].stutter(6), \octave, 4, \root, ~root, \scale, ~scale));
 
 /*
 Pdef(\sin).play(~tempo);
@@ -193,12 +193,12 @@ Pdef(\basspat1,
         ].stutter(2), inf),
         */
         \dur, Pseq([0.25, 6, 0.25, 0.25, 8, 0.25, 0.25, 0.25, 12], inf),
-        \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6, 3.2].stutter(7), inf),
+        \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6].stutter(2), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
         \octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
-        \round, Pshuf([0, 0.1, 0.2, 0.4].stutter(3), inf),
+        \round, Pshuf([0, 0.1, 0.2, 0.4].stutter(2), inf),
         \scale, ~scale,
 ));
 );
@@ -238,7 +238,7 @@ Pdef(\basspat2).stop;
 Pdef(\bass2,
     Pbind(
         \instrument, \bass,
-        \degree, Pseq([-6, -5, -2, 0, 1].scramble.mirror2, 11),
+        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 11),
         \detune, Pwhite(0, 0.01, inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3], inf),
         \fb, Pwhite(0.0, 2.5, inf),
@@ -258,7 +258,7 @@ Pdef(\basspat3,
     Pbind(
         \instrument, \bass,
         \curve, -4,
-        \degree, 0,
+        \degree, 2,
         \detune, Pshuf([0, 0.001, 0.002, 0.004], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \fb, Pshuf([0, 1.5], inf),
@@ -399,7 +399,7 @@ Pdef(\hat2,
         //\dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
         //\dur, Pshuf(Array.fill(3, { |d| Pseq([0.75 + (d * 0.25)], 2) }), inf),
         \dur, Pshuf([
-            0.25, Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1
+            0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1
         ].stutter(3), inf),
         \level, Pshuf([0.2, 1].stutter(11) * 0.02, inf),
         \fb, Prand([0, 3], inf),
@@ -491,7 +491,7 @@ Pdef(\prcpat1,
         //\rez_rq, Pshuf([0.25, 0.5].stutter(7), inf)
 ));
 
-Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pxrand([0.25, 0.5, 0.75, Pseq([1/3], 3), 1, 1.5], inf), \level, ~prcecholvl));
+Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \dur, Pxrand([0.25, 0.5, Pseq([0.375], 2), 0.75, 1, 1.5], inf), \level, ~prcecholvl));
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 
@@ -680,7 +680,7 @@ Pdef(\banjo2).stop;
 ////////////////////////////////////////////////////////////////
 
 (
-SynthDef(\pno, { |a = 1, b = 3, curve = -16, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.15, outbus, pan = 0|
+SynthDef(\pno, { |a = 1, b = 3, curve = -16, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.1, outbus, pan = 0|
     var env             =   Env.perc(0.003, dur, level: level, curve: curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var lat             =   Latoocarfian2DN.kr(a: [a, a - 0.002], b: [b, b - 0.002], mul: 1, add: 1).round(0.25);
@@ -702,7 +702,7 @@ Pdef(\pnopat,
         \fb, 2,
         \level, 0.005,
         \degree, [2, 7, 10, 12],
-        \octave, [4, 5, 7],
+        \octave, 5,
         \outbus, ~prcbus,
         \root, ~root,
         \scale, ~scale,
@@ -777,24 +777,6 @@ Pdef(\stringchords4setdelaytime).isPlaying;
 Pdef(\stringchords4setdelaytime).stop;
 */
 
-/*
-Pdef(\stringchords5setdelaytime).play(~tempo);
-Pdef(\stringchords5setdelaytime).isPlaying;
-Pdef(\stringchords5setdelaytime).stop;
-*/
-
-/*
-Pdef(\stringchorddronesetdelaytime).play(~tempo);
-Pdef(\stringchorddronesetdelaytime).isPlaying;
-Pdef(\stringchorddronesetdelaytime).stop;
-*/
-
-/*
-Pdef(\dronesetdelaytime).play(~tempo);
-Pdef(\dronesetdelaytime).isPlaying;
-Pdef(\dronesetdelaytime).stop;
-*/
-
 ////////////////////////////////////////////////////////////////
 // STRING
 
@@ -806,8 +788,8 @@ SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldm
     var foldmod         =   LFClipNoise.kr(LFNoise2.kr(0.1!2).range(foldmod_freq_min, foldmod_freq_max)).range(foldmod_min, foldmod_max);
     var osc             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
     var delay           =   DelayC.ar(osc, 1, delaytime.clip(0.00008, 0.1));
-    var sin             =   SinOsc.ar(freq ! 2).round(0.02) * envgen * 0.03;
-    Out.ar(outbus, (osc + delay + sin).fold2(level));
+    //var sin             =   SinOsc.ar(freq ! 2).round(0.02) * envgen * 0.03;
+    Out.ar(outbus, (osc + delay).fold2(level));
 }).add;
 );
 
@@ -822,16 +804,19 @@ Pdef(\stringchords1,
         \curve, 0,
         \degree, Pshuf(~stringchords, inf),
         \delaytime, ~stringchords1delayktrlbus.asMap,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], inf),
+        \dur, Pshuf([31, 33, 35, 37, 39], inf),
         \foldmod_freq_min, 0.1,
-        \foldmod_freq_max, 20,
-        \foldmod_min, Pwhite(0.025, 0.05, inf),
-        \foldmod_max, Pwhite(0.1, 0.5, inf),
-        \fold, Pwhite(0.1, 1.0, inf),
+        \foldmod_freq_max, 10,
+        \foldmod_min, Pwhite(0.1, 0.25, inf),
+        \foldmod_max, Pwhite(0.25, 0.5, inf),
         \octave, 5,
         \outbus, ~companderbus,
         \scale, ~scale,
-        \width, Pwhite(0.0, 1.0, inf)
+        \widthmod_freq_min, 0.1,
+        \widthmod_freq_min, 10,
+        \widthmod_min, 0,
+        \widthmod_max, 1
 ));
 
 Pdef(\stringchords2,
@@ -844,14 +829,13 @@ Pdef(\stringchords2,
         \widthmod_max, Pkey(\widthmod_min)
 ));
 
-//Pdef(\stringchords3, Pbindf(Pdef(\stringchords1), \delaytime, ~stringchords3delayktrlbus.asMap, \octave, 7));
-
 Pdef(\stringchords3,
     Pbindf(
         Pdef(\stringchords1),
         \degree, [0, 7, 12].stutter(5),
         \delaytime, ~stringchords3delayktrlbus.asMap,
         \dur, 53,
+        \octave, 4,
         \widthmod_min, 1,
         \widthmod_max, Pkey(\widthmod_min)
 ));
@@ -860,7 +844,7 @@ Pdef(\stringchords4,
     Pbindf(
         Pdef(\stringchords1),
         \delaytime, ~stringchords4delayktrlbus.asMap,
-        \degree, [0].stutter(10),
+        \degree, [7].stutter(10),
         \foldmod_min, 0.25,
         \foldmod_max, Pkey(\foldmod_min),
         \widthmod_min, 0.5,
