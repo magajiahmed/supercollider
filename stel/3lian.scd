@@ -98,7 +98,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.3, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.25, \outbus, 0));
 );
 
 ////////////////////////////////////////////////////////

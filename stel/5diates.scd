@@ -88,7 +88,7 @@ s.stopRecording;
 (
 SynthDef(\dynamix, { |inbus, outbus|
 	var in	   		= 	In.ar(inbus, 2);
-	var compressor	=	Compander.ar(in, in, thresh: 0.5, clampTime: 0.002, slopeAbove: 1/20);
+	var compressor	=	Compander.ar(in, in, thresh: 0.4, clampTime: 0.002, slopeAbove: 1/10);
 	Out.ar(outbus, compressor);
 }).add;
 );
@@ -131,7 +131,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus, level = 1, outbus|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.3, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.25, \outbus, 0));
 );
 
 ////////////////////////////////////////////////////////////////
@@ -442,14 +442,14 @@ Pdef(\pingpat,
     Pbind(
         \instrument, \hat,
         \curve, 0,
-        \dur, Pshuf([1.25, 1.5, 1.75, 2.25], inf),
+        \dur, Pshuf([1.5, 1.75, 2.25, 2.5, 3], inf),
         \degree, Pseq([
             Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
             Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
             Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord
         ], inf),
         \fb, 5,
-        \level, 0.01,
+        \level, 0.003,
         \octave, [6, 7, 8],
         \outbus, ~prcbus,
         \root, ~root,
