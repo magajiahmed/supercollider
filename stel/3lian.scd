@@ -107,7 +107,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.3,
 // SynthDef
 
 (
-SynthDef(\bass, { |curve = -12, dur = 1, fb = 0, foldfactor = 1, freq = 100, level = 0.15, outbus, start = 1, end = 1|
+SynthDef(\bass, { |curve = -12, dur = 1, fb = 0, foldfactor = 1, freq = 100, level = 0.05, outbus, start = 1, end = 1|
     var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
  	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var fenv            =   XLine.kr(start, end, 0.25);

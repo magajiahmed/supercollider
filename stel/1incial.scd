@@ -92,7 +92,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.3, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.25, \outbus, 0));
 );
 
 /*
@@ -730,7 +730,7 @@ Pdef(\pnochord).stop;
 // SynthDef
 
 (
-SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.1, outbus|
+SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     //var fbmod           =   LFNoise2.kr(3!2, XLine.kr(1, 0.01, dur), 1) * LFNoise2.kr(11!2, XLine.kr(1, 0.01, dur), 1);
@@ -838,7 +838,6 @@ b.plot;
 Pdef(\pbpat,
 	Pbind(
 		\instrument, \bufrd,
-		//\dur, Prand([1, 1.5], inf),
         \dur, Prand([0.25, 0.5], inf),
 		\ffreq, 4000,
         \level, 1,

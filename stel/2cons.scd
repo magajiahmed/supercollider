@@ -156,7 +156,7 @@ Pdef(\sinfbdrone2).stop;
 // SynthDef
 
 (
-SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.1, outbus, width = 0.5|
+SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.05, outbus, width = 0.5|
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var saw 			=	VarSaw.ar(freq + XLine.kr([-0.01, 0.01], [-1, 1], dur), width: width).round(0.03) * envgen;
