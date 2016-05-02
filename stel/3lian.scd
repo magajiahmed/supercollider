@@ -811,8 +811,8 @@ Pdef(\heavypar).stop;
 );
 
 (
-~scene6 = [\basspar, \basstwo, \bassthree, \pno1, \pnopulse, \wut, \wet, \pinglepat, \clappar];
-~scene6lights = [32, 48, 64, 33, 49, 34, 66, 35, 51];
+~scene6 = [\basspar, \basstwo, \bassthree, \pno1, \pnopulse, \wut, \pinglepat, \clappar];
+~scene6lights = [32, 48, 64, 33, 49, 34, 35, 51];
 ~scene6stoppers = [\heavypar, \prc2b];
 ~scene6stopperlights = [52, 68];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
@@ -820,15 +820,15 @@ Pdef(\heavypar).stop;
 
 (
 ~scene7 = [\basspar, \bassthree, \wut, \wat, \wet, \clappar, \prc2a, \prc1];
-~scene7lights = [32, 64, 34, 50, 66, 51, 67, 36];
+~scene7lights = [32, 64, 34, 50, 66, 51, 67];
 ~scene7stoppers = [\basstwo, \pno1, \pnopulse, \pinglepat];
-~scene7stopperlights = [48, 33, 49, 35];
+~scene7stopperlights = [48, 33, 49, 35, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
 (
-~scene8 = [\basstwo, \bassthree, \wut, \wet];
-~scene8lights = [48, 64, 34, 66];
+~scene8 = [\basstwo, \bassthree, \wut];
+~scene8lights = [48, 64, 34];
 ~scene8stoppers = [\basspar, \wat, \pinglepat, \clappar, \prc2a, \prc1];
 ~scene8stopperlights = [32, 50, 35, 51, 67, 36];
 ~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);

@@ -587,7 +587,7 @@ Pdef(\paddrones).stop;
 // LARRY
 
 (
-SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.003, outbus, s = 10|
+SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.005, outbus, s = 10|
     var env             =   Env.asr(0.01, level, 0.01, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var frqmod          =   Lorenz2DN.ar(15, 15000, s: [s, s - 0.001],  mul: 0.9, add: 1);
