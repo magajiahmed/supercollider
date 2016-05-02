@@ -668,7 +668,7 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.03, outbus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.01, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
