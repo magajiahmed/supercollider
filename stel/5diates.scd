@@ -58,21 +58,6 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 ~stringchords2delayktrlbus = Bus.control(s);
 ~stringchords3delayktrlbus = Bus.control(s);
 ~stringchords4delayktrlbus = Bus.control(s);
-//~stringchords5delayktrlbus = Bus.control(s);
-//~stringchorddronedelayktrlbus = Bus.control(s);
-//~dronedelayktrlbus = Bus.control(s);
-/*
-~stringpat0delayktrlbus = Bus.control(s);
-~stringpat1delayktrlbus = Bus.control(s);
-~stringpat2delayktrlbus = Bus.control(s);
-~stringpat3delayktrlbus = Bus.control(s);
-~stringpat4delayktrlbus = Bus.control(s);
-~stringpat5delayktrlbus = Bus.control(s);
-~stringpat6delayktrlbus = Bus.control(s);
-~stringpat7delayktrlbus = Bus.control(s);
-~stringpat8delayktrlbus = Bus.control(s);
-~stringpat9delayktrlbus = Bus.control(s);
-*/
 );
 
 // record
@@ -141,9 +126,9 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.25, 
 SynthDef(\sin, { |freq = 440, gate = 1, level = 0.01, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var foldmod         =   LFBrownNoise0.kr(17 ! 2).range(0.1, 0.11);
+    var foldmod         =   LFBrownNoise0.kr(17 ! 2).range(0.1, 0.12);
     var saw             =   VarSaw.ar(freq ! 2, width: 0).fold2(foldmod) * envgen;
-    var rhpf1           =   RHPF.ar(saw, 7000, 0.1);
+    var rhpf1           =   RHPF.ar(saw, 6000, 0.1);
     var sin             =   FSinOsc.ar(freq ! 2).round(0.05).round(0.1) * envgen * LFClipNoise.kr(LFNoise2.kr(1 ! 2).range(1, 15)).range(0.8, 1);
     var rhpf2           =   RHPF.ar(sin, (freq * 2).clip(100, SampleRate.ir / 2.5));
     Out.ar(outbus, rhpf1 + rhpf2);
@@ -154,8 +139,8 @@ SynthDef(\sin, { |freq = 440, gate = 1, level = 0.01, outbus|
 Pdef(\sin,
     Pmono(
         \sin,
-        \degree, Pshuf([[7, 7, 10, 12], [7, 7, 12, 12], [7, 10, 12, 13]].collect({ |c| c.stutter(3) }), inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+        \degree, Pshuf([[7, 7, 10, 12], [7, 7, 12, 12], [7, 10, 12, 13]].collect({ |c| c.stutter(3) }).mirror1, inf),
+        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \octave, 5,
         \root, ~root,
         \scale, ~scale
@@ -436,7 +421,8 @@ Pdef(\hat2).stop;
 */
 
 (
-~pingpatchord = [1, 4, 6, 7, 10, 12];
+//~pingpatchord = [1, 4, 6, 7, 10, 12];
+~pingpatchord = [0];
 
 Pdef(\pingpat,
     Pbind(
@@ -449,8 +435,9 @@ Pdef(\pingpat,
             Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord
         ], inf),
         \fb, 5,
-        \level, 0.003,
-        \octave, [6, 7, 8],
+        \level, 0.015,
+        //\octave, [6, 7, 8],
+        \octave, 7,
         \outbus, ~prcbus,
         \root, ~root,
         \scale, ~scale
@@ -986,57 +973,47 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene6 = [\sin, \hat2, \bass2, \prcpar1b];
-~scene6lights = [17, 33, 65, 82];
+~scene6 = [\sin, \hat2, \bass2, \prcpar1b, \pingpat];
+~scene6lights = [17, 33, 65, 82, 67];
 ~scene6stoppers = [\pulsepat1a, \pulsepat2a, \pulsepat3a, \basspat1, \hatpar, \prcpar];
 ~scene6stopperlights = [32, 48, 64, 49, 34, 50];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
 );
 
 (
-~scene7 = [\basspat3, \prcpar2, \pingpat, \banjo2, \stringchords1];
-~scene7lights = [81, 51, 67, 36, 52];
+~scene7 = [\pulsepat1a, \basspat3, \hatpar, \prcpar2, \pingpat, \banjo2, \stringchords1];
+~scene7lights = [32, 81, 34, 51, 67, 36, 52];
 ~scene7stoppers = [\sin, \basspat1, \pulsepat1a, \hat2, \bass2, \hatpar, \prcpar1b, \banjopar];
 ~scene7stopperlights = [17, 49, 32, 33, 65, 34, 82, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
-/*
 (
-~scene8 = [\stringchords2];
-~scene8lights = [68];
+~scene8 = [\stringchords3];
+~scene8lights = [37];
 ~scene8stoppers = nil;
 ~scene8stopperlights = nil;
 ~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);
 );
-*/
 
 (
-~scene9 = [\stringchords3];
-~scene9lights = [37];
-~scene9stoppers = nil;
-~scene9stopperlights = nil;
-~scenetoggle2.value(\scene9, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
+~scene9 = [\stringchords4];
+~scene9lights = [53];
+~scene9stoppers = [\basspat3];
+~scene9stopperlights = [81];
+~scenetoggle2.value(\scene10, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
 );
 
 (
-~scene10 = [\pulsepat1a, \stringchords4];
-~scene10lights = [32, 53];
-~scene10stoppers = [\basspat3, \hatpar];
-~scene10stopperlights = [81, 34];
-~scenetoggle2.value(\scene10, 24, ~scene10, ~scene10stoppers, ~scene10lights, ~scene10stopperlights);
+~scene10stoppers = [\pulsepat1a, \prcpar2, \pnopat, \pingpat, \stringchords3];
+~scene10stopperlights = [32, 51, 35, 67, 37];
+~scenetoggle2.value(\scene11, 24, stoppers: ~scene10stoppers, stopperlights: ~scene10stopperlights);
 );
 
 (
-~scene11stoppers = [\pulsepat1a, \prcpar2, \pnopat, \pingpat, \stringchords3];
-~scene11stopperlights = [32, 51, 35, 67, 37];
-~scenetoggle2.value(\scene11, 40, stoppers: ~scene11stoppers, stopperlights: ~scene11stopperlights);
-);
-
-(
-~scene12stopper = [\stringchords4];
-~scene12stopperlight = [53];
-~scenetoggle2.value(\scene12, 56, stoppers: ~scene12stopper, stopperlights: ~scene12stopperlight);
+~scene11stopper = [\stringchords4];
+~scene11stopperlight = [53];
+~scenetoggle2.value(\scene12, 40, stoppers: ~scene11stopper, stopperlights: ~scene11stopperlight);
 );
 
 (
@@ -1044,7 +1021,7 @@ Pdef(\stringchords4).stop;
 ~endstoppers = [\sin, \banjo2, \stringchords1];
 //~endstopperlights = [17, 36, 68, 37];
 ~endstopperlights = [17, 36, 52];
-~scenetoggle2.value(\end, 72, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
+~scenetoggle2.value(\end, 56, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
 );
 
 ////////////////////////////////
