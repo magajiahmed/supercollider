@@ -124,7 +124,7 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.25, 
 
 (
 SynthDef(\sin, { |freq = 440, gate = 1, level = 0.01, outbus|
-    var env             =   Env.asr(0.01, level, 0.1);
+    var env             =   Env.asr(0.003, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var foldmod         =   LFBrownNoise0.kr(17 ! 2).range(0.1, 0.12);
     var saw             =   VarSaw.ar(freq ! 2, width: 0).fold2(foldmod) * envgen;
@@ -139,9 +139,14 @@ SynthDef(\sin, { |freq = 440, gate = 1, level = 0.01, outbus|
 Pdef(\sin,
     Pmono(
         \sin,
-        \degree, Pshuf([[7, 7, 10, 12], [7, 7, 12, 12], [7, 10, 12, 13]].collect({ |c| c.stutter(3) }).mirror1, inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), Pseq([1/3], 3), 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
-        \octave, 5,
+        \degree, Pshuf([
+            [7, 7, 10, 12], [7, 7, 12, 12], [7, 10, 12, 13], [7, 10, 12, 19]].collect({ |c| c.stutter(3) }).stutter(3).mirror1,
+        inf),
+        \dur, Pshuf([
+            Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([1/6], 3), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75,
+            Pseq([0.25], 4), Pseq([1/3], 3), 1, 8, 12, 16, 24
+        ], inf),
+        \octave, [5, 6],
         \root, ~root,
         \scale, ~scale
 ));
@@ -203,31 +208,6 @@ Pdef(\basspat1).play(~tempo);
 Pdef(\basspat1).isPlaying;
 Pdef(\basspat1).stop;
 */
-
-/*
-(
-~bass2notes = [0, 12, 19];
-Pdef(\basspat2,
-    Pbind(
-        \instrument, \bass,
-        \curve, -4,
-        \degree, Pseq([~bass2notes, Rest, ~bass2notes, Rest, Rest, ~bass2notes, Rest, Rest, Rest], inf),
-        \dur, Pseq([1, 5, 1, 4, 3, 1, 4, 3, 2] + 0.25, inf),
-        \fb, Pshuf([0.5, 1.5], inf),
-        \octave, 2,
-        \outbus, ~delaybus,
-        \root, ~root,
-        \scale, ~scale
-));
-);
-*/
-
-/*
-Pdef(\basspat2).play(~tempo);
-Pdef(\basspat2).isPlaying;
-Pdef(\basspat2).stop;
-*/
-
 
 (
 Pdef(\bass2,
@@ -347,7 +327,8 @@ Pdef(\pulsepat1a,
 		\octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
-		\scale, ~scale
+		\scale, ~scale,
+        \timingOffset, Pwhite(-0.01, 0.01, inf)
 ));
 );
 
@@ -356,6 +337,8 @@ Pdef(\pulsepat1a).play(~tempo);
 Pdef(\pulsepat1a).isPlaying;
 Pdef(\pulsepat1a).stop;
 */
+
+Pdef(\loudpulse, Pbindf(Pdef(\pulsepat1a), \level, ~pulselvl * 2));
 
 (
 Pdef(\pulsepat2a,
@@ -454,6 +437,7 @@ Pdef(\pingpat).stop;
 
 ~midiktrl.value(\hatpar, 34);
 ~midiktrl.value(\pulsepat1a, 32);
+~midiktrl.value(\loudpulse, 16);
 ~midiktrl.value(\pulsepat2a, 48);
 ~midiktrl.value(\pulsepat3a, 64);
 ~midiktrl.value(\hat2, 33);
@@ -786,7 +770,7 @@ Pdef(\stringchords4setdelaytime).stop;
 // STRING
 
 (
-SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.01, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
+SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.008, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
     var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var widthmod        =   LFBrownNoise2.kr(dur.reciprocal).range(widthmod_min, widthmod_max);
@@ -801,7 +785,15 @@ SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldm
 //
 
 (
-~stringchords = [[-5, -2, 0, 4, 6], [-2, 0, 4, 6, 7], [0, 4, 6, 7, 10], [4, 6, 7, 10, 12], [6, 7, 10, 12, 16]].collect({ |c| c.stutter(4) });
+//~stringchords = [[-5, -2, 0, 4, 6], [-2, 0, 4, 6, 7], [0, 4, 6, 7, 10], [4, 6, 7, 10, 12], [6, 7, 10, 12, 16]].collect({ |c| c.stutter(4) });
+
+///*
+(
+~stringchords = [
+    [-5, -2, 0, 1, 4, 6], [-2, 0, 1, 4, 6, 7], [0, 1, 4, 6, 7, 10], [1, 4, 6, 7, 10, 12], [4, 6, 7, 10, 12, 13], [6, 7, 10, 12, 13, 16]
+].collect({ |c| c.stutter(5) });
+);
+//*/
 
 Pdef(\stringchords1,
     Pmono(
@@ -813,28 +805,29 @@ Pdef(\stringchords1,
         \dur, Pshuf([31, 33, 35, 37, 39], inf),
         \foldmod_freq_min, 0.1,
         \foldmod_freq_max, 10,
-        \foldmod_min, Pwhite(0.1, 0.25, inf),
+        \foldmod_min, Pwhite(0.05, 0.25, inf),
         \foldmod_max, Pwhite(0.25, 0.5, inf),
         \octave, 5,
         \outbus, ~companderbus,
         \scale, ~scale,
         \widthmod_freq_min, 0.1,
         \widthmod_freq_min, 10,
-        \widthmod_min, 0,
-        \widthmod_max, 1
+        \widthmod_min, Pwhite(0.0, 0.5, inf),
+        \widthmod_max, Pwhite(0.5, 1.0, inf)
 ));
 
 /*
-Pdef(\stringchords2,
+Pdef(\strings2,
     Pbindf(
         Pdef(\stringchords1),
+        \degree, Pshuf(~stringchords[0].collect({ |d| [d].stutter(7) }), inf),
         \delaytime, ~stringchords2delayktrlbus.asMap,
-        \dur, 53,
-        \octave, 6,
-        \widthmod_min, 1,
-        \widthmod_max, Pkey(\widthmod_min)
+        \octave, 7,
 ));
 */
+
+//Pdef(\stringchords2, Ppar([Pdef(\strings2)].stutter(3), inf));
+Pdef(\stringchords2, Pbindf(Pdef(\stringchords1), \degree, [7, 12].stutter(5), \octave, [5, 6, 7]));
 
 Pdef(\stringchords3,
     Pbindf(
@@ -851,7 +844,7 @@ Pdef(\stringchords4,
     Pbindf(
         Pdef(\stringchords1),
         \delaytime, ~stringchords4delayktrlbus.asMap,
-        \degree, [0].stutter(10),
+        \degree, [0].stutter(15),
         \foldmod_min, 0.25,
         \foldmod_max, Pkey(\foldmod_min),
         \widthmod_min, 0.5,
@@ -885,7 +878,7 @@ Pdef(\stringchords4).stop;
 */
 
 ~midiktrl.value(\stringchords1, 52);
-//~midiktrl.value(\stringchords2, 68);
+~midiktrl.value(\stringchords2, 68);
 ~midiktrl.value(\stringchords3, 37);
 ~midiktrl.value(\stringchords4, 53);
 
@@ -997,31 +990,35 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene9 = [\stringchords4];
-~scene9lights = [53];
-~scene9stoppers = [\basspat3];
-~scene9stopperlights = [81];
-~scenetoggle2.value(\scene10, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
+~scene9 = [\stringchords2];
+~scene9lights = [68];
+~scenetoggle2.value(\scene9, 8, ~scene9, starterlights: ~scene9lights);
 );
 
 (
-~scene10stoppers = [\pulsepat1a, \prcpar2, \pnopat, \pingpat, \stringchords3];
-~scene10stopperlights = [32, 51, 35, 67, 37];
-~scenetoggle2.value(\scene11, 24, stoppers: ~scene10stoppers, stopperlights: ~scene10stopperlights);
+~scene10 = [\stringchords4];
+~scene10lights = [53];
+~scene10stoppers = [\basspat3, \prcpar2];
+~scene10stopperlights = [81, 51];
+~scenetoggle2.value(\scene10, 24, ~scene10, ~scene10stoppers, ~scene10lights, ~scene10stopperlights);
 );
 
 (
-~scene11stopper = [\stringchords4];
-~scene11stopperlight = [53];
-~scenetoggle2.value(\scene12, 40, stoppers: ~scene11stopper, stopperlights: ~scene11stopperlight);
+~scene11stoppers = [\pulsepat1a, \prcpar2, \pnopat, \pingpat, \stringchords3];
+~scene11stopperlights = [32, 51, 35, 67, 37];
+~scenetoggle2.value(\scene11, 40, stoppers: ~scene11stoppers, stopperlights: ~scene11stopperlights);
 );
 
 (
-//~endstoppers = [\sin, \banjo2, \stringchords2, \stringchords3];
-~endstoppers = [\sin, \banjo2, \stringchords1];
-//~endstopperlights = [17, 36, 68, 37];
-~endstopperlights = [17, 36, 52];
-~scenetoggle2.value(\end, 56, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
+~scene12stopper = [\stringchords4];
+~scene12stopperlight = [53];
+~scenetoggle2.value(\scene12, 56, stoppers: ~scene12stopper, stopperlights: ~scene12stopperlight);
+);
+
+(
+~endstoppers = [\sin, \banjo2, \stringchords1, \stringchords2];
+~endstopperlights = [17, 36, 52, 68];
+~scenetoggle2.value(\end, 72, stoppers: ~endstoppers, stopperlights: ~endstopperlights);
 );
 
 ////////////////////////////////

@@ -420,7 +420,7 @@ Pdef(\prc8).stop;
 // Synth
 
 (
-SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.01, outbus|
+SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.015, outbus|
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
@@ -471,7 +471,7 @@ Pdef(\pad2pat).stop;
 */
 
 Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 4, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0].stutter(5), \level, 0.0001, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [0].stutter(5), \level, 0.0003, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
