@@ -121,16 +121,18 @@ Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.25, 
 // SIN
 
 (
-SynthDef(\sin, { |dur = 1, fold_min = 0.025, fold_max = 0.05, freq = 440, gate = 1, level = 0.01, outbus|
+SynthDef(\sin, { |dur = 1, fold_min = 0.025, fold_max = 0.1, freq = 440, gate = 1, level = 0.01, outbus, width = 0.5|
     var env             =   Env.asr(0.003, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(0.1, 10.0)).range(0.0, 1.0);
-    var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.001, 1)).range(fold_min, fold_max);
-    var saw             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
+    //var widthmod        =   LFNoise2.kr(LFNoise2.kr(0.1 ! 2).range(0.1, 10.0)).range(0.0, 1.0);
+    //var widthmod        =   Line.kr(0.0, 1.0, dur);
+    var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.1 ! 2, 0.002, 1)).range(fold_min, fold_max);
+    var saw             =   VarSaw.ar(freq, width: width).fold2(foldmod) * foldmod.reciprocal * envgen;
     //var rhpf1           =   RHPF.ar(saw, (freq * 2).clip(50, SampleRate.ir / 2.5));
     //var roundmod        =   LFNoise2.kr(1 ! 2).range(0.1, 1.0);
-    //var sin             =   FSinOsc.ar(freq ! 2).round(roundmod) * envgen * LFClipNoise.kr(LFNoise2.kr(1 ! 2).range(1, 15)).range(0.8, 1);
+    //var sin             =   FSinOsc.ar(freq ! 2) * envgen * LFClipNoise.kr(LFNoise2.kr(1 ! 2).range(1, 15)).range(0.0, 1.0);
     //var rhpf2           =   RHPF.ar(sin, (freq * 2).clip(100, SampleRate.ir / 2.5));
+    //var filt            =   BMoog.ar(saw, (freq * 4).clip(50, SampleRate.ir / 2.5), mode: mode);
     Out.ar(outbus, saw);
 }).add;
 );
@@ -139,20 +141,20 @@ SynthDef(\sin, { |dur = 1, fold_min = 0.025, fold_max = 0.05, freq = 440, gate =
 Pdef(\sin1,
     Pmono(
         \sin,
-        \degree, Pseq([10, 11, 12, 19].collect({ |d| [d].stutter(6) }), inf),
-        /*
+        \degree, Pseq([10, 11, 12, 13, 19].collect({ |d| [d].stutter(6) }).scramble.mirror1, inf),
+        ///*
         \dur, Pshuf([
             Pseq([0.125], 2), 0.25,
             Pseq([1/6], 3), Pseq([0.25], 2),
             Pseq([0.25], 3), Pseq([0.375], 2),
             Pseq([1/3], 3), Pseq([0.5], 2),
-            4, 6, 8, 12, 16, 24
+            4, 6, 8, 12
         ], inf),
-        */
-        \dur, Pseq([Pseq([1/6], 2), 24, Pseq([1/6], 2), 16, Pseq([1/6], 2), 12], inf),
-        \fold_min, Pshuf(Array.interpolation(7, 0.01, 0.05), inf),
-        \fold_max, Pshuf(Array.interpolation(11, 0.05, 0.25), inf),
-        \octave, 6,
+        //*/
+        //\dur, Pseq([Pseq([1/6]), 24, Pseq([1/6], 2), 16, Pseq([1/6], 3), 12], inf),
+        \fold_min, Prand([0.02, 0.1], inf),
+        \fold_max, Prand([0.1, 0.5], inf),
+        \octave, Pshuf([5, 6].stutter(3), inf),
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
@@ -162,23 +164,25 @@ Pdef(\sin1,
 Pdef(\sin2,
     Pmono(
         \sin,
-        \degree, Pseq([[7, 10, 12], [7, 12, 12]].collect({ |c| c.stutter(3) }), inf),
+        \degree, Pseq([[7, 10, 12], [7, 12, 12]].collect({ |c| c.stutter(2) }), inf),
         \dur, Pshuf([11, 12, 13] + 0.25, inf),
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
+        \width, Pwhite(0.0, 1.0, inf)
 ));
 //*/
 
 Pdef(\sindrone,
     Pmono(
         \sin,
-        \degree, Pseq([[0, 7], [12, 12]].collect({ |d| [d].stutter(2) }), inf),
+        \degree, Pseq([[0, 7], [12, 12]].collect({ |d| [d].stutter(3) }), inf),
         \dur, Pshuf([11, 13, 15, 17, 19] + 0.25, inf),
         \octave, Pseq([[4, 5], [5, 5]], inf),
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
+        \width, Pwhite(0.0, 1.0, inf)
 ));
 
 Pdef(\sin, Ppar([Pdef(\sin1), Pdef(\sin2), Pdef(\sindrone)]));
@@ -203,9 +207,9 @@ Pdef(\sindrone).stop;
 */
 
 /*
-Pdef(\sins).play(~tempo);
-Pdef(\sins).isPlaying;
-Pdef(\sins).stop;
+Pdef(\sin).play(~tempo);
+Pdef(\sin).isPlaying;
+Pdef(\sin).stop;
 */
 
 ~midiktrl.value(\sin, 17);
@@ -214,11 +218,12 @@ Pdef(\sins).stop;
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, level = 0.05, outbus, round = 0|
+SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_mul = 1, level = 0.05, outbus, round = 0|
 	var env				=	Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    var sinfb1          =   SinOscFB.ar(freq ! 2, [fb, fb * 0.99] * XLine.kr(1, 0.01, dur));
-    var sinfb2          =   SinOscFB.ar(freq ! 2 * LFClipNoise.ar(100 ! 2, detune, 1), [fb, fb * 0.9] * XLine.kr(1, 0.01, dur));
+    var freqmod         =   SinOsc.ar(freq * LFNoise2.kr(30 ! 2, 0.005, 1), mul: freqmod_mul, add: 1);
+    var sinfb1          =   SinOscFB.ar(freq * freqmod, [fb, fb * 0.99] * XLine.kr(1, 0.01, dur));
+    var sinfb2          =   SinOscFB.ar(freq * freqmod * LFClipNoise.ar(100 ! 2, detune, 1), [fb, fb * 0.9] * XLine.kr(1, 0.01, dur));
     var mix             =   (sinfb1 + sinfb2).round(round / 8).round(round / 4).round(round / 2).round(round) * envgen;
     var sinfb           =   SinOscFB.ar(freq * 0.5 ! 2, XLine.kr(1, 0.1, dur), envgen);
     Out.ar(outbus, mix + sinfb);
@@ -246,6 +251,7 @@ Pdef(\basspat1,
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6].stutter(2), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
+        \freqmod_mul, Pshuf([0, 1, 2, 4, 8], inf),
         \octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
@@ -266,8 +272,9 @@ Pdef(\bass2,
         \instrument, \bass,
         \degree, Pseq([-5, -2, 0, 1].scramble.mirror1, 17),
         \detune, Pwhite(0, 0.01, inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([1/3], 3), 1, 1.5, 2, 3], inf),
+        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), Pseq([0.375], 2), 0.75, 1, 1.5, 2, 3], inf),
         \fb, Pwhite(0.0, 2.5, inf),
+        \freqmod_mul, Pshuf([1, 2, 4, 8, 16], inf),
         \octave, 3,
         \outbus, ~delaybus,
         \round, Pwhite(0, 0.4, inf)
