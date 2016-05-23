@@ -111,7 +111,7 @@ Pdef(\pad1,
         \dur, Pshuf([31, 33, 35, 37, 39] + 0.25, inf),
         \fb, 0.3,
         \k, Pwhite(0.9, 4.0, inf),
-        \legato, 0.5,
+        \legato, 0.75,
         \octave, 5,
         \outbus, ~compressorbus,
         \release, 0.1,
@@ -122,7 +122,7 @@ Pdef(\pad1,
         \stan_freq, 0.2
 ));
 
-//Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(2), inf));
+Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(2), inf));
 
 //Pdef(\pads2, Pbindf(Pdef(\pads1)));
 
@@ -166,7 +166,7 @@ Pdef(\padlo,
         \dur, Pshuf([41, 43, 45, 47, 49] + 0.25, inf),
         \fb, 0.2,
         \k, Pwhite(0.9, 4.0, inf),
-        \legato, 0.5,
+        \legato, 0.75,
         \octave, 4,
         \outbus, ~compressorbus,
         \release, 0.1,
@@ -370,14 +370,14 @@ Pdef(\tones).stop;
 );
 
 (
-~scene3 = [\padsgroup1];
-~scene3lights = [34];
+~scene3 = [\tone1, \padsgroup1];
+~scene3lights = [33, 34];
 ~scenetoggle.value(\scene3, 106, ~scene3, ~scene3lights);
 );
 
 (
-~scene4 = [\tone1, \padslo];
-~scene4lights = [33, 35];
+~scene4 = [\padslo];
+~scene4lights = [35];
 ~scenetoggle.value(\scene4, 107, ~scene4, ~scene4lights);
 );
 
