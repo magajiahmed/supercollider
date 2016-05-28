@@ -413,7 +413,6 @@ Pdef(\loudpulse, Pbindf(Pdef(\pulsepat1a), \level, ~pulselvl * 2));
 Pdef(\pulsepat2a,
     Pbindf(
         Pdef(\pulsepat1a),
-        //\degree, Pshuf([[0, 7, 9, 11, 12, 13]] ++ [[0, 7, 10, 12, 14]].stutter(9) ++ [[0, 7, 11, 12, 13, 15]], inf)
         \octave, 4
 ));
 );
@@ -445,18 +444,9 @@ Pdef(\pulsepar3).stop;
 Pdef(\hat2,
     Pbind(
         \instrument, \hat,
-        //\curve, Pshuf([-64, -16, -4].stutter(3), inf),
         \curve, Pwrand([-64, 0], [16, 1].normalizeSum, inf),
         \degree, [0, 2, 7, 10, 12],
-        //\dur, Pshuf(Array.fill(11, { |d| (d + 7) * 0.25 }), inf),
-        //\dur, Pshuf([0.25, 0.5, 0.75, Pseq([1/5], 5), Pseq([1/3], 3), 1, 1.25, 1.5, 1.75].stutter(2), inf),
-        //\dur, Pshuf(Array.fill(3, { |d| Pseq([0.75 + (d * 0.25)], 2) }), inf),
-        /*
-        \dur, Pshuf([
-            0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4)
-        ].stutter(11), inf),
-        */
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
         \level, Pshuf([0.2, 1].stutter(11) * 0.02, inf),
         \fb, 0,
         \octave, (7..10),
@@ -566,14 +556,14 @@ Pdef(\prc3,
         \c, Pshuf([0.01, 0.02, 0.04, 0.08, 0.16].stutter(6), inf),
         //\curve, Pshuf([-8, -2].stutter(7), inf),
         \delaytime, Pshuf([0.01, 0.02, 0.04].stutter(3), inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6], inf),
         \level, ~prclvl,
         \octave, Pshuf((5..11), inf),
         \outbus, ~prcbus,
         \releaseTime, Pshuf([0.1, 0.8], inf)
 ));
 
-Pdef(\prc3a, Pbindf(Pdef(\prc3), \dur, Pxrand([0.75, 1, 1.5, 2, 7, 9], inf), \level, ~prcecholvl));
+Pdef(\prc3a, Pbindf(Pdef(\prc3), \level, ~prcecholvl));
 
 Pdef(\prcpar1b, Ppar([Pdef(\prc3), Pdef(\prc3a)]));
 );
@@ -1055,8 +1045,8 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene8 = [\pulsepat1a, \basspat3, \hatpar, \prcpar2, \pingpat, \banjo2, \stringchords1];
-~scene8lights = [32, 81, 34, 51, 67, 36, 52];
+~scene8 = [\pulsepat1a, \basspat3, \prcpar2, \pingpat, \banjo2, \stringchords1];
+~scene8lights = [32, 81, 51, 67, 36, 52];
 ~scene8stoppers = nil;
 ~scene8stopperlights = nil;
 ~scenetoggle.value(\scene8, 111, ~scene8, ~scene8stoppers, ~scene8lights, ~scene8stopperlights);
