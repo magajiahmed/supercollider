@@ -228,7 +228,7 @@ Pdef(\sin).stop;
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_mul = 1, level = 0.05, outbus, round = 0|
+SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_mul = 1, level = 0.03, outbus, round = 0|
 	var env				=	Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var freqmod         =   SinOsc.ar(freq * LFNoise2.kr(30 ! 2, 0.01, 1), mul: freqmod_mul, add: 1);
