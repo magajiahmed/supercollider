@@ -228,7 +228,7 @@ Pdef(\sin).stop;
 // BASS
 
 (
-SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_mul = 1, level = 0.03, outbus, round = 0|
+SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_mul = 1, level = 0.04, outbus, round = 0|
 	var env				=	Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var freqmod         =   SinOsc.ar(freq * LFNoise2.kr(30 ! 2, 0.01, 1), mul: freqmod_mul, add: 1);
@@ -247,7 +247,7 @@ SynthDef(\bass, { |curve = -2, detune = 1, dur = 1, fb = 0, freq = 440, freqmod_
 Pdef(\basspat1,
 	Pbind(
 		\instrument, \bass,
-        \curve, -4,
+        \curve, -3,
         //\degree, Pseq([Pshuf(~degrees.stutter(3)), Pseq([Rest], ~degrees.size)], inf),
         \degree, Pshuf(~degrees.stutter(7)),
         \detune, Pshuf([0.0025, 0.005, 0.01].stutter(5), inf),
@@ -258,7 +258,10 @@ Pdef(\basspat1,
         ].stutter(2), inf),
         */
         //\dur, Pshuf([0.25, 6, 0.25, 0.25, 8, 0.25, 0.25, 0.25, 12].stutter(3), inf),
-        \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+        \dur, Pshuf([
+            0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1,
+            1.5, 2, 3, 4, 6, 8, 12
+        ], inf),
         \fb, Pshuf([0, 0.2, 0.4, 0.8, 1.6].stutter(2), inf),
         //\fold, Pshuf([0.5, 1].stutter(5), inf),
         \freqmod_mul, Pshuf([0, 1, 2, 4, 8], inf),
@@ -337,7 +340,7 @@ Pdef(\hatpat1,
 	Pbind(
 		\instrument, \hat,
         \curve, -32,
-        \degree, [1, 4, 6, 7, 10, 12],
+        \degree, Pseq([Pseq([[1, 4, 6, 7, 10, 12]], 31), Pseq([Rest], 31)], inf),
         \dur, Pshuf([
             Pseq([0.125], 2), 0.25, 0.5, 0.75, 1, 1.5, 11
         ].stutter(3), inf),
@@ -387,17 +390,17 @@ Pdef(\hatpar).stop;
 Pdef(\pulsepat1a,
 	Pbind(
 		\instrument, \hat,
-        \curve, Prand([-64, -16, -4], inf),
-        \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24].stutter(11), inf),
-        \fb, Pshuf([2, 3, 4].stutter(5), inf),
-        \fbmod_mul, Pshuf([0.25, 0.5, 1, 2, 4].stutter(3), inf),
+        \curve, Pshuf([-64, -16, -4], inf),
+        \dur, Pshuf([0.25, 0.5, 0.75, 4, 6, 8, 12, 16, 24], inf),
+        \fb, Pseq((1..5).scramble.mirror1, inf),
+        \fbmod_mul, Pshuf([0.25, 0.5, 1, 2, 4], inf),
 		\level, ~pulselvl,
-        \degree, Pshuf([[6, 7, 10, 12]] ++ [[7, 12].stutter(3)] ++ [[7, 10, 12].stutter(2)], inf),
+        \degree, Pshuf([[6, 7, 10, 12]] ++ [[7, 12].stutter(3)] ++ [[7, 10, 12].stutter(3)], inf),
 		\octave, 3,
         \outbus, ~delaybus,
 		\root, ~root,
 		\scale, ~scale,
-        \timingOffset, Pwhite(-0.01, 0.01, inf)
+        \timingOffset, Pwhite(-0.015, 0.015, inf)
 ));
 );
 
@@ -407,7 +410,7 @@ Pdef(\pulsepat1a).isPlaying;
 Pdef(\pulsepat1a).stop;
 */
 
-Pdef(\loudpulse, Pbindf(Pdef(\pulsepat1a), \curve, Prand([-64, -16, -4, 0], inf), \level, ~pulselvl * 2));
+Pdef(\loudpulse, Pbindf(Pdef(\pulsepat1a), \curve, Pseq([-64, -16, -4, 0].scramble.mirror1, inf), \level, ~pulselvl * 1.5));
 
 (
 Pdef(\pulsepat2a,
@@ -652,7 +655,7 @@ Pdef(\prc2,
     Pbind(
         \instrument, \prc2,
         \a, Pxrand((1..3), inf),
-        \curve, Prand([-32, -16], inf),
+        \curve, Pxrand([-32, -16, -8, -4], inf),
         \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3) ++ [Pseq([1/3], 3)], inf),
         \octave, Prand([3, 4, 7], inf),
         \outbus, ~prcbus,
@@ -832,7 +835,7 @@ Pdef(\stringchords4setdelaytime).stop;
 // STRING
 
 (
-SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.008, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
+SynthDef(\string, { |attack = 0.01, curve = -4, delaytime = 0.01, dur = 1, foldmod_freq_min = 0.1, foldmod_freq_max = 10, foldmod_min = 0.05, foldmod_max = 0.2, freq = 440, gate = 1, level = 0.005, outbus, release = 0.1, widthmod_freq_min = 0.1, widthmod_freq_max = 1, widthmod_min = 0, widthmod_max = 1|
     var env             =   Env.asr(attack, level, release, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var widthmod        =   LFNoise2.kr(LFNoise2.kr(widthmod_freq_min!2, 1, 1)).range(widthmod_min, widthmod_max);

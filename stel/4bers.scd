@@ -90,14 +90,14 @@ Pdef(\delay, Pmono(\delay, \delay, ~delay, \inBus, ~delaybus, \outbus, 0));
 // LIMITER
 
 (
-SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.4, outbus|
+SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.3, outbus|
     var in          =   In.ar(inBus, 2);
     var limiter     =   Limiter.ar(in, level, dur);
     Out.ar(outbus, limiter);
 }).add;
 );
 
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.25, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.1, \outbus, 0));
 
 ////////////////////////////////////////////////////////
 // VERB
@@ -420,7 +420,7 @@ Pdef(\prc8).stop;
 // Synth
 
 (
-SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.015, outbus|
+SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.01, outbus|
 	var env				=	Env.asr(3, level, 7, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
