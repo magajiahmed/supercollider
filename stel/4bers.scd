@@ -229,7 +229,7 @@ Pdef(\pnobass1).stop;
 // PRC
 
 (
-SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level = 0.4, outbus, pan = 0, releaseTime = 0.2 |
+SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level = 0.2, outbus, pan = 0, releaseTime = 0.2 |
 	var env				=	Env.perc(releaseTime: releaseTime, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var cusp			=	CuspL.ar(freq, a, add: 1);
@@ -245,7 +245,7 @@ SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level 
 (
 ~prcpatfrq1 = 90;
 ~prcpatfrq2 = ~prcpatfrq1 * 32;
-~prcpatlvl = 0.4;
+~prcpatlvl = 0.2;
 ~prcpatecholvl = ~prcpatlvl / 5;
 Pdef(\prc1,
 	Pbind(
@@ -299,6 +299,7 @@ Pdef(\prc4,
         \curve, Pshuf([-64, -16, -4].stutter(13), inf),
 		\dur, Pshuf([Pseq([1/12], 3), 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, 0.75, 0.75, 0.75, 1, 1, 1, 1.25, 1.25, 1.25], inf),
         \ffreq, Pshuf([10000, 20000], inf),
+        \level, ~prcpatlvl * 0.5,
 		\octave, 9,
         \outbus, Pshuf([~prcfxbus, [~prcfxbus, ~verbus]], inf),
 ));
