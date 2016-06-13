@@ -51,6 +51,7 @@ MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
 ~delay = 0.05;
 ~delaybus = Bus.audio(s, 2);
 ~prcbus = Bus.audio(s, 2);
+~pulsebus = Bus.audio(s, 2);
 //
 ~stringchords1delayktrlbus = Bus.control(s);
 ~stringchords2delayktrlbus = Bus.control(s);
@@ -104,18 +105,18 @@ Pdef(\delay, Pmono(\delay, \delay, ~delay, \inBus, ~delaybus, \outbus, 0));
 // LIMITER /////////////////////////////////////////////
 
 (
-SynthDef(\limiter, { |dur = 1, gate = 1, inBus, level = 1, outbus|
+SynthDef(\limiter, { |duration = 1, gate = 1, inBus, level = 1, outbus|
     var env             =   Env.asr(0.01, 1, 0.01, 0);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var in              =   In.ar(inBus, 2);
-    var limiter         =   Limiter.ar(in, level, dur);
+    var limiter         =   Limiter.ar(in, level, duration);
     Out.ar(outbus, limiter);
 }).add;
 );
 
-(
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcbus, \level, 0.25, \outbus, 0));
-);
+Pdef(\limiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~prcbus, \level, 0.25, \outbus, 0));
+
+Pdef(\pulselimiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~pulsebus, \level, 0.25, \outbus, 0));
 
 ////////////////////////////////////////////////////////////////
 // SIN
@@ -364,7 +365,7 @@ Pdef(\pulsepat1a,
         \fbmod_mul, Pshuf([0.25, 0.5, 1, 2, 4], inf),
 		\level, ~pulselvl,
 		\octave, 3,
-        \outbus, ~delaybus,
+        \outbus, ~pulsebus,
 		\root, ~root,
 		\scale, ~scale,
         \timingOffset, Pwhite(-0.02, 0.02, inf)
@@ -379,13 +380,7 @@ Pdef(\pulsepat1a).stop;
 
 Pdef(\loudpulse, Pbindf(Pdef(\pulsepat1a), \curve, Pseq([-64, -16, -4, 0].scramble.mirror1, inf), \level, ~pulselvl * 1.5));
 
-(
-Pdef(\pulsepat2a,
-    Pbindf(
-        Pdef(\pulsepat1a),
-        \octave, 4
-));
-);
+Pdef(\pulsepat2a, Pbindf(Pdef(\pulsepat1a), \octave, 4));
 
 /*
 Pdef(\pulsepat2a).play(~tempo);
