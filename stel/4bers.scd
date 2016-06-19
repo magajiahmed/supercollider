@@ -178,18 +178,26 @@ Pdef(\pnopulse1,
         //\sinhimul, 0.0
 ));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, [0, 7], \dur, Pshuf([1.75, 2, 2.25, 2.5, 2.75, 3, 3.25], inf), \fb, 0.1));
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, 7, \dur, Pshuf([1.75, 2, 2.25, 2.5, 2.75, 3, 3.25], inf), \fb, 0.1));
+
+Pdef(\pnopulse3, Pbindf(Pdef(\pnopulse1), \degree, -2, \dur, Pshuf(Array.fill(6, { |d| d.nthPrime * 0.25 }), inf)));
 );
 
 /*
-Pdef(\pnopulse1).play(t, quant: 1);
+Pdef(\pnopulse1).play(t);
 Pdef(\pnopulse1).isPlaying;
 Pdef(\pnopulse1).stop;
 */
 
 /*
-Pdef(\pnopulse2).play(t, quant: 1);
+Pdef(\pnopulse2).play(t);
 Pdef(\pnopulse2).isPlaying;
+Pdef(\pnopulse2).stop;
+*/
+
+/*
+Pdef(\pnopulse3).play(t);
+Pdef(\pnopulse3).isPlaying;
 Pdef(\pnopulse2).stop;
 */
 
@@ -223,7 +231,8 @@ Pdef(\pnobass1).stop;
 
 ~midiktrl.value(\pnopulse1, 32);
 ~midiktrl.value(\pnopulse2, 48);
-~midiktrl.value(\pnobass1, 64);
+~midiktrl.value(\pnopulse3, 64);
+~midiktrl.value(\pnobass1, 80);
 
 ////////////////////////////////////////////////////////////////
 // PRC
@@ -472,7 +481,8 @@ Pdef(\pad2pat).stop;
 */
 
 Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 4, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0].stutter(5), \level, 0.0003, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [7, 12].stutter(2), \octave, 3, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2hi, Pmono(\pad2, \degree, [0].stutter(5), \level, 0.00015, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
@@ -488,6 +498,7 @@ Pdef(\pad2pat3).stop;
 
 // Midi Control
 
+~midiktrl.value(\pad2hi, 19);
 ~midiktrl.value(\pad2pat, 35);
 ~midiktrl.value(\pad2pat2, 51);
 ~midiktrl.value(\pad2pat3, 67);
