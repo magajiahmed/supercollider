@@ -32,8 +32,8 @@ t = TempoClock(80/60);
 MIDIdef.freeAll;
 MIDIClient.init;
 MIDIIn.connectAll;
-c.free;
-c = MIDIdef.cc(\ccpostln, { |...args| args.postln; });
+MIDIdef.cc(\midiccpostln, { |...args| args.postln });
+MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
 ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("Launchpad") };
 );
 
@@ -168,8 +168,8 @@ Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
         \curve, -8,
-        \dur, Pshuf([0.75, 1, 1.25, 1.5].stutter(5), inf),
-		\fb, 0.0,
+        \dur, Pshuf(Array.fill(5, { |d| d.nthPrime * 0.25 }), inf),
+		\fb, 0,
         \degree, 0,
         \octave, 6,
         \outbus, ~delaybus,
@@ -178,9 +178,11 @@ Pdef(\pnopulse1,
         //\sinhimul, 0.0
 ));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, 7, \dur, Pshuf([1.75, 2, 2.25, 2.5, 2.75, 3, 3.25], inf), \fb, 0.1));
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, 7, \dur, Pshuf(Array.fill(6, { |d| d.nthPrime * 0.25 }), inf)));
 
-Pdef(\pnopulse3, Pbindf(Pdef(\pnopulse1), \degree, -2, \dur, Pshuf(Array.fill(6, { |d| d.nthPrime * 0.25 }), inf)));
+Pdef(\pnopulse3, Pbindf(Pdef(\pnopulse1), \degree, -2, \dur, Pshuf(Array.fill(7, { |d| d.nthPrime * 0.25 }), inf)));
+
+Pdef(\pnopulse4, Pbindf(Pdef(\pnopulse1), \degree, 2, \dur, Pshuf(Array.fill(8, { |d| d.nthPrime * 0.25 }), inf)));
 );
 
 /*
@@ -198,7 +200,13 @@ Pdef(\pnopulse2).stop;
 /*
 Pdef(\pnopulse3).play(t);
 Pdef(\pnopulse3).isPlaying;
-Pdef(\pnopulse2).stop;
+Pdef(\pnopulse3).stop;
+*/
+
+/*
+Pdef(\pnopulse4).play(t);
+Pdef(\pnopulse4).isPlaying;
+Pdef(\pnopulse4).stop;
 */
 
 (
@@ -232,7 +240,8 @@ Pdef(\pnobass1).stop;
 ~midiktrl.value(\pnopulse1, 32);
 ~midiktrl.value(\pnopulse2, 48);
 ~midiktrl.value(\pnopulse3, 64);
-~midiktrl.value(\pnobass1, 80);
+~midiktrl.value(\pnopulse4, 80);
+~midiktrl.value(\pnobass1, 96);
 
 ////////////////////////////////////////////////////////////////
 // PRC
@@ -502,6 +511,158 @@ Pdef(\pad2pat3).stop;
 ~midiktrl.value(\pad2pat, 35);
 ~midiktrl.value(\pad2pat2, 51);
 ~midiktrl.value(\pad2pat3, 67);
+
+// Making a scene
+
+(
+~scenetoggle = { |scene, light, starters, stoppers, starterlights, stopperlights|
+    var scenestatus;
+    MIDIdef.cc(scene, {
+        if(scenestatus.isNil) {
+            ~midiout.control(0, light, 127);
+            starterlights.do({ |l| ~midiout.noteOn(0, l, 127) });
+            starters.do({ |s| Pdef(s).play(t) });
+            stopperlights.do({ |l| ~midiout.noteOff(0, l) });
+            stoppers.do({ |s| Pdef(s).stop });
+            scenestatus = "playing";
+            scene.asString.post;
+            " play".postln;
+        } {
+            ~midiout.control(0, light, 0);
+            starters.do({ |s| Pdef(s).stop });
+            starterlights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = nil;
+            scene.asString.post;
+            " stop".postln;
+        }
+    }, light, srcID: ~lpm.uid, argTemplate: { |a| a > 0 });
+}
+);
+
+(
+~scenetoggle2 = { |scene, light, starters, stoppers, starterlights, stopperlights|
+    var scenestatus;
+    MIDIdef.noteOn(scene, {
+        if(scenestatus.isNil) {
+            ~midiout.noteOn(0, light, 127);
+            starterlights.do({ |l| ~midiout.noteOn(0, l, 127) });
+            starters.do({ |s| Pdef(s).play(t) });
+            stopperlights.do({ |l| ~midiout.noteOff(0, l) });
+            stoppers.do({ |s| Pdef(s).stop });
+            scenestatus = "playing";
+            scene.asString.post;
+            " play".postln;
+        } {
+            ~midiout.noteOn(0, light, 0);
+            starters.do({ |s| Pdef(s).stop });
+            starterlights.do({ |l| ~midiout.noteOff(0, l) });
+            scenestatus = nil;
+            scene.asString.post;
+            " stop".postln;
+        }
+    }, light, srcID: ~lpm.uid, argTemplate: { |a| a > 0 });
+}
+);
+
+(
+~scene1 = [\pnopulse1];
+~scene1lights = [32];
+~scenetoggle.value(\scene1, 104, ~scene1, starterlights: ~scene1lights);
+);
+
+(
+~scene2 = [\pad2pat2];
+~scene2lights = [51];
+~scenetoggle.value(\scene2, 105, ~scene2, starterlights: ~scene2lights);
+);
+
+(
+~scene3 = [\prc3, \pad2pat];
+~scene3lights = [33, 35];
+~scenetoggle.value(\scene3, 106, ~scene3, starterlights: ~scene3lights);
+);
+
+(
+~scene4 = [\prc2];
+~scene4lights = [49];
+~scenetoggle.value(\scene4, 107, ~scene4, starterlights: ~scene4lights);
+);
+
+(
+~scene5 = [\prc1];
+~scene5lights = [65];
+~scenetoggle.value(\scene5, 108, ~scene5, starterlights: ~scene5lights);
+);
+
+(
+~scene6 = [\pnopulse2, \prc4];
+~scene6lights = [48, 34];
+~scenetoggle.value(\scene6, 109, ~scene6, starterlights: ~scene6lights);
+);
+
+(
+~scene7 = [\prc5];
+~scene7lights = [50];
+~scenetoggle.value(\scene7, 110, ~scene7, starterlights: ~scene7lights);
+);
+
+(
+~scene8 = [\prc8];
+~scene8lights = [66];
+~scenetoggle.value(\scene8, 111, ~scene8, starterlights: ~scene8lights);
+);
+
+(
+~scene9 = [\pnopulse3, \pnobass1, \pad2pat3, \pad2hi];
+~scene9lights = [64, 96, 67, 19];
+~scene9stoppers = [\pnopulse2, \prc3];
+~scene9stopperlights = [48, 33];
+~scenetoggle2.value(\scene9, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
+);
+
+(
+~scene10stopper = [\prc2];
+~scene10stopperlight = [49];
+~scenetoggle2.value(\scene10, 24, stoppers: ~scene10stopper, stopperlights: ~scene10stopperlight)
+);
+
+(
+~scene11stopper = [\prc1];
+~scene11stopperlight = [65];
+~scenetoggle2.value(\scene11, 40, stoppers: ~scene11stopper, stopperlights: ~scene11stopperlight);
+);
+
+(
+~scene12 = [\pnopulse4];
+~scene12light = [80];
+~scene12stoppers = [\pnopulse3, \prc4];
+~scene12stopperlights = [64, 34];
+~scenetoggle2.value(\scene12, 56, ~scene12, ~scene12stoppers, ~scene12light, ~scene12stopperlights);
+);
+
+(
+~scene13stopper = [\prc5];
+~scene13stopperlight = [50];
+~scenetoggle2.value(\scene13, 72, stoppers: ~scene13stopper,stopperlights: ~scene13stopperlight);
+);
+
+(
+~scene14stopper = [\prc8];
+~scene14stopperlight = [66];
+~scenetoggle2.value(\scene14, 88, stoppers: ~scene14stopper, stopperlights: ~scene14stopperlight);
+);
+
+(
+~scene15stoppers = [\pnopulse1, \pnopulse4, \pad2pat, \pad2pat2, \pad2pat3];
+~scene15stopperlights = [32, 64, 35, 51, 67];
+~scenetoggle2.value(\scene15, 104, stoppers: ~scene15stoppers, stopperlights: ~scene15stopperlights);
+);
+
+(
+~scene16stoppers = [\pnobass1, \pad2hi];
+~scene16stopperlights = [80, 19];
+~scenetoggle2.value(\scene16, 120, stoppers: ~scene16stoppers, stopperlights: ~scene16stopperlights);
+);
 
 // Start the effects
 (
