@@ -134,8 +134,6 @@ Pdef(\verb,
         \rq, Pwhite(0.1, 1, inf),
         \size, 5,
         \t60, 5,
-        //\trig_freq_min, Prand([5.0, 10.0], inf),
-        //\trig_freq_max, Prand([50.0, 100.0], inf)
         \trig_freq_min, Prand([20, 80], inf),
         \trig_freq_max, Prand([20, 80], inf)
 ));
@@ -153,8 +151,17 @@ SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, 
     var octavelower     =   SinOsc.ar(freq!2 / 2, mul: envgen * octavelowermul);
     var rlpf            =   RLPF.ar(sinfb1, lffreq.clip(50, SampleRate.ir / 3), rq1);
     var rhpf            =   RHPF.ar(sinfb2, hffreq.clip(50, SampleRate.ir / 3), rq2);
-	var sinhi           =   SinOscFB.ar(freq * 16, sinhifb * SinOsc.ar(freq * 16, mul: 1, add: 1), envgen * 16.reciprocal * sinhimul);
-    Out.ar(outbus, octavelower + rlpf + rhpf + sinhi);
+	//var sinhi           =   SinOscFB.ar(freq * 16, sinhifb, envgen * 16.reciprocal * sinhimul);
+    Out.ar(outbus, octavelower + rlpf + rhpf);
+}).add;
+);
+
+(
+SynthDef(\sin, { |freq = 440, gate = 1, level = 0.02, outbus|
+    var env             =   Env.asr(0.01, level, 0.1);
+	var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+	var sin             =   SinOsc.ar(freq ! 2, mul: envgen);
+	Out.ar(outbus, sin);
 }).add;
 );
 
@@ -162,21 +169,50 @@ SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, 
 Pdef(\pnopulse1,
     Pbind(
         \instrument, \pno,
-        \curve, -12,
-        \dur, Pshuf(Array.fill(13, { |d| d.nthPrime * 0.25 }), inf),
+        \curve, -4,
+        \dur, Pshuf(Array.fill(5, { |d| d.nthPrime * 0.25 }).stutter(3), inf),
 		\fb, 0.0,
         \degree, 12,
         \outbus, ~delaybus,
         \scale, ~scale,
-		\sinhifb, Pshuf((1..5), inf),
+		\sinhifb, Pshuf(Array.interpolation(7, 0, 1), inf),
 		\sinhimul, Pshuf(Array.interpolation(11, 0, 1), inf)
-));
+	));
 
-Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \degree, 7, \dur, Pshuf(Array.fill(14, { |d| d.nthPrime * 0.25 }), inf)));
+Pdef(\pnopulse2, Pbindf(Pdef(\pnopulse1), \curve, -16, \degree, [7, 14], \dur, Pshuf(Array.fill(7, { |d| d.nthPrime }) + 0.25, inf)));
 
-Pdef(\pnopulse3, Pbindf(Pdef(\pnopulse1), \degree, 10, \dur, Pshuf(Array.fill(15, { |d| d.nthPrime * 0.25 }), inf)));
+Pdef(\pnopulse3, Pbindf(Pdef(\pnopulse2), \degree, 10));
+);
 
-Pdef(\pnopulse4, Pbindf(Pdef(\pnopulse1), \degree, 14, \dur, Pshuf(Array.fill(16, { |d| d.nthPrime * 0.25 }), inf)));
+(
+Pdef(\sin1,
+	Pbind(
+		\instrument, \sin,
+		\degree, 12,
+		\dur, Pshuf([31, 33, 35, 37, 39], inf),
+		\legato, 0.25,
+		\octave, 4,
+		\releaseTime, 0.1,
+		\scale, ~scale
+	));
+
+Pdef(\sin2,
+	Pbindf(
+		Pdef(\sin1),
+		\degree, 7,
+	));
+
+Pdef(\sin3,
+	Pbindf(
+		Pdef(\sin1),
+		\degree, 10,
+	));
+
+Pdef(\sin4,
+	Pbindf(
+		Pdef(\sin1),
+		\degree, 14,
+	));
 );
 
 /*
@@ -186,21 +222,21 @@ Pdef(\pnopulse1).stop;
 */
 
 /*
-Pdef(\pnopulse2).play(t);
-Pdef(\pnopulse2).isPlaying;
-Pdef(\pnopulse2).stop;
+Pdef(\sin1).play(t);
+Pdef(\sin1).isPlaying;
+Pdef(\sin1).stop;
 */
 
 /*
-Pdef(\pnopulse3).play(t);
-Pdef(\pnopulse3).isPlaying;
-Pdef(\pnopulse3).stop;
+Pdef(\sin2).play(t);
+Pdef(\sin2).isPlaying;
+Pdef(\sin2).stop;
 */
 
 /*
-Pdef(\pnopulse4).play(t);
-Pdef(\pnopulse4).isPlaying;
-Pdef(\pnopulse4).stop;
+Pdef(\sin3).play(t);
+Pdef(\sin3).isPlaying;
+Pdef(\sin3).stop;
 */
 
 (
@@ -233,9 +269,14 @@ Pdef(\pnobass1).stop;
 */
 
 ~midiktrl.value(\pnopulse1, 32);
+/*
 ~midiktrl.value(\pnopulse2, 48);
 ~midiktrl.value(\pnopulse3, 64);
 ~midiktrl.value(\pnopulse4, 80);
+*/
+~midiktrl.value(\sin1, 48);
+~midiktrl.value(\sin2, 64);
+~midiktrl.value(\sin3, 80);
 ~midiktrl.value(\pnobass1, 96);
 
 ////////////////////////////////////////////////////////////////
@@ -445,7 +486,7 @@ SynthDef(\pad2, { |curve = -4, dur = 1, freq = 400, gate = 1, level = 0.01, outb
 	var bn				=	LFNoise2.ar(0.1!2, 0.1);
 	var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
 	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 5;
-    var sinfb           =   SinOscFB.ar(freq!2, 0.1, envgen);
+    var sinfb           =   SinOscFB.ar(freq!2, 0.2, envgen);
 	var lpf				=	BLowPass4.ar(sawmix + shape, freq * 1.125, mul: filtmulmods[0, 1]);
 	var rhpf			=	BHiPass4.ar(sawmix + shape, 6000, 0.05, filtmulmods[2, 3]);
 	Out.ar(outbus, sinfb + lpf + rhpf);
@@ -590,7 +631,7 @@ Pdef(\pad2pat3).stop;
 );
 
 (
-~scene6 = [\pnopulse2, \prc4];
+~scene6 = [\sin1, \prc4];
 ~scene6lights = [48, 34];
 ~scenetoggle.value(\scene6, 109, ~scene6, starterlights: ~scene6lights);
 );
@@ -608,7 +649,7 @@ Pdef(\pad2pat3).stop;
 );
 
 (
-~scene9 = [\pnopulse3, \pnobass1, \pad2pat3, \pad2hi];
+~scene9 = [\sin2, \pnobass1, \pad2pat3, \pad2hi];
 ~scene9lights = [64, 96, 67, 19];
 ~scene9stoppers = [\prc3];
 ~scene9stopperlights = [33];
@@ -628,7 +669,7 @@ Pdef(\pad2pat3).stop;
 );
 
 (
-~scene12 = [\pnopulse4];
+~scene12 = [\sin3];
 ~scene12light = [80];
 ~scene12stoppers = [\prc4];
 ~scene12stopperlights = [34];
@@ -648,7 +689,7 @@ Pdef(\pad2pat3).stop;
 );
 
 (
-~scene15stoppers = [\pnopulse1, \pnopulse2, \pnopulse3, \pnopulse4, \pad2pat, \pad2pat2, \pad2pat3];
+~scene15stoppers = [\pnopulse1, \sin1, \sin2, \sin3, \pad2pat, \pad2pat2, \pad2pat3];
 ~scene15stopperlights = [32, 48, 64, 80, 35, 51, 67];
 ~scenetoggle2.value(\scene15, 104, stoppers: ~scene15stoppers, stopperlights: ~scene15stopperlights);
 );
