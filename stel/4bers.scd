@@ -12,7 +12,7 @@ Pdef.removeAll;
 // init
 
 (
-t = TempoClock(66/60);
+t = TempoClock(80/60);
 );
 
 (
@@ -504,42 +504,22 @@ Pdef(\prc8).stop;
 
 // Synth
 
-/*
 (
-SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.015, outbus|
-	var env				=	Env.asr(1, level, 5, 0);
+SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.04, outbus|
+	var env				=	Env.asr(1, level, 5);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	//var filtmulmods		=	LFBrownNoise0.kr(15!4).range(0.25, 1).round(0.25);
-	//var filtmulmods     =   LFNoise2.kr(LFNoise2.kr(0.1 ! 4).range(0.2, 5)).range(0.5, 1.0);
-	var filtmulmods     =   1 ! 4;
-	var saw1freqmod		=	LFNoise1.kr(0.1 ! 2, 0.0003, 1);
-	var saw0			=	LFSaw.ar(freq!2, mul: envgen / 2);
-	var saw1			=	LFSaw.ar(freq * saw1freqmod, mul: envgen / 2);
-	//var sawmix			=	(saw0 + saw1).fold2(level);
-	var sawmix          =   saw0.fold2(level);
-	var bn				=	LFNoise2.ar(0.1!2, envgen);
-	var kbnshaper		=	LFBrownNoise1.kr(15.dup).range(0.5, 2);
-	var shape			=	(sawmix + bn).fold2(0.002 * kbnshaper) * 5;
-    var sinfb           =   SinOscFB.ar(freq!2, 0.2, envgen).fold2(level);
-	var lpf				=	BLowPass4.ar(sawmix + shape, (freq * 8).clip(50, SampleRate.ir / 2.5), mul: filtmulmods[0, 1]);
-	var rhpf			=	BHiPass4.ar(sawmix + shape, 6000, 1, filtmulmods[2, 3]);
-	Out.ar(outbus, sinfb + lpf + rhpf);
-	//Out.ar(outbus, shape);
-}).add;
-);
-*/
-
-(
-SynthDef(\pad2, { |freq = 440, gate = 1, level = 0.02, outbus|
-	var env             =   Env.asr(1, level, 1, 0);
-	var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-	var freqmod         =   LFNoise2.kr(0.01 ! 2, 0.005);
-	var sin1            =   SinOscFB.ar(freq ! 2, mul: envgen * (1/3));
-	var sin2            =   SinOscFB.ar(freq * freqmod, mul: envgen * (1/3));
-	var sinfb           =   SinOscFB.ar(freq * freqmod, 1.5).fold2(SinOsc.ar(freq)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5).fold2(0.5) * envgen * (1/3);
-	var leakdc          =   LeakDC.ar(sinfb);
-	var rhpf            =   RHPF.ar(leakdc, (freq * 12).clip(50, SampleRate.ir / 2.5));
-	Out.ar(outbus, sin1 + sin2 + rhpf);
+	//var saw1freqmod		=	LFNoise0.kr(LFNoise2.kr(1 ! 2).range(1, 2), 0.0005, 1);
+	//var saw0			=	LFSaw.ar(freq ! 2);
+	//var saw1			=	LFSaw.ar(freq * saw1freqmod);
+	//var sawmix			=	(saw0 + saw1);
+	var fm              =   SinOsc.ar(freq * SinOsc.ar(freq + [-0.1, 0.1], mul: 2, add: 1)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
+	var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.001, 1)).range(0.05, 0.1);
+	var shape			=	LeakDC.ar(fm.fold2(foldmod) * foldmod.reciprocal) * envgen;
+	//var foldmod         =   LFNoise2.kr(0.1 ! 2).range(0.05, 0.5);
+	//var sin             =   SinOsc.ar(freq, mul: envgen * 0.2);
+	var lpf             =   MoogFF.ar(shape, (freq * 1.5).clip(50, SampleRate.ir / 2.5), 0.01);
+	var rhpf			=	BHiPass4.ar(shape, (freq * 8).clip(50, SampleRate.ir / 2.5));
+	Out.ar(outbus, lpf + rhpf);
 }).add;
 );
 
@@ -562,8 +542,8 @@ Pdef(\pad2pat,
             ~padchords2shuf[11], Rest,
 		 ]),
         \dur, 23,
+		\fb, 1.5,
         \legato, 0.75,
-		//\level, 0.001,
         \octave, 5,
         \outbus, ~delaybus,
 		\scale, ~scale,
@@ -576,8 +556,8 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \degree, [0, 7].stutter(2), \octave, 4, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2pat3, Pmono(\pad2, \degree, [0, 7].stutter(2), \octave, 3, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, 0, \octave, 3, \outbus, ~delaybus, \scale, ~scale));
 Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 
 /*
