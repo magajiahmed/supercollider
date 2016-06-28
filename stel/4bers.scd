@@ -508,15 +508,9 @@ Pdef(\prc8).stop;
 SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.04, outbus|
 	var env				=	Env.asr(1, level, 5);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	//var saw1freqmod		=	LFNoise0.kr(LFNoise2.kr(1 ! 2).range(1, 2), 0.0005, 1);
-	//var saw0			=	LFSaw.ar(freq ! 2);
-	//var saw1			=	LFSaw.ar(freq * saw1freqmod);
-	//var sawmix			=	(saw0 + saw1);
 	var fm              =   SinOsc.ar(freq * SinOsc.ar(freq + [-0.1, 0.1], mul: 2, add: 1)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
 	var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.001, 1)).range(0.05, 0.1);
 	var shape			=	LeakDC.ar(fm.fold2(foldmod) * foldmod.reciprocal) * envgen;
-	//var foldmod         =   LFNoise2.kr(0.1 ! 2).range(0.05, 0.5);
-	//var sin             =   SinOsc.ar(freq, mul: envgen * 0.2);
 	var lpf             =   MoogFF.ar(shape, (freq * 1.5).clip(50, SampleRate.ir / 2.5), 0.01);
 	var rhpf			=	BHiPass4.ar(shape, (freq * 8).clip(50, SampleRate.ir / 2.5));
 	Out.ar(outbus, lpf + rhpf);
