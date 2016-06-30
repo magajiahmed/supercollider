@@ -187,7 +187,9 @@ Pdef(\pno3, Pbindf(Pdef(\pno1), \degree, 14, \dur, 23.5));
 
 Pdef(\pno4, Pbindf(Pdef(\pno1), \degree, 7, \dur, 23.75));
 
-Pdef(\pnopulse, Pbindf(Pdef(\pno1), \curve, -2, \dur, Pshuf([0.5, 0.75].stutter(13), inf), \fb2mul, 0.2, \octave, 4));
+Pdef(\pnoprepulse, Pbindf(Pdef(\pno1), \curve, -2, \dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf), \fb2mul, 0.2, \octave, 4));
+
+Pdef(\pnopulse, Pbindf(Pdef(\pnoprepulse), \dur, Pshuf([0.5, 0.75].stutter(13), inf)));
 );
 
 //
@@ -233,6 +235,12 @@ Pdef(\pno3).stop;
 Pdef(\pno4).play(t);
 Pdef(\pno4).isPlaying;
 Pdef(\pno4).stop;
+*/
+
+/*
+Pdef(\pnoprepulse).play(t);
+Pdef(\pnoprepulse).isPlaying;
+Pdef(\pnoprepulse).stop;
 */
 
 /*
@@ -293,11 +301,13 @@ Pdef(\pnobass1).isPlaying;
 Pdef(\pnobass1).stop;
 */
 
+~midiktrl.value(\pnoprepulse, 0);
+~midiktrl.value(\pnopulse, 16);
 ~midiktrl.value(\pno1, 32);
 ~midiktrl.value(\pno2, 48);
 ~midiktrl.value(\pno3, 64);
 ~midiktrl.value(\pno4, 80);
-~midiktrl.value(\pnopulse, 16);
+
 //
 
 ~midiktrl.value(\sin1, 112);
@@ -505,11 +515,11 @@ Pdef(\prc8).stop;
 // Synth
 
 (
-SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.04, outbus|
-	var env				=	Env.asr(1, level, 5);
+SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.03, outbus|
+	var env				=	Env.asr(1, level, 7, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var fm              =   SinOsc.ar(freq * SinOsc.ar(freq + [-0.1, 0.1], mul: 2, add: 1)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
-	var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.001, 1)).range(0.05, 0.1);
+	var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.002, 1)).range(0.05, 0.1);
 	var shape			=	LeakDC.ar(fm.fold2(foldmod) * foldmod.reciprocal) * envgen;
 	var lpf             =   MoogFF.ar(shape, (freq * 1.5).clip(50, SampleRate.ir / 2.5), 0.01);
 	var rhpf			=	BHiPass4.ar(shape, (freq * 8).clip(50, SampleRate.ir / 2.5));
@@ -538,6 +548,7 @@ Pdef(\pad2pat,
         \dur, 23,
 		\fb, 1.5,
         \legato, 0.75,
+		\level, 0.04,
         \octave, 5,
         \outbus, ~delaybus,
 		\scale, ~scale,
@@ -550,9 +561,9 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12], \octave, 4, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12], \octave, 3, \outbus, ~delaybus, \scale, ~scale));
 Pdef(\pad2pat3, Pmono(\pad2, \degree, 0, \octave, 3, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \level, 0.02, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
@@ -626,8 +637,8 @@ Pdef(\pad2pat3).stop;
 );
 
 (
-~scene2 = [\pno1, \pad2pat2];
-~scene2lights = [32, 51];
+~scene2 = [\pnoprepulse, \pno1, \pad2pat2];
+~scene2lights = [0, 32, 51];
 ~scenetoggle.value(\scene2, 105, ~scene2, starterlights: ~scene2lights);
 );
 
@@ -670,8 +681,8 @@ Pdef(\pad2pat3).stop;
 (
 ~scene9 = [\pno3, \pnopulse, \sin3, \pnobass1, \pad2pat3, \pad2hi];
 ~scene9lights = [64, 16, 114, 96, 67, 19];
-~scene9stoppers = [\prc3];
-~scene9stopperlights = [33];
+~scene9stoppers = [\pnoprepulse, \prc3];
+~scene9stopperlights = [0, 33];
 ~scenetoggle2.value(\scene9, 8, ~scene9, ~scene9stoppers, ~scene9lights, ~scene9stopperlights);
 );
 
