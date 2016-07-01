@@ -176,7 +176,7 @@ Pdef(\pno1,
 		\dur, 23,
 		\fb, 0.0,
 		\fb2, 2.5,
-		\fb2mul, 0.3,
+		\fb2mul, Pshuf(Array.interpolation(11, 0.0, 0.3), inf),
         \outbus, ~delaybus,
         \scale, ~scale,
 	));
@@ -187,7 +187,7 @@ Pdef(\pno3, Pbindf(Pdef(\pno1), \degree, 14, \dur, 23.5));
 
 Pdef(\pno4, Pbindf(Pdef(\pno1), \degree, 7, \dur, 23.75));
 
-Pdef(\pnoprepulse, Pbindf(Pdef(\pno1), \curve, -2, \dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf), \fb2mul, 0.2, \octave, 4));
+Pdef(\pnoprepulse, Pbindf(Pdef(\pno1), \curve, -2, \dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf), \fb2mul, Pshuf(Array.interpolation(11, 0, 0.2), inf), \octave, 4));
 
 Pdef(\pnopulse, Pbindf(Pdef(\pnoprepulse), \dur, Pshuf([0.5, 0.75].stutter(13), inf)));
 );
@@ -515,8 +515,8 @@ Pdef(\prc8).stop;
 // Synth
 
 (
-SynthDef(\pad2, { |dur = 1, freq = 400, gate = 1, level = 0.03, outbus|
-	var env				=	Env.asr(1, level, 7, 0);
+SynthDef(\pad2, { |attack = 0.3, dur = 1, freq = 400, gate = 1, level = 0.03, outbus, release = 7|
+	var env				=	Env.asr(attack, level, release, 0);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
 	var fm              =   SinOsc.ar(freq * SinOsc.ar(freq + [-0.1, 0.1], mul: 2, add: 1)).round(0.1).round(0.2).round(0.3).round(0.4).round(0.5) * envgen;
 	var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(0.2 ! 2, 0.002, 1)).range(0.05, 0.1);
@@ -561,9 +561,21 @@ Pdef(\pad2pat).isPlaying;
 Pdef(\pad2pat).stop;
 */
 
-Pdef(\pad2pat2, Pmono(\pad2, \degree, [7, 12], \octave, 3, \outbus, ~delaybus, \scale, ~scale));
+(
+Pdef(\pad2pat2,
+	Pmono(
+		\pad2,
+		\degree, [7, 12],
+		\dur, 11.5,
+		\legato, 1,
+		\octave, 3,
+		\outbus, ~delaybus,
+		\scale, ~scale,
+	));
+
 Pdef(\pad2pat3, Pmono(\pad2, \degree, 0, \octave, 3, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \level, 0.02, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2hi, Pmono(\pad2, \degree, [0].stutter(6), \level, 0.005, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+);
 
 /*
 Pdef(\pad2pat2).play(t, quant: 1);
