@@ -176,8 +176,10 @@ Pdef(\pno1,
 		\dur, 23,
 		\fb, 0.0,
 		\fb2, 2.5,
-		\fb2mul, Pshuf(Array.interpolation(11, 0.0, 0.3), inf),
+		\fb2mul, Pshuf(Array.interpolation(7, 0.0, 0.5), inf),
+		\hffreq, Pshuf(Array.interpolation(6, 6000, 12000), inf),
         \outbus, ~delaybus,
+		\rq2, Pshuf(Array.interpolation(5, 0.3, 0.5), inf),
         \scale, ~scale,
 	));
 
@@ -187,7 +189,13 @@ Pdef(\pno3, Pbindf(Pdef(\pno1), \degree, 14, \dur, 23.5));
 
 Pdef(\pno4, Pbindf(Pdef(\pno1), \degree, 7, \dur, 23.75));
 
-Pdef(\pnoprepulse, Pbindf(Pdef(\pno1), \curve, -2, \dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf), \fb2mul, Pshuf(Array.interpolation(11, 0, 0.2), inf), \octave, 4));
+Pdef(\pnoprepulse,
+	Pbindf(
+		Pdef(\pno1),
+		\curve, -2,
+		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf),
+		\octave, 4
+	));
 
 Pdef(\pnopulse, Pbindf(Pdef(\pnoprepulse), \dur, Pshuf([0.5, 0.75].stutter(13), inf)));
 );
@@ -530,9 +538,8 @@ SynthDef(\pad2, { |attack = 0.3, dur = 1, freq = 400, gate = 1, level = 0.03, ou
 // Pattern
 
 (
-//~padchords2 = ~scaledegrees.collect({ |i| [2, 7, 10, 12, i, i + 2, i + 7, i + 10, i + 12] });
-//~padchords2shuf = ~padchords2.scramble;
-~padchords2shuf = [6, 5, 7, 4, 8, 3, 9, 2, 10, 1, 11, 0].collect({ |c| [2, 7, 10, 12, c + 2, c + 7, c + 10, c + 12] });
+//~padchords2shuf = [6, 5, 7, 4, 8, 3, 9, 2, 10, 1, 11, 0].collect({ |c| [2, 7, 10, 12, c + 2, c + 7, c + 10, c + 12] });
+~padchords2shuf = [6, 5, 7, 4, 8, 3, 9, 2, 10, 1, 11, 0].collect({ |c| [-2, 0, 2, 7, c - 2, c + 0, c + 2, c + 7] });
 
 Pdef(\pad2pat,
 	Pbind(
@@ -574,7 +581,7 @@ Pdef(\pad2pat2,
 	));
 
 Pdef(\pad2pat3, Pmono(\pad2, \degree, 0, \octave, 3, \outbus, ~delaybus, \scale, ~scale));
-Pdef(\pad2hi, Pmono(\pad2, \degree, [0].stutter(6), \level, 0.005, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \level, 0.02, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 );
 
 /*
