@@ -163,7 +163,7 @@ SynthDef(\pno, { |balance = 0.25, curve = -4, dur = 1, fold = 1, freq = 440, fre
 	var envgen      =   EnvGen.kr(env, doneAction: 2);
 	var freqmod     =   StandardL.ar(2000, [k - 0.02, k + 0.02], mul: XLine.kr(freqmod_amp_start + 0.0000001, freqmod_amp_end + 0.0000001, freqmod_dur), add: 1);
 	var sin1        =   SinOsc.ar(freq * freqmod).fold2(fold) * fold.reciprocal * envgen * balance;
-	var sin2        =   SinOsc.ar(freq) * envgen * (1 - balance);
+	var sin2        =   SinOsc.ar(freq * LFNoise2.kr(0.5 ! 2, 0.001, 1)) * envgen * (1 - balance);
 	Out.ar(outbus, (sin1 + sin2).fold2(level));
 }).add;
 );
@@ -187,24 +187,24 @@ Pdef(\pno1,
         \instrument, \pno,
 		\balance, 0.2,
         \curve, -32,
-        \degree, 12,
+        \degree, [12].stutter(4),
 		\dur, 23,
 		\fold, 0.1,
 		\freqmod_amp_start, Pshuf([1, 2, 3, 4, 5, 6, 7], inf),
 		\freqmod_amp_end, Pshuf([0.125, 0.25], inf),
 		\freqmod_dur, Pshuf([0.005, 0.01, 0.02, 0.04], inf),
 		\k, Pshuf(Array.interpolation(5, 0.9, 4.0), inf),
-		\level, 0.1,
+		//\level, 0.1,
 		\octave, 5,
         \outbus, ~delaybus,
         \scale, ~scale,
 	));
 
-Pdef(\pno2, Pbindf(Pdef(\pno1), \degree, 10, \dur, 23.25));
+Pdef(\pno2, Pbindf(Pdef(\pno1), \degree, [10].stutter(4), \dur, 23.25));
 
-Pdef(\pno3, Pbindf(Pdef(\pno1), \degree, 14, \dur, 23.5));
+Pdef(\pno3, Pbindf(Pdef(\pno1), \degree, [14].stutter(4), \dur, 23.5));
 
-Pdef(\pno4, Pbindf(Pdef(\pno1), \degree, 7, \dur, 23.75));
+Pdef(\pno4, Pbindf(Pdef(\pno1), \degree, [7].stutter(4), \dur, 23.75));
 );
 
 (
@@ -213,13 +213,14 @@ Pdef(\pnoprepulse,
 		Pdef(\pno1),
 		\balance, 0.5,
 		\curve, -2,
-		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(13), inf),
-		\fold, 0.5,
-		\level, 0.02,
+		\dur, Pshuf([0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+		\fold, 0.9,
+		\freqmod_amp_end, 0.001,
+		\level, 0.01,
 		\octave, 4
 	));
 
-Pdef(\pnopulse, Pbindf(Pdef(\pnoprepulse), \dur, Pshuf([0.5, 0.75].stutter(13), inf)));
+Pdef(\pnopulse, Pbindf(Pdef(\pnoprepulse), \dur, Pshuf([0.5, 0.75, 1, 1.5].stutter(13), inf)));
 );
 
 //
@@ -309,21 +310,13 @@ Pdef(\sin4).stop;
 Pdef(\pnobass1,
     Pbind(
         \instrument, \pno,
-		\balance, Pshuf([0, 0.0125, 0.025, 0.05, 0.1], inf),
+		\balance, Pshuf([0, 0.125, 0.25, 0.5], inf),
         \curve, -8,
-        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(2), inf),
-        //\fb, 0.5,
-        //\fb2, Pshuf((0..2), inf),
-        //\fb2mul, 0.05,
-        //\hffreq, Pshuf((8..12) * 1000, inf),
-        //\level, 0.15,
-        //\lffreq, 5000,
         \degree, 0,
+        \dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12].stutter(2), inf),
+		\fold, Pshuf([0.1, 0.2, 0.3, 0.4, 0.5], inf),
         \octave, 3,
-        //\octavelowermul, 0.5,
         \outbus, ~delaybus,
-		//\rq1, 1,
-        //\rq2, 0.2,
         \scale, ~scale,
 		\freqmod_amp_start, Pshuf([1, 2, 3, 4, 5, 6, 7], inf),
 		\freqmod_amp_end, Pshuf([0.125, 0.25], inf),
@@ -347,10 +340,12 @@ Pdef(\pnobass1).stop;
 
 //
 
+/*
 ~midiktrl.value(\sin1, 112);
 ~midiktrl.value(\sin2, 113);
 ~midiktrl.value(\sin3, 114);
 ~midiktrl.value(\sin4, 115);
+*/
 
 //
 
@@ -475,6 +470,21 @@ Pdef(\prc7,
 ));
 
 Pdef(\prc8, Ppar([Pdef(\prc6), Pdef(\prc7)], inf));
+
+//
+
+Pdef(\prcult,
+	Pbind(
+		\instrument, \prc,
+		\a, Pshuf([1.5, 2.0, 2.5].stutter(2), inf),
+		\curve, -4,
+        \dur, Pshuf([0.125, 0.125, 0.25, Pseq([0.125], 4), 0.5, 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
+		//\dur, Pshuf([0.5, 0.75, 1, 1.5].stutter(3), inf),
+		\level, ~prcpatlvl,
+		\octave, 9,
+		\outbus, ~prcfxbus,
+		\releaseTime, Pkey(\dur)
+	));
 );
 
 /*
@@ -537,12 +547,19 @@ Pdef(\prc8).isPlaying;
 Pdef(\prc8).stop;
 */
 
+/*
+Pdef(\prcult).play(t, quant: 1);
+Pdef(\prcult).isPlaying;
+Pdef(\prcult).stop;
+*/
+
 ~midiktrl.value(\prc3, 33);
 ~midiktrl.value(\prc2, 49);
 ~midiktrl.value(\prc1, 65);
 ~midiktrl.value(\prc4, 34);
 ~midiktrl.value(\prc5, 50);
 ~midiktrl.value(\prc8, 66);
+~midiktrl.value(\prcult, 82);
 
 ////////////////////////////////////////////////////////////////
 // PAD2
@@ -607,7 +624,7 @@ Pdef(\pad2pat2,
 		\scale, ~scale,
 	));
 
-Pdef(\pad2pat3, Pmono(\pad2, \degree, 0, \octave, 3, \outbus, ~delaybus, \scale, ~scale));
+Pdef(\pad2pat3, Pmono(\pad2, \degree, [0].stutter(2), \octave, 3, \outbus, ~delaybus, \scale, ~scale));
 Pdef(\pad2hi, Pmono(\pad2, \degree, 0, \level, 0.02, \octave, 8, \outbus, ~delaybus, \scale, ~scale));
 );
 
