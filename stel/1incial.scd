@@ -4,6 +4,9 @@
 // clear all patterns
 Pdef.removeAll;
 
+// clear environment
+currentEnvironment.clear;
+
 // Clock and buffer
 (
 t = TempoClock(84/60);
@@ -23,6 +26,10 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |a| a.name.contains("out0") }
 ~midiout =  MIDIOut(0);
 ~midiout.connect(~lpm.uid);
 );
+
+// Turn off any lights left on previously.
+(0..127).do({ |i| ~midiout.noteOn(0, i, 0) });
+(0..127).do({ |i| ~midiout.control(0, i, 0) });
 
 // MIDI Control
 (
@@ -92,7 +99,7 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 );
 
 (
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.75, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay * 0.5, \inBus, ~prcfxbus, \level, 0.85, \outbus, 0));
 );
 
 /*
@@ -281,7 +288,7 @@ Pdef(\single2).stop;
 // Synth
 
 (
-SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.4, outbus, rt = 0.1 |
+SynthDef(\snap, { | curve = -512, dur = 1, freq = 400, im = 1, level = 0.5, outbus, rt = 0.1 |
 	var env				=	Env.new([0, level, level / 40, 0], [0.005, 0.005, dur], curve: 'cubed');
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var fbs				=	FBSineC.ar(freq: freq, im: [im, im + 1], mul: envgen);
@@ -319,7 +326,7 @@ Pdef(\snappat).stop;
 // XAOS
 
 (
-SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.4, outbus, resonz_freq = 4000, rhpf_freq = 8000|
+SynthDef(\xaos, { |chaos = 1.5, curve = -16, dur = 1, level = 0.5, outbus, resonz_freq = 4000, rhpf_freq = 8000|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xaos            =   Crackle.ar([chaos, chaos - 0.01]).round(0.5) * envgen * 2;
@@ -357,7 +364,7 @@ Pdef(\xaos).stop;
 // AUXKLK
 
 (
-SynthDef(\auxklk, { |freq = 1000, level = 0.4, numharm = 200, outbus, pan = 0|
+SynthDef(\auxklk, { |freq = 1000, level = 0.5, numharm = 200, outbus, pan = 0|
 	var env             =   Env.perc(0.003, 0.1, level, -64);
 	var envgen          =   EnvGen.kr(env, doneAction: 2);
 	var klk             =   Blip.ar(freq, numharm, envgen);
@@ -390,7 +397,7 @@ Pdef(\auxklk).stop;
 // SINPRC
 
 (
-SynthDef(\sinprc, { |curve = -16, fb = 2.5, ffreq = 4000, freq = 440, gfreq = 22050, level = 0.4, outbus, xi = 1.2, yi = 2.1|
+SynthDef(\sinprc, { |curve = -16, fb = 2.5, ffreq = 4000, freq = 440, gfreq = 22050, level = 0.5, outbus, xi = 1.2, yi = 2.1|
     var env             =   Env.perc(0.01, 0.3, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var gbman           =   GbmanL.ar([gfreq, gfreq - 1], xi, yi, 0.25, 1);
@@ -440,7 +447,7 @@ SynthDef(\cnprc, { |bal = 0, curve = -16, freq = 500, level = 0.1, outbus, relea
 );
 
 (
-~cnprclvl = 0.4;
+~cnprclvl = 0.5;
 ~cnprcecholvl = ~cnprclvl / 4;
 Pdef(\cnprc1,
     Pbind(
@@ -491,7 +498,7 @@ Pdef(\cnprc3).stop;
 // LORI
 
 (
-SynthDef(\lori, { |balance = 0, curve = -16, dur = 1, freq = 440, length = 1, level = 0.4, lfreq = 22050, lorimul = 1, outbus, r = 28, s = 10, start = 1, end = 1|
+SynthDef(\lori, { |balance = 0, curve = -16, dur = 1, freq = 440, length = 1, level = 0.5, lfreq = 22050, lorimul = 1, outbus, r = 28, s = 10, start = 1, end = 1|
     var env             =   Env.perc(0.005, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var lori            =   LorenzL.ar(lfreq * XLine.ar(start, end, length), [s, s - 0.05], [r, r - 0.05], mul: lorimul, add: 1);
@@ -531,7 +538,7 @@ Pdef(\lori).stop;
 // PAD
 
 (
-SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.03, outbus|
+SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.05, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin1            =   SinOscFB.ar(freq!2 * XLine.ar(freqmod_start, 1, freqmod_length), fb, envgen);
@@ -620,7 +627,7 @@ Pdef(\paddrones).stop;
 // LARRY
 
 (
-SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.015, outbus, s = 10|
+SynthDef(\larry, { |curve = -4, dur = 1, fb = 0, freq = 440, gate = 1, level = 0.02, outbus, s = 10|
     var env             =   Env.asr(0.01, level, 0.01, curve);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var frqmod          =   Lorenz2DN.ar(15, 15000, s: [s, s - 0.001],  mul: 0.9, add: 1);
@@ -701,7 +708,7 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.03, outbus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
@@ -718,7 +725,7 @@ Pdef(\pno1,
         \degree, Pshuf([0, [-2, 0], [0, 1, 7]], inf),
         \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25], inf),
         \fb, 0,
-        \level, Prand([0.2, 1] * 0.08, inf),
+        \level, Prand([0.2, 1] * 0.1, inf),
         \octave, 6,
         \outbus, ~delaybus,
         \scale, ~scale

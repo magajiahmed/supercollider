@@ -1,5 +1,6 @@
 // init
 Pdef.removeAll;
+currentEnvironment.clear;
 
 (
 ~tempo = TempoClock(120/60);
@@ -20,6 +21,10 @@ if(~lpm.isNil) { ~lpm = MIDIClient.sources.detect{ |s| s.name.contains("out0") }
 ~midiout = MIDIOut(0);
 ~midiout.connect(~lpm.uid);
 );
+
+// Turn off any lights left on previously.
+(0..127).do({ |i| ~midiout.noteOn(0, i, 0) });
+(0..127).do({ |i| ~midiout.control(0, i, 0) });
 
 (
 ~midiktrl = { |pdef, chan|

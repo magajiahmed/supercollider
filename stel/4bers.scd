@@ -42,6 +42,10 @@ MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
 ~midiout.connect(~lpm.uid);
 );
 
+// Turn off any lights left on previously.
+(0..127).do({ |i| ~midiout.noteOn(0, i, 0) });
+(0..127).do({ |i| ~midiout.control(0, i, 0) });
+
 (
 ~midiktrl = { |pdef, note|
     MIDIdef.noteOn(pdef, {
@@ -97,14 +101,14 @@ SynthDef(\limiter, { |dur = 0.1, inBus, level = 0.3, outbus|
 }).add;
 );
 
-Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.8, \outbus, 0));
-Pdef(\padlimiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~padbus, \level, 0.8, \outbus, 0));
+Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.75, \outbus, 0));
+Pdef(\padlimiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~padbus, \level, 0.75, \outbus, 0));
 
 ////////////////////////////////////////////////////////
 // VERB
 
 (
-SynthDef(\verb, { |dur = 1, filter_mode = 0, gate = 1, hipass_freq_min = 4000, hipass_freq_max = 8000, inBus, level = 0.5, outbus, rq = 1, size = 1, t60 = 1, trig_freq_min = 1, trig_freq_max = 100|
+SynthDef(\verb, { |dur = 1, filter_mode = 0, gate = 1, hipass_freq_min = 4000, hipass_freq_max = 8000, inBus, level = 0.75, outbus, rq = 1, size = 1, t60 = 1, trig_freq_min = 1, trig_freq_max = 100|
     var env             =   Env.perc(0.003, dur, level, 0);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
 	var in		       	=	In.ar(inBus, 2);
@@ -159,7 +163,7 @@ SynthDef(\pno, { |curve = -4, dur = 1, fb = 0, fb2 = 0, fb2mul = 1, freq = 440, 
 */
 
 (
-SynthDef(\pno, { |balance = 0.25, curve = -4, dur = 1, fold = 1, freq = 440, freqmod_amp_start = 1, freqmod_amp_end = 0, freqmod_dur = 0.2, k = 1, level = 0.1, outbus|
+SynthDef(\pno, { |balance = 0.25, curve = -4, dur = 1, fold = 1, freq = 440, freqmod_amp_start = 1, freqmod_amp_end = 0, freqmod_dur = 0.2, k = 1, level = 0.2, outbus|
 	var env         =   Env.perc(0.005, dur, level, curve);
 	var envgen      =   EnvGen.kr(env, doneAction: 2);
 	var freqmod     =   StandardL.ar(2000, [k - 0.02, k + 0.02], mul: XLine.kr(freqmod_amp_start + 0.0000001, freqmod_amp_end + 0.0000001, freqmod_dur), add: 1);
@@ -405,7 +409,7 @@ SynthDef(\prc, { | a = 1, curve = -8, dur = 1, ffreq = 1000, freq = 1000, level 
 (
 ~prcpatfrq1 = 90;
 ~prcpatfrq2 = ~prcpatfrq1 * 32;
-~prcpatlvl = 0.8;
+~prcpatlvl = 0.5;
 ~prcpatecholvl = ~prcpatlvl / 5;
 Pdef(\prc1,
 	Pbind(
@@ -587,7 +591,7 @@ Pdef(\prc8).stop;
 // PRC2
 
 (
-SynthDef(\sinprc, { |curve = -4, ffreq = 1000, freq = 1000, level = 0.3, nfreq = 1000, nmul_start = 0.5, nmul_end = 0.05, outbus, releaseTime = 1, rq = 1|
+SynthDef(\sinprc, { |curve = -4, ffreq = 1000, freq = 1000, level = 0.5, nfreq = 1000, nmul_start = 0.5, nmul_end = 0.05, outbus, releaseTime = 1, rq = 1|
 	var env             =    Env.perc(0.005, releaseTime, level, curve);
 	var envgen          =    EnvGen.kr(env, doneAction: 2);
 	var noiz            =    LFClipNoise.ar(nfreq ! 2, XLine.kr(nmul_start, nmul_end, releaseTime * 0.5), 1);
@@ -705,7 +709,7 @@ Pdef(\pad2pat3,
 		\scale, ~scale
 	));
 
-Pdef(\pad2hi, Pmono(\pad2, \degree, [2, 7, 10, 12], \fb, 2.0, \level, 0.008, \octave, 7, \outbus, ~padbus, \release, 7, \scale, ~scale));
+Pdef(\pad2hi, Pmono(\pad2, \degree, [2, 7, 10, 12], \fb, 2.0, \level, 0.01, \octave, 7, \outbus, ~padbus, \release, 7, \scale, ~scale));
 );
 
 /*
