@@ -538,7 +538,7 @@ Pdef(\lori).stop;
 // PAD
 
 (
-SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.05, outbus|
+SynthDef(\pad, { |a = 1.1, curve = -4, dur = 1, fb = 0, freq = 400, freqmod_length = 0.01, freqmod_start = 1, gate = 1, level = 0.03, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin1            =   SinOscFB.ar(freq!2 * XLine.ar(freqmod_start, 1, freqmod_length), fb, envgen);
@@ -702,6 +702,36 @@ Pdef(\larrys).stop;
 */
 
 ~midiktrl.value(\larrys, 68);
+
+////////////////////////////////////////////////////////
+// SINPNO
+
+(
+SynthDef(\sinpno, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.2, outbus|
+	var env             =   Env.perc(0.01, dur, level, curve);
+	var envgen          =   EnvGen.kr(env, doneAction: 2);
+	var sin             =   SinOscFB.ar([freq - 0.1, freq + 0.1], fb * LFBrownNoise0.kr(freq ! 2).range(0, 1), envgen);
+	Out.ar(outbus, sin);
+}).add;
+);
+
+(
+Pdef(\sinpno,
+	Pbind(
+		\instrument, \sinpno,
+		\degree, Pseq([-2, 0, 7], inf),
+		\dur, Pseq([0.25, 21, 0.25, 23, 0.25, 25, 0.25, 27, 0.25, 29], inf),
+		\fb, Pseq([0.25, 0.5], inf),
+		\octave, 6,
+		\outbus, ~delaybus,
+		\scale, ~scale
+	));
+);
+
+/*
+Pdef(\sinpno).play(t);
+Pdef(\sinpno).stop;
+*/
 
 ////////////////////////////////////////////////////////
 // PNO
