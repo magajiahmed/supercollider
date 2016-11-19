@@ -125,7 +125,7 @@ Pdef(\limiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~prcbus, \level, 0
 Pdef(\pulselimiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~pulsebus, \level, 0.75, \outbus, 0));
 
 ////////////////////////////////////////////////////////////////
-// SIN
+// SIN (ACTUALLY MORE OF A SAW WITH 'WIDTH MODULATION' AND 'FOLDING MODULATION')
 
 (
 SynthDef(\sin, { |dur = 1, fold_min = 0.025, fold_max = 0.1, freq = 440, gate = 1, level = 0.05, outbus, width = 0.5|
@@ -153,10 +153,8 @@ Pdef(\sin1,
 ));
 
 Pdef(\sin2,
-    //Pmono(
-	//\sin,
-	Pbind(
-		\instrument, \sin,
+    Pmono(
+	\sin,
         //\degree, Pseq([[7, 10, 12], [7, 12, 12]].collect({ |c| c.stutter(2) }), inf),
 		\degree, Pseq([[0, 7, 10, 12], [0, 7, 12, 12], Rest], inf),
         \dur, Pshuf([11, 13, 15, 17, 19], inf),
@@ -264,7 +262,7 @@ Pdef(\basspat1).stop;
 Pdef(\bass2,
     Pbind(
         \instrument, \bass,
-        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 9),
+        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 8),
         \detune, Pwhite(0, 0.01, inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), Pseq([0.375], 2), 0.75, 1, 1.5, 2, 3, 4, 6, 7], inf),
         \fb, Pwhite(0.0, 2.5, inf),
@@ -333,9 +331,8 @@ Pdef(\auxklk,
 		\scale, ~scale
 	));
 );
-
 /*
-Pdef(\auxklk).play(t);
+Pdef(\auxklk).play(~tempo);
 Pdef(\auxklk).isPlaying;
 Pdef(\auxklk).stop;
 */
@@ -480,7 +477,6 @@ Pdef(\hat2).stop;
 */
 
 (
-//~pingpatchord = [1, 4, 6, 7, 10, 12];
 ~pingpatchord = [0];
 
 Pdef(\pingpat,
@@ -489,13 +485,12 @@ Pdef(\pingpat,
         \curve, -2,
         \dur, Pshuf([1.5, 1.75, 2.25, 2.5, 3], inf),
         \degree, Pseq([
-            Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
-            Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
-            Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord
+            Rest, Rest, Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
+            Rest, Rest, Rest, Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord,
+            Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, ~pingpatchord, ~pingpatchord, ~pingpatchord
         ], inf),
         \fb, 5,
         \level, 0.05,
-        //\octave, [6, 7, 8],
         \octave, 7,
         \outbus, ~prcbus,
         \root, ~root,
@@ -593,6 +588,7 @@ Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat3), Pdef(\prcpat3)]));
 
 //
 
+(
 //~prc3durs = [0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), Pseq([0.5], 2), 1, 1.5, 2, 3, 4, 6];
 Pdef(\prc3,
     Pbind(
@@ -602,18 +598,18 @@ Pdef(\prc3,
 		\curve, -4,
         \degree, Pseq([Pseq([0], 31), Pseq([Rest], 11)], inf),
         \delaytime, Pshuf([0.01, 0.02, 0.04].stutter(3), inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.125], 8), Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1, 1, 1.5, 2, 3, 4, 6], inf),
         \level, ~prclvl,
-        \octave, Pshuf([4, 9, 10, 11], inf),
+        \octave, Pshuf([4, 8, 9, 11], inf),
         \outbus, ~prcbus,
         \releaseTime, Pshuf([0.001, 0.01, 0.1], inf),
 		\tailmul, Pshuf([0.001, 0.01, 0.1], inf)
-));
+	));
+);
 
 Pdef(\prc3a, Pbindf(Pdef(\prc3), \level, ~prcecholvl));
 
 Pdef(\prcpar1b, Ppar([Pdef(\prc3), Pdef(\prc3a)]));
-);
 
 /*
 Pdef(\prcpat1).play(~tempo);
@@ -684,8 +680,34 @@ Pdef(\prcpar).isPlaying;
 Pdef(\prcpar).stop;
 */
 
+(
+Pdef(\prc4,
+	Pbind(
+		\instrument, \prc,
+		\a, Pshuf([1.09, 1.095, 1.1, 1.15, 1.11], inf),
+		\curve, -4,
+		//\dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 0.75, 0.75, 1, 1, 1, 1, 1, 1.5, 2, 3], inf),
+		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5].stutter(3), inf),
+		\foldfactor, 8,
+		\level, ~prclvl * 0.5,
+		\octave, Pshuf([4, 4, 10], inf),
+		\outbus, ~prcbus,
+		\releaseTime, 0.2,
+		\root, ~root,
+		\scale, ~scale,
+		\tailmul, Pseq([Pseq([0], 31), 0.2], inf)
+	));
+);
+
+/*
+Pdef(\prc4).play(~tempo);
+Pdef(\prc4).isPlaying;
+Pdef(\prc4).stop;
+*/
+
 ~midiktrl.value(\prcpar, 50);
 ~midiktrl.value(\prcpar1b, 82);
+~midiktrl.value(\prc4, 98);
 
 ////////////////////////////////////////////////////////////////
 
@@ -787,6 +809,7 @@ Pdef(\banjo2).stop;
 ~midiktrl.value(\banjo2, 36);
 
 ////////////////////////////////////////////////////////////////
+// PNO
 
 (
 SynthDef(\pno, { |a = 1, b = 3, curve = -16, dur = 1, fb = 0, freq = 440, latfreq = 10000, level = 0.5, outbus, pan = 0|
@@ -1061,8 +1084,8 @@ Pdef(\stringchords4).stop;
 );
 
 (
-~scene6 = [\sindrone, \sin, \hat2, \bass2, \prcpar1b];
-~scene6lights = [1, 17, 33, 65, 82];
+~scene6 = [\sindrone, \sin, \hat2, \bass2, \prcpar1b, \prc4];
+~scene6lights = [1, 17, 33, 65, 82, 98];
 ~scene6stoppers = [\auxklk, \pulsepat1a, \pulsepat2a, \pulsepat3a, \basspat1, \hatpar, \prcpar];
 ~scene6stopperlights = [0, 32, 48, 64, 49, 34, 50];
 ~scenetoggle.value(\scene6, 109, ~scene6, ~scene6stoppers, ~scene6lights, ~scene6stopperlights);
@@ -1071,8 +1094,8 @@ Pdef(\stringchords4).stop;
 (
 ~scene7 = [\basspat3, \pnopat, \pingpat, \banjo2];
 ~scene7lights = [81, 35, 67, 36];
-~scene7stoppers = [\auxklk, \sin, \sindrone, \pulsepat1a, \hat2, \bass2, \hatpar, \prcpar1b, \banjopar];
-~scene7stopperlights = [0, 17, 1, 32, 33, 65, 34, 82, 66];
+~scene7stoppers = [\auxklk, \sin, \sindrone, \pulsepat1a, \hat2, \bass2, \hatpar, \prcpar1b, \prc4, \banjopar];
+~scene7stopperlights = [0, 17, 1, 32, 33, 65, 34, 82, 98, 66];
 ~scenetoggle.value(\scene7, 110, ~scene7, ~scene7stoppers, ~scene7lights, ~scene7stopperlights);
 );
 
