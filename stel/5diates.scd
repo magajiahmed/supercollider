@@ -538,17 +538,13 @@ SynthDef(\prc, {
 Pdef(\prcpat1,
 	Pbind(
 		\instrument, \prc,
-        //\a, Pshuf([1.2, 1.25], inf),
 		\a, Pshuf([1.1, 1.2, 1.25], inf),
         \curve, -16,
-        //\dur, Pshuf(Array.fill(13, { |d| (d + 1) * 0.25 }), inf),
-        //\dur, Pshuf([Pseq([0.25, 0.75]), Pseq([0.5], 2), Pseq([0.75, 0.25]), 3].stutter(3), inf),
-		//\dur, Pxrand([Pseq([0.125], 2), 0.25, 0.5, Pseq([0.25], 3), 1, 2, 4], inf),
 		\dur, Pseq([Pseq([0.75], 11), Pseq([1], 11)], inf),
         \foldfactor, Pshuf([Pseq([1000], 13), Pseq([1000000], 13)], inf),
         \level, ~prclvl,
         \note, Pseq([
-			Rest, 0, Rest, Rest, Rest, 
+			Rest, 0, Rest, Rest, Rest,
 			Rest, 0, Rest, Rest, Rest, Rest,
 			Rest, 0, Rest, Rest, Rest, Rest, Rest
 		], inf),
@@ -563,9 +559,11 @@ Pdef(\prcpat1,
         \rez_freq, Pxrand([500, 1500, 4500, 13500], inf),
 		\tailmul, 0
 ));
+);
 
 //Pdef(\prcpat2, Pbindf(Pdef(\prcpat1), \a, Pwhite(0.78, 0.82, inf)));
 
+(
 Pdef(\prcpat3,
 	Pbind(
 		\instrument, \prc,
@@ -585,6 +583,7 @@ Pdef(\prcpat3,
 //Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat2)]));
 
 Pdef(\prcpar1, Ppar([Pdef(\prcpat1), Pdef(\prcpat3), Pdef(\prcpat3)]));
+);
 
 //
 
@@ -653,7 +652,7 @@ Pdef(\kikpat,
 	Pbind(
 		\instrument, \kik,
 		\a, Pwhite(1.0, 2.0, inf).round(0.01),
-        \dur, Pshuf(Array.fill(13, { |d| (d + 1) * 0.25 }) ++ [Pseq([7, 1, 1] /3)], inf),
+        \dur, Pshuf(Array.fill(13, { |d| (d + 1) * 0.25 }) ++ [Pseq([7, 1, 1] / 3)], inf),
         \ffreq, Pshuf([1000, 2000, 4000], inf),
 		\frq, 0.1,
         \degree, [0, 7],
