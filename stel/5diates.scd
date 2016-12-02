@@ -33,6 +33,7 @@ MIDIdef.noteOn(\midinoteonpostln, { |...args| args.postln });
 (0..127).do({ |i| ~midiout.noteOn(0, i, 0) });
 (0..127).do({ |i| ~midiout.control(0, i, 0) });
 
+// generalized function to control patterns with midi
 (
 ~midiktrl = { |pdef, note|
     MIDIdef.noteOn(pdef, {
@@ -142,8 +143,7 @@ SynthDef(\sin, { |dur = 1, fold_min = 0.025, fold_max = 0.1, freq = 440, gate = 
 Pdef(\sin1,
     Pmono(
         \sin,
-        \degree, Pshuf([[6, 12], [7, 12], [10, 12], [12, 19], [14, 19]].collect({ |c| [c].stutter(4).flatten }), inf),
-        //\dur, Pshuf([11, 13, 15, 17, 19] + 0.25, inf),
+        \degree, Pshuf([[6, 12], [7, 12], [10, 12], [12, 19], [14, 19]].collect({ |c| [c].stutter(3).flatten }), inf),
         \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2),  0.5, Pseq([0.25], 3), 0.75, Pseq([0.125], 8), Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
         \octave, 5,
         \outbus, ~delaybus,
@@ -155,11 +155,8 @@ Pdef(\sin1,
 Pdef(\sin2,
     Pmono(
 	\sin,
-        //\degree, Pseq([[7, 10, 12], [7, 12, 12]].collect({ |c| c.stutter(2) }), inf),
-		\degree, Pseq([[0, 7, 10, 12], [0, 7, 12, 12], Rest], inf),
+        \degree, Pseq([[0, 7, 10, 12], [0, 7, 12, 12], [0, 0, 0, 0]], inf),
         \dur, Pshuf([11, 13, 15, 17, 19], inf),
-        \legato, 1,
-        //\octave, Pseq([4, 6], inf),
 		\octave, 4,
         \outbus, ~delaybus,
         \root, ~root,
@@ -170,7 +167,6 @@ Pdef(\sin2,
 Pdef(\sindrone,
     Pmono(
         \sin,
-        //\degree, Pseq([[-2, 0, 7], [7, 10, 12]].collect({ |d| [d].stutter(3).flatten }), inf),
 		\degree, [7, 12].stutter(3),
         \dur, Pshuf([21, 23, 25, 27, 29] + 0.25, inf),
         \octave, [3, 4, 5, 6, 7],
@@ -262,16 +258,15 @@ Pdef(\basspat1).stop;
 Pdef(\bass2,
     Pbind(
         \instrument, \bass,
-        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 8),
+        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 7),
         \detune, Pwhite(0, 0.01, inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), Pseq([0.375], 2), 0.75, 1, 1.5, 2, 3, 4, 6, 7], inf),
-        \fb, Pwhite(0.0, 2.5, inf),
+        \fb, Pshuf(Array.interpolation(6, 0.0, 2.5), inf),
         \freqmod_mul, Pshuf([1, 2, 4, 8, 16], inf),
 		\freqmod_mul_start, 1,
 		\freqmod_mul_end, 0.1,
 		\freqmod_mul_dur, Pkey(\dur) * 0.25,
-		\mul, 0.6,
-        \octave, 3,
+        \octave, 3 ! 2,
         \outbus, ~delaybus,
         \round, Pwhite(0, 0.4, inf)
 ));
@@ -460,7 +455,8 @@ Pdef(\hat2,
         \curve, Pwrand([-64, 0], [16, 1].normalizeSum, inf),
         \degree, Pseq([Pseq([[0, 2, 7, 10, 12]], 31), Pseq([Rest], 31)], inf),
         //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75].stutter(3), inf),
-		\dur, Prand([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), Pseq([0.25], 3)], inf),
+		//\dur, Prand([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), Pseq([0.25], 3)], inf),
+        \dur, 0.5,
         //\level, Pshuf([0.2, 1].stutter(11) * 0.1, inf),
         \fb, 0,
         \octave, (7..10),
@@ -597,7 +593,7 @@ Pdef(\prc3,
 		\curve, -4,
         \degree, Pseq([Pseq([0], 31), Pseq([Rest], 11)], inf),
         \delaytime, Pshuf([0.01, 0.02, 0.04].stutter(3), inf),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1, 1, 1.5, 2, 3, 4, 6], inf),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1, 1, 1, 1.5, 2, 3, 4, 6], inf),
         \level, ~prclvl,
         \octave, Pshuf([4, 8, 9, 11], inf),
         \outbus, ~prcbus,
@@ -606,9 +602,10 @@ Pdef(\prc3,
 	));
 );
 
-Pdef(\prc3a, Pbindf(Pdef(\prc3), \level, ~prcecholvl));
+Pdef(\prc3a, Pbindf(Pdef(\prc3), \degree, 0, \dur, Prand([0.25, 0.5], inf), \level, ~prcecholvl));
 
 Pdef(\prcpar1b, Ppar([Pdef(\prc3), Pdef(\prc3a)]));
+//Pdef(\prcpar1b, Ppar([Pdef(\prc3)]));
 
 /*
 Pdef(\prcpat1).play(~tempo);

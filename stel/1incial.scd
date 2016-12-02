@@ -752,8 +752,8 @@ SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
-        \degree, Pshuf([0, [-2, 0], [0, 1, 7]], inf),
-        \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25], inf),
+        \degree, Pseq([Pshuf([0, [-2, 0], [0, 1, 7]], 3), Pseq([Rest], 6)], inf),
+        \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25, 23], inf),
         \fb, 0,
         \level, Prand([0.2, 1] * 0.1, inf),
         \octave, 6,
@@ -800,17 +800,15 @@ Pdef(\pnochord).stop;
 // SynthDef
 
 (
-SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb = 0, freq = 440, level = 0.15, outbus|
+SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, freq = 440, freqmodmul = 0, level = 0.2, modfrqratio = 1, modmul = 0, modmulstart = 0, modmulend = 0, outbus, round = 0.0001|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
-    //var fbmod           =   LFNoise2.kr(3!2, XLine.kr(1, 0.01, dur), 1) * LFNoise2.kr(11!2, XLine.kr(1, 0.01, dur), 1);
-    var fbmod           =   1;
-    var sinfb1freqmod   =   SinOscFB.ar(freq * carrier_ratio * XLine.kr(0.5, 1, 0.1), 0, carrier_amp * XLine.kr(1, 0.1, 0.1), 1);
-    var sinfb1          =   SinOscFB.ar(freq!2 * sinfb1freqmod, fb * XLine.kr(1, 0.1, 0.2)) * envgen;
-    var sinfb2          =   SinOscFB.ar(freq, fb * fbmod) * envgen;
-    //var tri             =   LFTri.ar(freq!2, mul: envgen);
-    var sinfb3          =   SinOscFB.ar(freq ! 2, 0.2, envgen);
-    Out.ar(outbus, sinfb1 + sinfb2 + sinfb3);
+    var freqmodfreqmod  =   LFNoise2.kr(1 ! 2).range(0.1, 100);
+    var freqmod         =   LFClipNoise.kr(freqmodfreqmod ! 2, freqmodmul, 1);
+    var modulator       =   FSinOsc.ar(freq * modfrqratio * freqmod, mul: modmul * XLine.kr(modmulstart + 0.00001, modmulend + 0.00001, dur), add: 1);
+    var carrier         =   SinOsc.ar(freq * modulator).fold2(Line.kr(level, 1, dur)) * envgen;
+    var sin             =   FSinOsc.ar(freq ! 2).round(round) * envgen;
+    Out.ar(outbus, carrier + sin);
 }).add;
 );
 
@@ -818,31 +816,37 @@ SynthDef(\abass, { |carrier_amp = 1, carrier_ratio = 1, curve = -4, dur = 1, fb 
 
 (
 ~bassnotes = (-5..3);
-~bassdurations = [0.25, 0.5, 0.75, 1, 1.5, 8, 12];
+~bassdurs = [0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12];
 
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \carrier_amp, Pshuf((1..23), inf),
-        \carrier_ratio, Pxrand([1, 2, 4], inf),
         \degree, Pseq([Pshuf(~bassnotes, 4), Pseq([Rest], ~bassnotes.size)], inf),
-        \dur, Pshuf(~bassdurations.stutter(3), inf),
-        \fb, Pshuf([0.25, 0.5, 0.75].stutter(5), inf),
+        \dur, Pshuf(~bassdurs, inf),
+        \freqmodmul, Pshuf(Array.interpolation(9, 0.0, 0.1), inf),
+        \modfrqratio, Pshuf(Array.interpolation(7, 1, 16), inf),
+        \modmul, Pshuf(Array.interpolation(5, 0.0, 8.0), inf),
+        \modmulstart, 1,
+        \modmulend, 0,
         \octave, 3,
         \outbus, [~delaybus, ~bassfxbus],
+        \round, Pshuf([0, 0.0125, 0.025, 0.05, 0.1], inf),
 		\scale, ~scale,
 ));
 
 Pdef(\bass2,
     Pbind(
         \instrument, \abass,
-        \carrier_amp, Pshuf([4, 8, 16, 32], inf),
-        \carrier_ratio, 4,
         \degree, Pseq([Pseq([0], 3), 1, Pseq([0], 5), 1, Pseq([0], 7), 1], inf),
-        \dur, Pshuf(~bassdurations, inf),
-        \fb, Pshuf([0.25, 0.5, 1].stutter(7), inf),
+        \dur, Pshuf(~bassdurs, inf),
+        \freqmodmul, Pshuf(Array.interpolation(11, 0.0, 0.2), inf),
+        \modfrqratio, Pshuf(Array.interpolation(5, 1, 8), inf),
+        \modmul, Pshuf([0, 1, 2, 3, 4, 5], inf),
+        \modmulstart, 1,
+        \modmulend, 0,
         \octave, 3,
         \outbus, [~delaybus, ~bassfxbus],
+        \round, Pshuf([0, 0.0125, 0.025, 0.05, 0.1, 0.2, 0.4], inf),
         \scale, ~scale
 ));
 );
