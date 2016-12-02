@@ -453,7 +453,7 @@ Pdef(\hat2,
     Pbind(
         \instrument, \hat,
         \curve, Pwrand([-64, 0], [16, 1].normalizeSum, inf),
-        \degree, Pseq([Pseq([[0, 2, 7, 10, 12]], 31), Pseq([Rest], 31)], inf),
+        \degree, Pseq([Pseq([[0, 2, 7, 10, 12]], 23), Pseq([Rest], 31)], inf),
         //\dur, Pshuf([Pseq([0.125], 2), 0.25, 0.5, 0.75].stutter(3), inf),
 		//\dur, Prand([Pseq([0.125], 2), 0.25, Pseq([0.25], 2), Pseq([0.25], 3)], inf),
         \dur, 0.5,
