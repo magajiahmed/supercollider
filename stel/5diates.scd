@@ -258,8 +258,8 @@ Pdef(\basspat1).stop;
 Pdef(\bass2,
     Pbind(
         \instrument, \bass,
-        \degree, Pseq([-5, -2, 0, 1, 6].scramble.mirror1, 7),
-        \detune, Pwhite(0, 0.01, inf),
+        \degree, Pseq([-6, 0, 1, 7, 10].scramble.mirror1, 7),
+        \detune, Pshuf(Array.interpolation(5, 0, 0.02), inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), Pseq([0.375], 2), 0.75, 1, 1.5, 2, 3, 4, 6, 7], inf),
         \fb, Pshuf(Array.interpolation(6, 0.0, 2.5), inf),
         \freqmod_mul, Pshuf([1, 2, 4, 8, 16], inf),
@@ -268,7 +268,8 @@ Pdef(\bass2,
 		\freqmod_mul_dur, Pkey(\dur) * 0.25,
         \octave, 3 ! 2,
         \outbus, ~delaybus,
-        \round, Pwhite(0, 0.4, inf)
+        \round, Pwhite(0, 0.4, inf),
+        \scale, ~scale
 ));
 );
 
