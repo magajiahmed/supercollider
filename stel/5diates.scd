@@ -129,10 +129,10 @@ Pdef(\pulselimiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~pulsebus, \l
 // SIN (ACTUALLY MORE OF A SAW WITH 'WIDTH MODULATION' AND 'FOLDING MODULATION')
 
 (
-SynthDef(\sin, { |dur = 1, fold_min_start = 0.025, fold_min_end = 0.05, fold_max_start = 0.1, fold_max_end = 0.2, foldmod_detune = 0, foldmod_dur_mul = 1, freq = 440, gate = 1, level = 0.05, outbus, width = 0|
+SynthDef(\sin, { |dur = 1, fold_min_start = 0.0125, fold_min_end = 0.025, fold_max_start = 0.05, fold_max_end = 0.1, foldmod_detune = 0, foldmod_dur_mul = 1, freq = 440, gate = 1, level = 0.05, outbus|
     var env             =   Env.asr(0.003, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var widthmod        =   LFNoise2.kr(dur.reciprocal ! 2 * 4).range(0.0, 1.0).round(0.5);
+    var widthmod        =   LFNoise2.kr(dur.reciprocal ! 2 * 4).range(0.0, 1.0).round(0.25);
     var foldmod_freq_mod =  LFNoise2.kr(dur.reciprocal * foldmod_dur_mul, foldmod_detune, 1);
     var foldmod         =   SinOsc.ar(freq * foldmod_freq_mod).range(LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_min_start, fold_min_end), LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_max_start, fold_max_end));
     var saw             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
@@ -142,40 +142,65 @@ SynthDef(\sin, { |dur = 1, fold_min_start = 0.025, fold_min_end = 0.05, fold_max
 );
 
 (
-Pdef(\sinrest1, Pbind(\instrument, \sin, \degree, Pseq([Rest]), \dur, 11));
-
-Pdef(\sin1pat,
+Pdef(\sinrest1,
     Pmono(
         \sin,
-        \degree, Pseq([[6, 12], [7, 12], [10, 12], [12, 19], [14, 19]].collect({ |c| [c].stutter(6).flatten }).scramble.mirror1, 4),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2),  0.5, Pseq([0.25], 3), 0.75, Pseq([0.125], 8), Pseq([0.25], 4), 1, 1.5, 2, 3, 4, 6, 8, 12], inf),
-        \foldmod_detune, Pshuf(Array.interpolation(17, 0, 0.0005), inf),
-        \foldmod_dur_mul, Pshuf([2, 4], inf),
+        \degree, Pseq([[0, 7].stutter(3)]),
+        \dur, 10.25,
+        \foldmul_detune, 0.0002,
+        \foldmul_dur_mul, 53,
+        \octave, 5,
+        \outbus, ~delaybus,
+        \root, ~root,
+        \scale, ~scale
+));
+
+Pdef(\sin1pat1,
+    Pmono(
+        \sin,
+        \degree, Pseq([[7, 12], [10, 12], [12, 19], [14, 19], [18, 19]].collect({ |c| [c].stutter(8).flatten }).scramble.mirror1, 4),
+        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2),  0.5, Pseq([0.125], 6), Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1.25, 1.5, 2, 3, 4, 6, 8, 12]),
+        \foldmod_detune, Pshuf(Array.interpolation(17, 0, 0.0003), inf),
+        \foldmod_dur_mul, Pshuf([1, 2, 3, 4, 5], inf),
         \octave, 5,
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
 ));
 
-Pdef(\sin1, Pseq([Pdef(\sin1pat), Pdef(\sinrest1)], inf));
+Pdef(\sin1pat2,
+    Pmono(
+        \sin,
+        \degree, Pshuf([[7, 12], [10, 12], [12, 19], [14, 19], [18, 19]].collect({ |c| [c].stutter(8).flatten }), 9),
+        \dur, Prand([Pseq([0.125], 2), 0.25], 45),
+        \outbus, ~delaybus,
+        \root, ~root,
+        \scale, ~scale
+));
+
+Pdef(\sin1, Pseq([Pdef(\sin1pat1), Pdef(\sinrest1), Pdef(\sin1pat2)], inf));
+);
 
 //
 
-Pdef(\sinrest2, Pbind(\instrument, \sin, \degree, Pseq([Rest]), \dur, 11));
+(
+Pdef(\sinrest2, Pbind(\instrument, \sin, \degree, Pseq([Rest]), \dur, 21.5));
 
 Pdef(\sin2pat,
     Pmono(
         \sin,
         \degree, Pseq([[0, 7, 10, 12], [0, 7, 12, 12]]),
-        \dur, 11,
+        \dur, 10.75,
         \foldmod_detune, 0.001,
-		\octave, 5,
+        \foldmod_dur_mul, Pshuf((5..17), inf),
+        \octave, 4,
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
 ));
 
 Pdef(\sin2, Pseq([Pdef(\sin2pat), Pdef(\sinrest2)], inf));
+);
 
 //
 
@@ -183,20 +208,23 @@ Pdef(\sin, Ppar([Pdef(\sin1), Pdef(\sin2)]));
 
 //
 
-Pdef(\sindronerest, Pbind(\instrument, \sin, \degree, Pseq([Rest]), \dur, 21));
+(
+//Pdef(\sindronerest, Pbind(\instrument, \sin, \degree, Pseq([Rest]), \dur, 21.5));
 
-Pdef(\sindronepat,
+Pdef(\sindrone,
     Pmono(
         \sin,
-        \degree, Pseq([[7, 12].stutter(3)]),
-        \dur, 21,
+        \degree, Pseq([[7, 12].stutter(2)], inf),
+        \dur, 21.5,
+        \foldmod_detune, 0.0003,
+        \foldmod_dur_mul, Pshuf((30..53), inf),
         \octave, [3, 4, 5, 6, 7],
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale,
 ));
 
-Pdef(\sindrone, Pseq([Pdef(\sindronepat), Pdef(\sindronerest)], inf));
+//Pdef(\sindrone, Pseq([Pdef(\sindronepat), Pdef(\sindronerest)], inf));
 );
 
 /*
@@ -257,9 +285,9 @@ Pdef(\basspat1,
         ], inf),
         \fb, Pshuf([0.5, 1, 1.5].stutter(2), inf),
         \freqmod_mul, Pshuf([0, 10, 20], inf),
-		\freqmod_mul_start, Pshuf([0, 1].stutter(3), inf),
+		\freqmod_mul_start, Pshuf([0, 1], inf),
 		\freqmod_mul_end, (Pkey(\freqmod_mul_start) - 1).abs,
-		\freqmod_mul_dur, Pxrand([0.125, 0.25, 0.5, 1], inf),
+		\freqmod_mul_dur, Prand([0.125, 0.25], inf),
         \octave, 3 ! 2,
         \outbus, ~delaybus,
 		\root, ~root,
