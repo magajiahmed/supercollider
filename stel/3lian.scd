@@ -17,6 +17,7 @@ b = Buffer.alloc(s, s.sampleRate * (t.tempo * 6), 1);
 ~delay = 0.05;
 ~delaybus = Bus.audio(s, 2);
 ~prcfxbus = Bus.audio(s, 2);
+~verbbus = Bus.audio(s, 2);
 );
 
 (
@@ -103,6 +104,36 @@ SynthDef(\limiter, { |dur = 1, gate = 1, inBus = 0, level = 1, outbus = 0|
 
 (
 Pdef(\limiter, Pmono(\limiter, \dur, ~delay / 2, \inBus, ~prcfxbus, \level, 0.75, \outbus, 0));
+);
+
+////////////////////////////////////////////////////////////////
+// PRCVERB /////////////////////////////////////////////////////
+
+(
+SynthDef(\verb, { |gate = 1, inbus, level = 0.1, outbus|
+    var env             =   Env.adsr(0.001, 0.1, level, 0.1, curve: -64);
+    var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
+    //var env             =   Env.perc(0.001, 1, level, -4);
+    //var envgen          =   EnvGen.kr(env, doneAction: 2);
+    var ampmod          =   LFClipNoise.kr(50 ! 2).range(0.5, 1.0);
+    var in              =   In.ar(inbus, 2);
+    //var verb            =   FreeVerb2.ar(in[0], in[1], 1, 0.125, 1, envgen);
+    var verb            =   GVerb.ar(in, 20, 0.5, 1, mul: envgen * ampmod);
+    //var verbgate        =   Compander.ar(verb, verb, level * 0.1, 1, 0.001, 0.0001, 0.01);
+    Out.ar(outbus, verb);
+}).add;
+
+//Pdef(\verb, Pmono(\verb, \inbus, ~verbbus, \outbus, ~delaybus));
+);
+
+(
+Pdef(\verb,
+    Pmono(
+        \verb,
+        \dur, Pshuf([ 0.25, 0.5, 0.75, 1, 1.5 ], inf),
+        \inbus, ~verbbus,
+        \outbus, ~delaybus
+));
 );
 
 ////////////////////////////////////////////////////////
@@ -432,7 +463,7 @@ Pdef(\wat,
         \legato, 0.5,
         \level, 0.05,
         \octave, 4,
-        \outbus, ~delaybus,
+        \outbus, [ ~delaybus, ~verbbus ],
         \scale, ~scale
 ));
 );
@@ -553,7 +584,7 @@ SynthDef(\clap, { | combdelay = 0.02, combdelay_start = 1, combdelay_end = 1, cu
 );
 
 (
-~claplvl = 0.5;
+~claplvl = 1;
 ~clapecholvl = ~claplvl / 3;
 Pdef(\clappat1,
 	Pbind(
@@ -568,7 +599,7 @@ Pdef(\clappat1,
         \level, ~claplvl,
         \degree, Pshuf([[-5, -2, 0, 2], [-2, 0, 2, 7], [0, 2, 7, 10], [2, 7, 10, 12]], inf),
         \octave, Pshuf([1, 2, 3, 5, 7, 11, 13], inf),
-        \outbus, ~prcfxbus,
+        \outbus, [ ~prcfxbus, ~verbbus ].stutter(4),
         \pan, Pshuf([-0.25, 0, 0.25].stutter(7), inf),
         \scale, ~scale,
         \xi, Pshuf([1.1, 1.2, 1.3].stutter(5), inf),
@@ -597,7 +628,7 @@ Pdef(\clappar).stop;
 // PRC1
 
 (
-SynthDef(\prc1, { |a = 1.1, c = 0.13, curve = -16, dur = 1, fb = 0, freq = 1000, length = 1, level = 0.5, outbus|
+SynthDef(\prc1, { |a = 1.1, c = 0.13, curve = -16, dur = 1, fb = 0, freq = 1000, length = 1, level = 1, outbus|
     var env             =   Env.perc(0.01, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sindrop         =   SinOscFB.ar(freq * LinCongC.ar(a: [a, a - 0.01], c: [c, c - 0.01], mul: 2, add: 1), fb, envgen);
@@ -616,7 +647,7 @@ Pdef(\prc1,
         \fb, Prand([0, 1], inf),
         \freq, Pshuf([100, 500, 1000].stutter(13), inf),
         \length, Pshuf([0.5, 1, 1.5].stutter(11), inf),
-        \outbus, ~prcfxbus,
+        \outbus, [ ~prcfxbus, ~verbbus ],
 ));
 );
 
@@ -632,7 +663,7 @@ Pdef(\prc1).stop;
 // PRC2
 
 (
-SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 0.5, lfreq = 22050, multiplier = 1, outbus, s = 10|
+SynthDef(\prc2, { |curve = -16, fb = 0, freq = 440, length = 0.1, level = 1, lfreq = 22050, multiplier = 1, outbus, s = 10|
     var env             =   Env.perc(0.005, length, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sinmod          =   LorenzL.ar([lfreq, lfreq - 10], [s, s - 0.1], mul: 5, add: 1);
@@ -675,7 +706,7 @@ Pdef(\prc2b,
         //\freq, Pshuf([Pwhite(190.0, 210.0, 1), Pwhite(1000.0, 2000.0, 1)].stutter(3), inf),
         \freq, Pxrand([250, 500, 1000, 2000, 4000], inf),
         \length, Pshuf([0.1, 0.4].stutter(17), inf),
-        \level, Pshuf([0.2, 1, 1, 1].stutter(11) * 0.5, inf),
+        \level, Pshuf([0.2, 1, 1, 1].stutter(11), inf),
         \lfreq, Pshuf((1..19) * 1000, inf),
         \outbus, ~prcfxbus,
         \s, Pwhite(7.0, 12.0, inf).round(0.1)
@@ -880,5 +911,6 @@ Pdef(\heavypar).stop;
     Pdef(\bassstutter).play(t);
     Pdef(\limiter).play(t);
     Pdef(\delay).play(t);
+    Pdef(\verb).play(t);
 }.fork;
 );

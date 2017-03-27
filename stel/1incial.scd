@@ -575,7 +575,7 @@ Pdef(\pads).stop;
 Pdef(\paddrone1,
     PmonoArtic(
         \pad,
-        \degree, Pseq([Pseq([[7, 12]], 53), Pseq([Rest], 31)], 2),
+        \degree, Pseq([Pseq([[7, 12]], 53), Pseq([Rest], 17)], 2),
         \dur, Pshuf([0.5, 0.75, 1, 1.25, 1.5].mirror2, inf),
         \fb, 0.3,
         \freqmod_length, Pshuf([0.0125, 0.025, 0.05], inf),
@@ -591,7 +591,7 @@ Pdef(\paddrone2,
     Pbind(
         \instrument, \pad,
         \degree, [7, 12],
-        \dur, Pshuf([97, 101, 103], inf),
+        \dur, Pshuf([97, 101, 103]),
         \fb, 1.5,
         \freqmod_length, 0.1,
         \freqmod_start, Pshuf([0.5, 2]),
@@ -644,10 +644,10 @@ Pdef(\larry1,
 	Pbind(
 		\instrument, \larry,
         \curve, -32,
+        \degree, Pseq([[7, 10, 12, 13], Rest], 2),
         \dur, Pshuf(Array.fill(3, { |i| (i + 9).nthPrime }) + 0.25, inf),
         \fb, 0,
         \legato, 1,
-        \degree, Pseq([[7, 10, 12, 13], Rest], 2),
         \octave, 5,
         \outbus, ~delaybus,
         \s, Pwhite(8.0, 12.0, inf),
@@ -667,9 +667,9 @@ Pdef(\larry3,
         \degree, Pshuf([[7, 12, 13], Rest], 2)
 ));
 
-Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pseq([0, Rest], 2), \legato, 1, \octave, [2, 3, 4]));
+Pdef(\larry4, Pbindf(Pdef(\larry1), \degree, Pseq([ 1, Rest ], 2), \legato, 1, \octave, [2, 3, 4]));
 
-Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry1), Pdef(\larry4)], inf));
+Pdef(\larrys, Ppar([Pdef(\larry1), Pdef(\larry2), Pdef(\larry3), Pdef(\larry4)], inf));
 );
 
 /*
@@ -705,43 +705,6 @@ Pdef(\larrys).stop;
 ~midiktrl.value(\larrys, 68);
 
 ////////////////////////////////////////////////////////
-// SINPNO
-
-(
-SynthDef(\sinpno, { |curve = -16, dur = 1, fb = 0, freq = 440, level = 0.2, outbus|
-	var env             =   Env.perc(0.01, dur, level, curve);
-	var envgen          =   EnvGen.kr(env, doneAction: 2);
-    //var fbmod           =   SinOsc.ar(freq ! 2, mul: XLine.kr(1, 0.1, dur), add: 1);
-    //var foldmod         =   SinOsc.ar(freq * LFNoise0.kr(1 ! 2, 0.005, 1), mul: XLine.kr(0.9, 0.1, dur), add: 1);
-    var sin             =   SinOscFB.ar([freq - 0.3, freq + 0.3], fb).fold2(0.5).round(0.1).round(0.05).round(0.025).round(0.125) * 2 * envgen;
-	Out.ar(outbus, sin.softclip);
-}).add;
-);
-
-(
-Pdef(\sinpno,
-	Pbind(
-		\instrument, \sinpno,
-        \curve, -8,
-        //\degree, Pseq([[-5, -2], [-5, 0], [0, 7]], 2),
-        \degree, Pshuf([[2, 7, 10], [2, 7, 12], [7, 12, 14]], inf),
-		\dur, Pseq([0.25, 21, 0.25, 23, 0.25, 25, 0.25, 27, 0.25, 29]),
-        //\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24], 2),
-        //\dur, 0.25,
-        \fb, Pshuf([0.125, 0.25, 0.5, 1], inf),
-		\octave, 6,
-		\outbus, ~delaybus,
-		\scale, ~scale
-	));
-);
-
-/*
-Pdef(\sinpno).play(t);
-Pdef(\sinpno).isPlaying;
-Pdef(\sinpno).stop;
-*/
-
-////////////////////////////////////////////////////////
 // PNO
 
 // SynthDef
@@ -760,7 +723,7 @@ SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
 Pdef(\pno1,
     Pbind(
         \instrument, \pno,
-        \degree, Pseq([Pshuf([0, [-2, 0], [0, 1, 7]], 3), Pseq([Rest], 6)], inf),
+        \degree, Pseq([Pshuf([[ 0, 1 ], [ -2, 0, 1 ], [0, 1, 7]], 3), Pseq([Rest], 6)], inf),
         \dur, Prand([0.75, 1.25, 2.25, 3.25, 5, 11.25, 23], inf),
         \fb, 0,
         \level, Prand([0.2, 1] * 0.1, inf),
@@ -829,7 +792,8 @@ SynthDef(\abass, { |curve = -4, dur = 1, fb = 0, freq = 440, freqmodmul = 0, lev
 Pdef(\bass,
 	Pbind(
         \instrument, \abass,
-        \degree, Pseq([Pshuf(~bassnotes, 2), Pseq([Rest], ~bassnotes.size)], 3),
+        \degree, Pseq([ Pshuf(~bassnotes ++ [ Rest ].stutter(~bassnotes.size)), Pseq([ Rest ], ~bassnotes.size)], 2),
+        //\degree, Pseq([Pseq([ 0, Rest ], 9), Pseq([Rest], 9)], 3),
         \dur, Pshuf(~bassdurs, inf),
         \freqmodmul, Pshuf(Array.interpolation(9, 0.0, 0.1), inf),
         \modfrqratio, Pshuf(Array.interpolation(7, 1, 16), inf),
@@ -837,19 +801,23 @@ Pdef(\bass,
         \modmulstart, 1,
         \modmulend, 0,
         \octave, 3,
-        \outbus, [~delaybus, ~bassfxbus],
+        \outbus, [ ~delaybus, ~bassfxbus ].stutter(2),
         \round, Pshuf([0, 0.0125, 0.025, 0.05, 0.1], inf),
 		\scale, ~scale,
 ));
 
+//Pdef(\basstonic, Pbindf(Pdef(\bassnotes), \degree, 0));
+
+//Pdef(\bass, Ppar([Pdef(\bassnotes), Pdef(\basstonic)]));
+
 Pdef(\bass2,
     Pbind(
         \instrument, \abass,
-        \degree, Pseq([Pseq([0], 3), 1, Pseq([0], 5), 1, Pseq([0], 7), 1], inf),
+        \degree, Pseq([ Pseq([ 0 ], 1), 1, Rest, Pseq([ 0 ], 2), 1, Rest, Pseq([ 0 ], 3), 1, Rest ], 3),
         \dur, Pshuf(~bassdurs, inf),
         \freqmodmul, Pshuf(Array.interpolation(11, 0.0, 0.2), inf),
         \modfrqratio, Pshuf(Array.interpolation(5, 1, 8), inf),
-        \modmul, Pshuf([0, 1, 2, 3, 4, 5], inf),
+        \modmul, Pshuf([ 0, 1, 2, 3, 4, 5 ], inf),
         \modmulstart, 1,
         \modmulend, 0,
         \octave, 3,
@@ -864,6 +832,13 @@ Pdef(\bass).play(t);
 Pdef(\bass).isPlaying;
 Pdef(\bass).stop;
 */
+
+/*
+Pdef(\basstonic).play(t);
+Pdef(\basstonic).isPlaying;
+Pdef(\basstonic).stop;
+*/
+
 
 /*
 Pdef(\bass2).play(t, quant: 0.5);

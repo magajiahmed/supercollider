@@ -1197,10 +1197,10 @@ Pdef(\stringchords4).stop;
 (
 {
     s.sync;
-    Pdef(\delay).play(t);
-    Pdef(\dynamix).play(t);
-    Pdef(\limiter).play(t);
-    Pdef(\pulselimiter).play(t);
+    Pdef(\delay).play(~tempo);
+    Pdef(\dynamix).play(~tempo);
+    Pdef(\limiter).play(~tempo);
+    Pdef(\pulselimiter).play(~tempo);
 }.fork;
 );
 

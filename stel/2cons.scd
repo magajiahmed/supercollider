@@ -430,7 +430,7 @@ Pdef(\hatgrains,
         //\curve, Pshuf([-4, -16, -64].stutter(17), inf),
         \curve, Pbrown(-64, -8, -1, inf),
         \dur, 16.reciprocal,
-        \degree, Pseq([Pseq([[7, 10, 12]], 601), Pseq([Rest], 601)], inf),
+        \degree, Pseq([Pseq([[7, 10, 12]], 601), Pseq([Rest], 601)], 3),
         \level, 0.1,
         \numharm, Pshuf([Pseq([1], 100.rand.round(1) + 100), Pseq([2], 100.rand.round(1) + 100), Pseq([3], 100.rand.round(1) + 100)].stutter(3), inf),
         \octave, 7,
@@ -444,7 +444,7 @@ Pdef(\hatgrainsdrone,
     Pbind(
         \instrument, \hat,
         \curve, -4,
-        \degree, Pseq([Pseq([[7, 12]], 503), Pseq([Rest], 503)], inf),
+        \degree, Pseq([Pseq([[7, 12]], 503), Pseq([Rest], 503)], 3),
         \dur, 16.reciprocal,
         \level, 0.03,
         \numharm, 0,
@@ -537,25 +537,25 @@ SynthDef(\crumble, { |a = 1, b = 1.9, bwr = 0.03, curve = -4, dur = 1, freq = 10
 Pdef(\crumble0,
 	Pbind(
 		\instrument, \crumble,
-		\a, Pshuf([0.8, 0.85, 0.9], inf),
+		\a, Pshuf([ 0.8, 0.85, 0.9 ], inf),
 		//\b, Pbrown(1.6, 1.9, 0.05, inf),
 		\bwr, 0.01,
 		\curve, 0,
-        \degree, Pseq([5, Rest], inf),
-        \dur, Pshuf([23, 29, 31], inf),
-		\legato, 0.75,
+        \degree, Pseq([ 5, Rest ], 3),
+        \dur, Pshuf([ 23, 29, 31 ], 2),
+		\legato, 1,
         \level, 0.8,
 		\octave, 6,
         \outbus, ~delaybus,
 		\scale, ~scale,
 ));
 
-Pdef(\crumble1, Pbindf(Pdef(\crumble0), \degree, Pseq([7, Rest], inf)));
-Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([10, Rest], inf)));
-Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([12, Rest], inf)));
-Pdef(\crumblepar0, Ppar([Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3)], inf));
+Pdef(\crumble1, Pbindf(Pdef(\crumble0), \degree, Pseq([ 7, Rest ], 3)));
+Pdef(\crumble2, Pbindf(Pdef(\crumble0), \degree, Pshuf([ 10, Rest ], 3)));
+Pdef(\crumble3, Pbindf(Pdef(\crumble0), \degree, Pshuf([ 12, Rest ], 3)));
+Pdef(\crumblepar0, Ppar([ Pdef(\crumble0), Pdef(\crumble1), Pdef(\crumble2), Pdef(\crumble3) ]));
 
-Pdef(\crumble4, Pbindf(Pdef(\crumble0), \degree, 0));
+Pdef(\crumble4, Pbindf(Pdef(\crumble0), \degree, Pseq([ 0 ], 3)));
 );
 
 /*
