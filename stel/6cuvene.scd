@@ -89,18 +89,14 @@ Pdef(\dynamix).stop;
 // PAD
 
 (
-SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, freq = 400, gate = 1, k = 1, level = 0.03, outbus, release = 0.2, round = 0.1, stan_freq = 100|
+SynthDef(\pad, { |attack = 0.05, curve = -16, dur = 1, fb = 0, fold = 0.25, freq = 400, gate = 1, k = 1, level = 0.02, outbus, release = 0.2, round = 0.1, stan_freq = 100|
 	var env				=	Env.asr(attack, level, release, curve);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-	var stan            =   StandardL.ar([stan_freq - 0.05, stan_freq + 0.05], [k, k - 0.01]).range(0.0, fb);
-    //var sinfb1			=	SinOscFB.ar(freq, stan);
-    //var sinfb1			=	SinOscFB.ar(freq, fb * LFBrownNoise2.kr(0.2!2).range(0.5, 1));
-    var sinfb2			=	SinOscFB.ar(freq!2, fb);
-    var roundmod        =   LFBrownNoise2.kr(1!6, mul: 0.01, add: 1);
-    //var sinfbmix        =   (sinfb1 + sinfb2).round(round) * envgen;
-    //var rhpf            =   RHPF.ar(sinfbmix, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.5);
-    //var rhpf            =   RHPF.ar(sinfb1.round(round) * envgen, (freq * 4).clip(50, SampleRate.ir / 2.5), 0.3);
-    Out.ar(outbus, sinfb2.round(round * 0.25 * [roundmod[0], roundmod[1]]).round(round * 0.5 * [roundmod[2], roundmod[3]]).round(round * [roundmod[4], roundmod[5]]) * envgen);
+    var foldmod         =   StandardN.ar(stan_freq, [ k - 0.01, k + 0.01 ]).range(0.666, 1.0) * fold;
+    var sinfb           =	SinOscFB.ar(freq!2, fb).fold2(foldmod) * foldmod.reciprocal * envgen;
+    var leakdc          =   LeakDC.ar(sinfb);
+    var filter          =   DFM1.ar(leakdc, 8000, 0.75);
+    Out.ar(outbus, filter);
 }).add;
 );
 
@@ -112,25 +108,19 @@ Pdef(\pad1,
         \instrument, \pad,
         \attack, 0.03,
         \curve, 0,
-        //\degree, Pseq([[-2, 0, 7], [7, 10, 12]], inf),
         \degree, Pshuf(~chords, inf),
         \dur, Pshuf([31, 33, 35, 37, 39] + 0.25, inf),
-        \fb, 0.3,
+        \fb, 1.5,
         \k, Pwhite(0.9, 4.0, inf),
         \legato, 1,
-        \octave, 5,
         \outbus, ~compressorbus,
         \release, 0.1,
         \root, ~root,
-        \round, 0.5,
         \scale, ~scale,
-        //\stan_freq, 23
-        \stan_freq, 0.2
+        \stan_freq, 23
 ));
 
 Pdef(\pads1, Ppar([Pdef(\pad1)].stutter(2), inf));
-
-//Pdef(\pads2, Pbindf(Pdef(\pads1)));
 
 Pdef(\padsgroup1, Ppar([Pdef(\pads1)].stutter(2), inf));
 
@@ -147,12 +137,6 @@ Pdef(\pads1).stop;
 */
 
 /*
-Pdef(\pads2).play(t, quant: 1);
-Pdef(\pads2).isPlaying;
-Pdef(\pads2).stop;
-*/
-
-/*
 Pdef(\padsgroup1).play(t, quant: 1);
 Pdef(\padsgroup1).isPlaying;
 Pdef(\padsgroup1).stop;
@@ -162,23 +146,21 @@ Pdef(\padsgroup1).stop;
 
 (
 Pdef(\padlo,
-    //Pmono(
-        //\pad,
     Pbind(
         \instrument, \pad,
         \attack, 0.1,
         \curve, -4,
         \degree, [0, 7, 12],
         \dur, Pshuf([41, 43, 45, 47, 49] + 0.25, inf),
-        \fb, 0.2,
+        \fb, 1.5,
         \k, Pwhite(0.9, 4.0, inf),
         \legato, 1,
         \octave, 4,
         \outbus, ~compressorbus,
         \release, 0.1,
         \root, ~root,
-        \round, 0.5,
-        \scale, ~scale
+        \scale, ~scale,
+        \stan_freq, 23
 ));
 
 Pdef(\padslo, Ppar([Pdef(\padlo)].stutter(2), inf));
@@ -191,7 +173,17 @@ Pdef(\padslo).isPlaying;
 Pdef(\padslo).stop;
 */
 
-Pdef(\padhi, Pbindf(Pdef(\pad1), \degree, Pshuf(~chord.collect({ |d| [d].stutter(2) }), inf), \fb, 1.5, \legato, 0.5, \octave, 6));
+(
+Pdef(\padhi,
+    Pbindf(
+        Pdef(\pad1),
+        \degree, Pshuf(~chord.collect({ |d| [d].stutter(2) }), inf),
+        \fb, 1.5,
+        \legato, 0.5,
+        \octave, 6,
+        \stan_freq, 13
+));
+);
 
 Pdef(\padshi, Ppar([Pdef(\padhi)].stutter(3)));
 
@@ -211,7 +203,7 @@ Pdef(\padshi).stop;
 // SIN
 
 (
-SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.05, outbus|
+SynthDef(\sin, { |fb = 0, freq = 440, gate = 1, level = 0.1, outbus|
     var env             =   Env.asr(0.01, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
     var sin             =   SinOscFB.ar(freq!2, fb, envgen);
@@ -291,7 +283,7 @@ Pdef(\sinlo).stop;
 // TONE
 
 (
-SynthDef(\tone, { |curve = -4, dur, fb = 0, freq = 440, level = 0.15, outbus|
+SynthDef(\tone, { |curve = -4, dur, fb = 0, freq = 440, level = 0.3, outbus|
     var env             =   Env.perc(0.01, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var sin             =   SinOscFB.ar([freq - 0.2, freq + 0.2], fb, envgen);
