@@ -129,18 +129,55 @@ Pdef(\pulselimiter, Pmono(\limiter, \duration, ~delay / 2, \inBus, ~pulsebus, \l
 // SIN (ACTUALLY MORE OF A SAW WITH 'WIDTH MODULATION' AND 'FOLDING MODULATION')
 
 (
-SynthDef(\sin, { |dur = 1, fold_min_start = 0.0125, fold_min_end = 0.025, fold_max_start = 0.05, fold_max_end = 0.1, foldmod_detune = 0, foldmod_dur_mul = 1, freq = 440, gate = 1, level = 0.05, outbus|
+SynthDef(\sin, { |dur = 1, fold_min_start = 0.0125, fold_min_end = 0.025, fold_max_start = 0.05, fold_max_end = 0.2, foldmod_detune = 0, foldmod_dur_mul = 1, freq = 440, freqmod_mul = 0, gate = 1, level = 0.04, outbus|
     var env             =   Env.asr(0.003, level, 0.1);
     var envgen          =   EnvGen.kr(env, gate, doneAction: 2);
-    var widthmod        =   LFNoise2.kr(dur.reciprocal ! 2 * 4).range(0.0, 1.0).round(0.25);
+    var widthmod        =   LFNoise2.kr(dur.reciprocal ! 2).range(0.0, 1.0);
     var foldmod_freq_mod =  LFNoise2.kr(dur.reciprocal * foldmod_dur_mul, foldmod_detune, 1);
-    var foldmod         =   SinOsc.ar(freq * foldmod_freq_mod).range(LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_min_start, fold_min_end), LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_max_start, fold_max_end));
-    var saw             =   VarSaw.ar(freq, width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
-    var filter          =   LPF.ar(saw, SampleRate.ir / 2.1);
+    //var foldmod         =   SinOsc.ar(freq * foldmod_freq_mod).range(LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_min_start, fold_min_end), LFNoise0.kr(dur.reciprocal * foldmod_dur_mul).range(fold_max_start, fold_max_end));
+    var foldmod         =   SinOsc.ar(freq * LFNoise2.kr(dur.reciprocal, 0.0003, 1)).range(fold_min_start, fold_max_start);
+    var saw             =   VarSaw.ar(freq * LFNoise2.ar(freq ! 2, freqmod_mul, 1), width: widthmod).fold2(foldmod) * foldmod.reciprocal * envgen;
+    var filter          =   BLowPass4.ar(saw, 18000);
     Out.ar(outbus, filter);
 }).add;
 );
 
+(
+Pdef(\sin,
+    Pmono(
+        \sin,
+        //\degree, Pshuf([[7, 12], [10, 12], [12, 19], [14, 19], [18, 19]].collect({ |c| [c].stutter(8).flatten }), inf),
+        \degree, Pshuf([2, 7, 10, 12].powerset.reject({ |c| c.size != 2 }).collect({ |c| c.stutter(10) }), inf),
+        \dur, Pseq([Pseq([0.0625], 4), Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12])], inf),
+        \fold_min_start, Pshuf([0.0125, 0.025, 0.05, 0.1], inf),
+        \fold_max_start, Pshuf([0.0625, 0.125, 0.25, 0.5, 1], inf),
+        \freqmod_mul, Pshuf([0.00001, 0.0001, 0.001, 0.01], inf),
+        \legato, 0.999,
+        \outbus, ~delaybus,
+        \root, ~root,
+        \scale, ~scale
+));
+
+Pdef(\sindrone,
+    Pbindf(Pdef(\sin1),
+        \degree, [7, 12].stutter(10),
+        \freqmod_mul, 0,
+));
+);
+
+/*
+Pdef(\sin).play(~tempo);
+Pdef(\sin).isPlaying;
+Pdef(\sin).stop;
+*/
+
+/*
+Pdef(\sindrone).play(~tempo);
+Pdef(\sindrone).isPlaying;
+Pdef(\sindrone).stop;
+*/
+
+/*
 (
 Pdef(\sinrest1,
     Pmono(
@@ -159,7 +196,7 @@ Pdef(\sin1pat1,
     Pmono(
         \sin,
         \degree, Pseq([[7, 12], [10, 12], [12, 19], [14, 19], [18, 19]].collect({ |c| [c].stutter(8).flatten }).scramble.mirror1, 4),
-        \dur, Pshuf([Pseq([0.125], 2), 0.25, Pseq([0.125], 4), Pseq([0.25], 2),  0.5, Pseq([0.125], 6), Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1.25, 1.5, 2, 3, 4, 6, 8, 12]),
+        \dur, Pshuf([Pseq([0.0625], 4), Pseq([0.125], 2), 0.25, Pseq([0.25], 2),  0.5, Pseq([0.0625], 12), Pseq([0.25], 3), 0.75, Pseq([0.25], 4), 1.25, 1.5, 2, 3, 4, 6, 8, 12]),
         \foldmod_detune, Pshuf(Array.interpolation(17, 0, 0.0003), inf),
         \foldmod_dur_mul, Pshuf([1, 2, 3, 4, 5], inf),
         \octave, 5,
@@ -172,7 +209,7 @@ Pdef(\sin1pat2,
     Pmono(
         \sin,
         \degree, Pshuf([[7, 12], [10, 12], [12, 19], [14, 19], [18, 19]].collect({ |c| [c].stutter(8).flatten }), 9),
-        \dur, Prand([Pseq([0.125], 2), 0.25], 45),
+        \dur, Prand([Pseq([0.0625], 4), 0.25], 45),
         \outbus, ~delaybus,
         \root, ~root,
         \scale, ~scale
@@ -226,6 +263,27 @@ Pdef(\sindrone,
 
 //Pdef(\sindrone, Pseq([Pdef(\sindronepat), Pdef(\sindronerest)], inf));
 );
+*/
+
+//
+
+/*
+Pdef(\sinrest1).play(~tempo);
+Pdef(\sinrest1).isPlaying;
+Pdef(\sinrest1).stop;
+*/
+
+/*
+Pdef(\sin1pat1).play(~tempo);
+Pdef(\sin1pat1).isPlaying;
+Pdef(\sin1pat1).stop;
+*/
+
+/*
+Pdef(\sin1pat2).play(~tempo);
+Pdef(\sin1pat2).isPlaying;
+Pdef(\sin1pat2).stop;
+*/
 
 /*
 Pdef(\sin1).play(~tempo);
