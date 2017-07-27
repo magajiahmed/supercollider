@@ -627,7 +627,7 @@ SynthDef(\prc, {
     var env             =   Env.new([0, level, level * tailmul, 0], [0.003, release, dur - release]);
 	//var envgen			=	EnvGen.kr(env, doneAction: 2);
 	var envgen			=	EnvGen.kr(env, gate, doneAction: 2);
-    var lc				=	LinCongC.ar([freq, freq + 10], a).fold2(1 / foldfactor) * foldfactor * envgen;
+    var lc				=	LinCongC.ar([freq, freq + 10], a).fold2(1 / foldfactor) * foldfactor * envgen * 2;
     var rez				=	Resonz.ar(lc, (rez_freq).clip(50, SampleRate.ir / 3), rez_rq.clip(0.1, 1)) * rez_rq.reciprocal * 2;
 	var compress        =   Compander.ar(lc + rez, lc + rez, level / 2, slopeAbove: 0.1, clampTime: 0.003) * 2;
     Out.ar(outbus, compress);

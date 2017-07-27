@@ -108,7 +108,7 @@ SynthDef(\sinfbdrone, { |freq = 440, gate = 1, level = 0.05, outbus|
     var freqmod         =   LFBrownNoise0.kr(0.1!2, mul: 0.001, add: 1);
     var sinfb           =   SinOscFB.ar(freq * freqmod, 0.3, envgen);
     var deci            =   Decimator.ar(sinfb, bits: 5);
-    var rhpf            =   RHPF.ar(deci, 10000) * 0.2;
+    var rhpf            =   RHPF.ar(deci, 8000) * 0.25;
     Out.ar(outbus, sinfb + rhpf);
 }).add;
 );
@@ -165,7 +165,7 @@ SynthDef(\bass, { |curve = 0, dur = 1, freq = 100, level = 0.3, outbus, width = 
 	var env				=	Env.perc(releaseTime: dur, level: level, curve: curve);
 	var envgen			=	EnvGen.kr(env, doneAction: 2);
     var saw 			=	VarSaw.ar(freq + XLine.kr([-0.01, 0.01], [-1, 1], dur), width: width).round(0.03) * envgen;
-    var sin				=	SinOsc.ar(freq!2).round(0.05) * envgen;
+    var sin				=	SinOsc.ar(freq!2 * 0.5) * envgen;
 	Out.ar(outbus, saw + sin);
 }).add;
 );
@@ -183,7 +183,7 @@ Pdef(\basspat,
 			Pseq([~bassdegrees[0], ~bassdegrees[1], Rest]),
 			Pseq([~bassdegrees[2], ~bassdegrees[3], Rest]),
 			Pseq([~bassdegrees[4], ~bassdegrees[5], ~bassdegrees[6], Rest])
-		], inf),
+		], 3),
         \dur, Pshuf(~bassdurations, inf),
         \octave, 3,
         \outbus, [~delaybus, ~bassfxbus],
@@ -291,75 +291,6 @@ SynthDef(\snr, { |a = 1, freq = 1000, curve = -64, level = 0.9, outbus = 0, pan 
 
 // Pattern
 
-/*
-(
-~snrfreq0 = 5000;
-~snrfreq1 = 100;
-~snrfreq2 = 15000;
-~snrlvl = 0.15;
-~snrecholvl = ~snrlvl / 4;
-Pdef(\snrpat0,
-	Pbind(
-		\instrument, \snr,
-		\a, Pwhite(0.98, 1.02, inf),
-		\curve, Prand([-32, -16], inf),
-		\freq, ~snrfreq0,
-		/*
-		\dur, Pshuf([
-			0.75, 0.75, 1.25,
-			0.75, 0.75, 0.75, 1.25,
-			0.75, 0.75, 0.75, 0.75, 1.25
-        ], inf),
-		*/
-		\dur, Pshuf([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], inf),
-		\note, Pshuf([
-            Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0,
-            Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0,
-            Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, Rest, 0
-        ], inf),
-        \level, ~snrlvl,
-        \octave, 6,
-        \outbus, ~limiterbus,
-        \scale, ~scale
-));
-
-Pdef(\snrpat1, Pbindf(Pdef(\snrpat0), \level, ~snrecholvl, \pan, -1));
-
-Pdef(\snrpat2, Pbindf(Pdef(\snrpat1), \pan, 1));
-
-//
-
-Pdef(\snrpat3, Pbindf(Pdef(\snrpat0), \curve, -8, \freq, ~snrfreq1));
-
-Pdef(\snrpat4, Pbindf(Pdef(\snrpat3), \level, ~snrecholvl, \pan, -1));
-
-Pdef(\snrpat5, Pbindf(Pdef(\snrpat4), \pan, 1));
-
-//
-
-Pdef(\snrpat6, Pbindf(Pdef(\snrpat0), \freq, ~snrfreq2));
-
-Pdef(\snrpat7, Pbindf(Pdef(\snrpat6), \level, ~snrecholvl, \pan, -1));
-
-Pdef(\snrpat8, Pbindf(Pdef(\snrpat7), \pan, 1));
-
-//
-
-Pdef(\snrpar0,
-    Ppar([
-        Pdef(\snrpat0), Pdef(\snrpat1), Pdef(\snrpat2),
-        Pdef(\snrpat3), Pdef(\snrpat4), Pdef(\snrpat5),
-        Pdef(\snrpat3), Pdef(\snrpat4), Pdef(\snrpat5)
-], inf));
-
-Pdef(\snrpar2, Ppar([Pdef(\snrpat6), Pdef(\snrpat7), Pdef(\snrpat8)]));
-
-Pdef(\snrs, Ppar([Pdef(\snrpar0), Pdef(\snrpar2), Pdef(\snrpar2)]));
-);
-*/
-
-//
-
 (
 ~snrlvl = 0.8;
 ~snrecholvl = ~snrlvl / 4;
@@ -370,7 +301,7 @@ Pdef(\snr1,
         \a, Pwhite(0.98, 1.02, inf),
         \curve, Pshuf([-16, -8], inf),
         \dur, Pshuf([0.25, Pseq([0.25], 2), 0.5, Pseq([0.25], 3), 0.75, 1, 1.5, 2, 3, 4, 6], inf),
-        \freq, Pshuf([100, 500, 1000, 5000].stutter(3), inf),
+        \freq, Pshuf([100, 500, 1000, 5000].stutter(3), 11),
         \level, ~snrlvl,
         \outbus, ~limiterbus
 ));
@@ -415,15 +346,6 @@ SynthDef(\hat, { |curve = -64, freq = 1000, level = 0.3, numharm = 14, outbus, p
 // Pattern
 
 (
-/*
-~hat0shortdurs = (8..3).collect({ |d| Pseq([d.reciprocal], d) });
-~hat0longdurs = [0.5, 1, 1.5, 2, 3, 4, 6];
-//~hat0durs = ~hat0shortdurs ++ ~hat0longdurs;
-~hat0durs = ~hat0shortdurs;
-//~hatlvl = 0.002;
-//~hatecholvl = ~hatlvl / 4;
-*/
-
 Pdef(\hatgrains,
 	Pbind(
 		\instrument, \hat,
@@ -473,7 +395,7 @@ Pdef(\hatgrains).stop;
 Pdef(\hatpat1,
     Pbind(
         \instrument, \hat,
-        \degree, Pseq([Pseq([[7, 12]], 71), Pseq([Rest], 71)], inf),
+        \degree, Pseq([Pseq([[7, 12]], 71), Pseq([Rest], 71)], 4),
         \dur, 0.25,
         \octave, 7,
         \outbus, ~limiterbus,
@@ -491,7 +413,7 @@ Pdef(\hatpat1).stop;
 Pdef(\hatpulse,
     Pbind(
         \instrument, \hat,
-        \degree, Pseq([Pseq([0], 101), Pseq([Rest], 101)], inf),
+        \degree, Pseq([Pseq([0], 101), Pseq([Rest], 101)], 3),
         \dur, 0.25,
         \octave, 9,
         \outbus, ~limiterbus,

@@ -721,11 +721,11 @@ Pdef(\larrys).stop;
 
 // SynthDef
 (
-SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus|
+SynthDef(\pno, { |curve = -8, dur = 1, fb = 0, freq = 440, level = 0.05, outbus, sin1lfn0_freq = 31|
     var env             =   Env.perc(0.001, dur, level, curve);
     var envgen          =   EnvGen.kr(env, doneAction: 2);
     var xline           =   XLine.kr(0.5, 1, 0.01);
-    var sin1            =   SinOscFB.ar(freq * xline * LFNoise2.kr(0.5!2, 0.001, 1) * LFNoise0.kr(17!2, 0.002, 1), fb);
+    var sin1            =   SinOscFB.ar(freq * xline * LFNoise2.kr(0.5!2, 0.0003, 1) * LFNoise0.kr(sin1lfn0_freq!2, 0.02, 1), fb);
     var sin3            =   SinOscFB.ar(freq!2 * xline, fb);
     Out.ar(outbus, ((sin1 + sin3).fold2(0.2) * 5 * envgen * 0.5) + ((sin1 + sin3) * envgen * 0.5));
 }).add;
@@ -741,7 +741,8 @@ Pdef(\pno1,
         \level, Prand([0.2, 1] * 0.1, inf),
         \octave, 6,
         \outbus, ~delaybus,
-        \scale, ~scale
+        \scale, ~scale,
+        \sin1lfn0_freq, Pshuf((6..15).collect({ |i| i.nthPrime }), inf)
 ));
 
 Pdef(\pno2, Pbindf(Pdef(\pno1), \fb, 0, \octave, 9));
@@ -764,7 +765,8 @@ Pdef(\pnochord,
         \fb, Pshuf([0, 0.125, 0.25, 0.5, 1], inf),
         \octave, 5,
         \outbus, ~delaybus,
-        \scale, ~scale
+        \scale, ~scale,
+        \sin1lfn0_freq, Pshuf((6..15).collect({ |i| i.nthPrime }), inf)
 ));
 );
 
@@ -790,7 +792,7 @@ SynthDef(\abass, { |ampmod_mul = 1, bwr = 1, curve = -8, dur = 1, fb = 0, ffreq_
     var osc             =   SinOscFB.ar([ freq - 0.1, freq + 0.1 ] * SinOsc.ar(freq, 0, 1, 1), fb).fold2(fold) * fold.reciprocal * envgen * ampmod * 0.333;
     var filter          =   Resonz.ar(osc, XLine.kr(ffreq_start, ffreq_end, dur).clip(50, s.sampleRate / 2.5), bwr.clip(0.01, 1));
     var sin             =   SinOsc.ar(freq ! 2).round(round) * envgen * 0.5;
-    Out.ar(outbus, osc + sin);
+    Out.ar(outbus, filter + sin);
 }).add;
 );
 
